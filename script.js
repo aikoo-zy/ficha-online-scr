@@ -897,10 +897,10 @@ document.querySelectorAll("[data-barra-clique]").forEach(barra => {
 // Espera um instante pra dar tempo de ver a barra esvaziar.
 let timerDorMontaria;
 function verificarDorMontaria() {
-  const m = ficha.montaria;
-  if (m.dor < BASE.dor) return;
+  if (ficha.montaria.dor < BASE.dor) return;
   clearTimeout(timerDorMontaria);
   timerDorMontaria = setTimeout(() => {
+    const m = ficha.montaria; // pega a ficha atual (ela pode ter sido recarregada da nuvem)
     if (m.dor < BASE.dor) return;
     m.dor = 0;
     m.vidaRiscada = Math.min(m.vidaRiscada + 1, calcular().montariaVidaMax);
