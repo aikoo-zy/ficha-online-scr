@@ -7,7 +7,7 @@
 // ---------- 1. Regras do livro ----------
 
 const ATRIBUTOS = [
-  { id: "fisico",     nome: "Físico",     efeito: "+1 Círculo de Vida por ponto" },
+  { id: "fisico",     nome: "Físico",     efeito: "+1 Ponto de Vida para cada ponto" },
   { id: "velocidade", nome: "Velocidade", efeito: "+1 Movimento por ponto" },
   { id: "intelecto",  nome: "Intelecto",  efeito: "+1 ponto de Antecedente por ponto" },
   { id: "coragem",    nome: "Coragem",    efeito: "+1 Ação de Combate por ponto" },
@@ -81,8 +81,8 @@ function fichaNova() {
     antecedentes: Object.fromEntries(ANTECEDENTES.map(a => [a.id, 0])),
     iniciativa: "",
     defesaBonus: 0,
-    dor: 0,            // quantos Círculos de Dor riscados
-    vidaRiscada: 0,    // quantos Círculos de Vida riscados
+    dor: 0,            // quantos Pontos de Dor riscados
+    vidaRiscada: 0,    // quantos Pontos de Vida riscados
     vidaBonus: 0,      // vida extra vinda de habilidades
     habilidades: "",
     capacidade: 10,
@@ -904,13 +904,13 @@ $("limpar-historico").addEventListener("click", () => {
   desenharHistorico();
 });
 
-// Seis Círculos de Dor: rola a penalidade, risca 1 Vida e zera a Dor
+// Seis Pontos de Dor: rola a penalidade, risca 1 Vida e zera a Dor
 $("botao-penalidade").addEventListener("click", () => {
   const n = rolar(6);
   const [nome, efeito] = TABELA_DOR[n - 1];
   ficha.dor = 0;
   ficha.vidaRiscada = Math.min(ficha.vidaRiscada + 1, calcular().vidaMax);
-  ficha.historico.unshift({ rotulo: "Penalidade de Dor", total: String(n), conta: `${nome}: ${efeito}`, extra: "1 Círculo de Vida riscado", hora: horaAgora() });
+  ficha.historico.unshift({ rotulo: "Penalidade de Dor", total: String(n), conta: `${nome}: ${efeito}`, extra: "1 Ponto de Vida riscado", hora: horaAgora() });
   salvar();
   desenharTudo();
   desenharTabelaDor(n);
