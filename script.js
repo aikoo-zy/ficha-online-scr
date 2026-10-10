@@ -828,7 +828,8 @@ document.addEventListener("click", e => {
     const max = BARRAS[d.barra].max();
     gravarCaminho(caminho, Math.min(max, Math.max(0, lerCaminho(caminho) - Number(d.passo))));
     salvar();
-    return atualizarResumo();
+    atualizarResumo();
+    return verificarDorMontaria();
   }
 
   if (d.fidelidade) {
@@ -888,8 +889,30 @@ document.querySelectorAll("[data-barra-clique]").forEach(barra => {
     gravarCaminho(caminho, max - resta);
     salvar();
     atualizarResumo();
+    verificarDorMontaria();
   });
 });
+
+// Montaria: quando os 6 Pontos de Dor acabam, ela perde 1 Ponto de Vida e a Dor volta cheia.
+// Espera um instante pra dar tempo de ver a barra esvaziar.
+let timerDorMontaria;
+function verificarDorMontaria() {
+  const m = ficha.montaria;
+  if (m.dor < BASE.dor) return;
+  clearTimeout(timerDorMontaria);
+  timerDorMontaria = setTimeout(() => {
+    if (m.dor < BASE.dor) return;
+    m.dor = 0;
+    m.vidaRiscada = Math.min(m.vidaRiscada + 1, calcular().montariaVidaMax);
+    const nome = m.nome || "A montaria";
+    ficha.historico.unshift({ rotulo: "Dor da montaria", total: "−1", conta: `${nome} perdeu 1 Ponto de Vida`, extra: "Pontos de Dor zerados", hora: horaAgora() });
+    ficha.historico = ficha.historico.slice(0, 30);
+    salvar();
+    atualizarResumo();
+    desenharHistorico();
+    avisoFicha(`${nome} chegou ao limite de dor: perdeu 1 Ponto de Vida e a Dor foi zerada.`);
+  }, 700);
+}
 
 $("rolar-potencia").addEventListener("click", () => {
   const p = ficha.montaria.potencia, m = ficha.antecedentes.montaria;
