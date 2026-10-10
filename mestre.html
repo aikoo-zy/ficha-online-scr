@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mesa do Mestre</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- ============================================================
+     MESA DO MESTRE
+     Mostra todas as fichas salvas na nuvem, atualizando ao vivo.
+     ============================================================ -->
+
+<header class="topo">
+  <div class="marca">Mesa do Mestre</div>
+  <a class="botao-ficha link-topo" href="index.html">Abrir ficha</a>
+</header>
+
+<main class="mesa-mestre">
+  <p class="status-nuvem mestre-status" id="status-nuvem" data-estado="conectando">Conectando na nuvem…</p>
+  <div class="grade-mestre" id="grade-mestre"></div>
+</main>
+
+<script src="mestre.js"></script>
+<script type="module" src="nuvem.js"></script>
+</body>
+</html>

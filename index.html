@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ficha de Sacramento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- ============================================================
+     FICHA DE SACRAMENTO RPG — versão 1
+     Estrutura: cabeçalho, abas (Personagem / Equipamento / Montaria)
+     e a Mesa de Dados ao lado (no celular ela vira a aba "Dados").
+     ============================================================ -->
+
+<header class="topo">
+  <div class="marca">Ficha de Personagem</div>
+  <nav class="abas" role="tablist" aria-label="Partes da ficha">
+    <button class="aba ativa" role="tab" data-aba="personagem" id="aba-personagem">Personagem</button>
+    <button class="aba" role="tab" data-aba="equipamento" id="aba-equipamento">Equipamento</button>
+    <button class="aba" role="tab" data-aba="montaria" id="aba-montaria">Montaria</button>
+    <button class="aba so-celular" role="tab" data-aba="dados" id="aba-dados">Dados</button>
+  </nav>
+
+  <!-- Menu das fichas salvas (abre ao clicar) -->
+  <div class="menu-fichas">
+    <button class="botao-menu" id="abrir-menu" aria-expanded="false" aria-controls="menu-painel">
+      <span class="ponto-nuvem" id="ponto-nuvem" data-estado="local"></span>
+      Fichas
+      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+    </button>
+  <div class="gerenciar menu-painel" id="menu-painel" hidden>
+    <label for="seletor-ficha" class="perfil-rotulo">Fichas salvas</label>
+    <select id="seletor-ficha" class="seletor-ficha"></select>
+    <span class="contagem-fichas" id="contagem-fichas"></span>
+    <span class="status-nuvem" id="status-nuvem" data-estado="local"></span>
+    <div class="gerenciar-botoes">
+      <button class="botao-ficha" id="nova-ficha">Nova</button>
+      <button class="botao-ficha" id="exportar-ficha">Exportar</button>
+      <label class="botao-ficha" for="importar-ficha">Importar</label>
+      <button class="botao-ficha botao-excluir" id="excluir-ficha">Excluir</button>
+    </div>
+    <button class="botao-ficha botao-link" id="copiar-link" hidden>Copiar link da ficha</button>
+    <input type="file" id="importar-ficha" accept=".json,application/json" hidden>
+    <p class="aviso-ficha" id="aviso-ficha" hidden></p>
+  </div>
+  </div>
+</header>
+
+<div class="layout">
+
+<!-- ===================== PERFIL (coluna da esquerda) ===================== -->
+<aside class="perfil">
+  <div class="retrato">
+    <img id="foto" class="retrato-foto" alt="Retrato do personagem" hidden>
+    <label for="input-foto" class="retrato-vazio" id="retrato-vazio">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><path d="M8 38c6 4 14 6 24 6s18-2 24-6c-1 6-9 10-24 10S9 44 8 38zm12-4c0-10 3-22 12-22s12 12 12 22c-4 1-8 2-12 2s-8-1-12-2z"/></svg>
+      <span class="retrato-texto">Adicionar foto</span>
+      <span class="retrato-dica">Retrato 3:4 · ideal 600 × 800 px</span>
+    </label>
+  </div>
+  <input type="file" id="input-foto" accept="image/*" hidden>
+  <div class="foto-acoes" id="foto-acoes" hidden>
+    <label for="input-foto" class="link-botao">Trocar foto</label>
+    <button class="link-botao" id="remover-foto">Remover</button>
+  </div>
+  <p class="aviso-foto" id="aviso-foto" hidden></p>
+
+  <label for="nome" class="perfil-rotulo">Nome</label>
+  <input id="nome" class="perfil-nome" type="text" placeholder="Nome do personagem" data-campo="nome">
+
+</aside>
+
+<main class="conteudo">
+
+  <!-- ===================== ABA PERSONAGEM ===================== -->
+  <section class="painel ativo" data-painel="personagem">
+
+    <div class="grade-2">
+      <!-- ATRIBUTOS -->
+      <div class="bloco bloco-escuro">
+        <div class="bloco-cabeca">
+          <h2>Atributos</h2>
+        </div>
+        <p class="dica">Distribua 4 pontos. Clique no nome pra rolar um Teste de Resistência (1d6 + Atributo).</p>
+        <div id="lista-atributos" class="lista-atributos"></div>
+      </div>
+
+      <!-- ANTECEDENTES -->
+      <div class="bloco">
+        <div class="bloco-cabeca">
+          <h2>Antecedentes</h2>
+        </div>
+        <p class="dica">4 pontos + 1 por ponto de Intelecto. Clique no nome pra rolar 1d6 + pontos.</p>
+        <div id="lista-antecedentes" class="lista-antecedentes"></div>
+      </div>
+    </div>
+
+    <!-- CONDIÇÕES -->
+    <div class="condicoes">
+      <div class="condicao"><span class="condicao-rotulo">Movimentos</span><span class="condicao-valor" id="val-movimentos">1</span></div>
+      <div class="condicao"><span class="condicao-rotulo">Ações de Combate</span><span class="condicao-valor" id="val-acoes">1</span></div>
+      <div class="condicao">
+        <label class="condicao-rotulo" for="iniciativa">Iniciativa</label>
+        <input id="iniciativa" class="condicao-campo" type="text" placeholder="carta" data-campo="iniciativa">
+      </div>
+      <div class="condicao">
+        <span class="condicao-rotulo">Defesa</span>
+        <div class="defesa-linha">
+          <span class="condicao-valor">5</span>
+          <span class="defesa-bonus" id="defesa-bonus-valor">±0</span>
+        </div>
+        <div class="defesa-controle">
+          <button class="mini" data-ajuste="defesaBonus" data-passo="-1" aria-label="Diminuir bônus de Defesa">−</button>
+          <span>bônus</span>
+          <button class="mini" data-ajuste="defesaBonus" data-passo="1" aria-label="Aumentar bônus de Defesa">+</button>
+        </div>
+        <span class="defesa-total" id="val-defesa"></span>
+      </div>
+    </div>
+
+    <div class="grade-2">
+      <!-- CÍRCULOS DE DOR -->
+      <div class="bloco">
+        <div class="bloco-cabeca"><h2>Círculos de Dor</h2></div>
+        <div class="barra-linha">
+          <button class="mini" data-barra="dor" data-passo="-1" aria-label="Riscar 1 Círculo de Dor">−</button>
+          <div class="barra barra-dor" id="barra-dor" data-barra-clique="dor" role="meter" aria-label="Círculos de Dor" aria-valuemin="0">
+            <div class="barra-cheia"><span class="barra-pulso"></span></div>
+          </div>
+          <button class="mini" data-barra="dor" data-passo="1" aria-label="Recuperar 1 Círculo de Dor">+</button>
+        </div>
+        <div class="alerta-dor" id="alerta-dor" hidden>
+          <strong>Seis Círculos de Dor riscados!</strong>
+          <span>Role a penalidade: risca 1 Círculo de Vida e zera a Dor.</span>
+          <button class="botao" id="botao-penalidade">Rolar penalidade</button>
+        </div>
+        <ol class="tabela-dor" id="tabela-dor"></ol>
+      </div>
+
+      <!-- CÍRCULOS DE VIDA -->
+      <div class="bloco">
+        <div class="bloco-cabeca"><h2>Círculos de Vida</h2></div>
+        <div class="barra-linha">
+          <button class="mini" data-barra="vida" data-passo="-1" aria-label="Riscar 1 Círculo de Vida">−</button>
+          <div class="barra barra-vida" id="barra-vida" data-barra-clique="vida" role="meter" aria-label="Círculos de Vida" aria-valuemin="0">
+            <div class="barra-cheia"><span class="barra-pulso"></span></div>
+          </div>
+          <button class="mini" data-barra="vida" data-passo="1" aria-label="Recuperar 1 Círculo de Vida">+</button>
+        </div>
+        <div class="vida-extra">
+          <span>Vida extra <small>(habilidades)</small></span>
+          <div class="ajuste">
+            <button class="mini" data-ajuste="vidaBonus" data-passo="-1" aria-label="Diminuir vida extra">−</button>
+            <span class="valor-grande" id="val-vida-bonus">0</span>
+            <button class="mini" data-ajuste="vidaBonus" data-passo="1" aria-label="Aumentar vida extra">+</button>
+          </div>
+        </div>
+        <p class="dica">6 iniciais + 1 por ponto de Físico + vida extra. Use − e + ou clique na barra pra marcar dano e cura.</p>
+      </div>
+    </div>
+
+    <!-- HABILIDADES -->
+    <div class="bloco">
+      <div class="bloco-cabeca"><h2>Habilidades</h2></div>
+      <textarea id="habilidades" class="texto-livre" rows="6" placeholder="Anote aqui as Habilidades do personagem…" data-campo="habilidades"></textarea>
+    </div>
+  </section>
+
+  <!-- ===================== ABA EQUIPAMENTO ===================== -->
+  <section class="painel" data-painel="equipamento">
+    <div class="bloco">
+      <div class="bloco-cabeca">
+        <h2>Bolsa</h2>
+        <span class="contador" id="resumo-espaco"></span>
+      </div>
+      <p class="dica">
+        Bolsa com
+        <input id="capacidade" class="campo-curto" type="number" min="0" step="1" data-campo="capacidade" aria-label="Capacidade da bolsa">
+        espaços. Itens pequenos ocupam 0,5. Armas dos coldres também contam.
+      </p>
+      <div class="tabela-rolagem">
+        <table class="tabela">
+          <thead><tr><th>Item</th><th class="col-num">Espaço</th><th class="col-acao"></th></tr></thead>
+          <tbody id="corpo-itens"></tbody>
+        </table>
+      </div>
+      <button class="botao botao-claro" id="add-item">+ Adicionar item</button>
+    </div>
+
+    <div class="bloco">
+      <div class="bloco-cabeca"><h2>Coldres</h2></div>
+      <p class="dica">Até 4 armas. O espaço delas entra na conta da bolsa.</p>
+      <div class="coldres" id="coldres"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ABA MONTARIA ===================== -->
+  <section class="painel" data-painel="montaria">
+    <div class="bloco">
+      <div class="bloco-cabeca">
+        <h2>Montaria</h2>
+      </div>
+      <div class="linha-campo">
+        <label for="montaria-nome">Nome</label>
+        <input id="montaria-nome" type="text" placeholder="Nome da montaria" data-campo="montaria.nome">
+      </div>
+      <p class="dica">Distribua 3 pontos entre Potência e Resistência.</p>
+
+      <div class="grade-2">
+        <div class="sub-bloco">
+          <div class="atributo-linha">
+            <button class="nome-rolavel" id="rolar-potencia">Potência</button>
+            <div class="ajuste">
+              <button class="mini" data-ajuste="montaria.potencia" data-passo="-1" aria-label="Diminuir Potência">−</button>
+              <span class="valor-grande" id="val-potencia">0</span>
+              <button class="mini" data-ajuste="montaria.potencia" data-passo="1" aria-label="Aumentar Potência">+</button>
+            </div>
+          </div>
+          <p class="dica">Clique em Potência pra rolar 1d6 + Potência + Antecedente Montaria.</p>
+        </div>
+        <div class="sub-bloco">
+          <div class="atributo-linha">
+            <span class="nome-fixo">Resistência</span>
+            <div class="ajuste">
+              <button class="mini" data-ajuste="montaria.resistencia" data-passo="-1" aria-label="Diminuir Resistência">−</button>
+              <span class="valor-grande" id="val-resistencia">0</span>
+              <button class="mini" data-ajuste="montaria.resistencia" data-passo="1" aria-label="Aumentar Resistência">+</button>
+            </div>
+          </div>
+          <p class="dica">+1 Círculo de Vida por ponto.</p>
+        </div>
+      </div>
+
+      <div class="grade-2">
+        <div>
+          <h3>Círculos de Dor</h3>
+          <div class="barra-linha">
+            <button class="mini" data-barra="montaria-dor" data-passo="-1" aria-label="Riscar 1 Círculo de Dor da montaria">−</button>
+            <div class="barra barra-dor" id="barra-montaria-dor" data-barra-clique="montaria-dor" role="meter" aria-label="Círculo de Dor da montaria" aria-valuemin="0">
+              <div class="barra-cheia"><span class="barra-pulso"></span></div>
+            </div>
+            <button class="mini" data-barra="montaria-dor" data-passo="1" aria-label="Recuperar 1 Círculo de Dor da montaria">+</button>
+          </div>
+        </div>
+        <div>
+          <h3>Círculos de Vida</h3>
+          <div class="barra-linha">
+            <button class="mini" data-barra="montaria-vida" data-passo="-1" aria-label="Riscar 1 Círculo de Vida da montaria">−</button>
+            <div class="barra barra-vida" id="barra-montaria-vida" data-barra-clique="montaria-vida" role="meter" aria-label="Círculo de Vida da montaria" aria-valuemin="0">
+              <div class="barra-cheia"><span class="barra-pulso"></span></div>
+            </div>
+            <button class="mini" data-barra="montaria-vida" data-passo="1" aria-label="Recuperar 1 Círculo de Vida da montaria">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bloco bloco-escuro">
+      <div class="bloco-cabeca"><h2>Nível de Fidelidade</h2></div>
+      <div class="fidelidade" id="fidelidade" role="radiogroup" aria-label="Nível de Fidelidade"></div>
+    </div>
+  </section>
+
+  <!-- ===================== ABA DADOS (só no celular) ===================== -->
+  <section class="painel painel-dados" data-painel="dados"></section>
+</main>
+
+<!-- ===================== MESA DE DADOS ===================== -->
+<aside class="mesa" id="mesa">
+  <div class="arena">
+    <div class="arena-feltro" id="arena"></div>
+    <div class="placar" id="resultado" aria-live="polite">
+      <div class="resultado-rotulo" id="resultado-rotulo">Mesa de dados</div>
+      <div class="resultado-total" id="resultado-total">–</div>
+      <div class="resultado-conta" id="resultado-conta">Clique num botão abaixo, num Atributo ou num Antecedente.</div>
+      <div class="resultado-extra" id="resultado-extra" hidden></div>
+    </div>
+  </div>
+
+  <div class="botoes-dados">
+    <button class="botao-dado" data-atalho="1d6"><span class="botao-dado-nome">1d6</span></button>
+    <button class="botao-dado" data-atalho="1d12"><span class="botao-dado-nome">1d12</span></button>
+    <button class="botao-dado" data-atalho="sorte"><span class="botao-dado-nome">Sorte</span><span class="botao-dado-sub">par sim · ímpar não</span></button>
+  </div>
+  <button class="botao botao-largo" id="rolar-de-novo" hidden>Rolar de novo</button>
+
+  <div class="mesa-historico">
+    <div class="bloco-cabeca">
+      <h2>Histórico</h2>
+      <button class="link-botao" id="limpar-historico">Limpar</button>
+    </div>
+    <ol class="historico" id="historico"></ol>
+  </div>
+</aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="script.js"></script>
+<script type="module" src="nuvem.js"></script>
+</body>
+</html>
