@@ -15,8 +15,30 @@
      e a Mesa de Dados ao lado (no celular ela vira a aba "Dados").
      ============================================================ -->
 
+<!-- ===================== TELA INICIAL: escolher ou criar ficha ===================== -->
+<section class="inicio" id="tela-inicio" hidden>
+  <header class="inicio-topo">
+    <h1 class="marca">Fichas de Sacramento</h1>
+    <p class="dica">Escolha a sua ficha ou crie uma nova.</p>
+    <span class="status-nuvem inicio-status" id="status-inicio" data-estado="local"></span>
+  </header>
+
+  <div class="inicio-grade" id="lista-inicio"></div>
+
+  <footer class="inicio-rodape">
+    <label class="botao-ficha" for="importar-ficha">Importar ficha (.json)</label>
+    <a class="link-botao" href="mestre.html">Mesa do mestre</a>
+  </footer>
+  <input type="file" id="importar-ficha" accept=".json,application/json" hidden>
+</section>
+
+<!-- ===================== FICHA ===================== -->
+<div id="tela-ficha">
 <header class="topo">
-  <div class="marca">Ficha de Personagem</div>
+  <div class="topo-titulo">
+    <a class="voltar" href="index.html">← Todas as fichas</a>
+    <div class="marca">Ficha de Personagem</div>
+  </div>
   <nav class="abas" role="tablist" aria-label="Partes da ficha">
     <button class="aba ativa" role="tab" data-aba="personagem" id="aba-personagem">Personagem</button>
     <button class="aba" role="tab" data-aba="equipamento" id="aba-equipamento">Equipamento</button>
@@ -24,29 +46,6 @@
     <button class="aba so-celular" role="tab" data-aba="dados" id="aba-dados">Dados</button>
   </nav>
 
-  <!-- Menu das fichas salvas (abre ao clicar) -->
-  <div class="menu-fichas">
-    <button class="botao-menu" id="abrir-menu" aria-expanded="false" aria-controls="menu-painel">
-      <span class="ponto-nuvem" id="ponto-nuvem" data-estado="local"></span>
-      Fichas
-      <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
-    </button>
-  <div class="gerenciar menu-painel" id="menu-painel" hidden>
-    <label for="seletor-ficha" class="perfil-rotulo">Fichas salvas</label>
-    <select id="seletor-ficha" class="seletor-ficha"></select>
-    <span class="contagem-fichas" id="contagem-fichas"></span>
-    <span class="status-nuvem" id="status-nuvem" data-estado="local"></span>
-    <div class="gerenciar-botoes">
-      <button class="botao-ficha" id="nova-ficha">Nova</button>
-      <button class="botao-ficha" id="exportar-ficha">Exportar</button>
-      <label class="botao-ficha" for="importar-ficha">Importar</label>
-      <button class="botao-ficha botao-excluir" id="excluir-ficha">Excluir</button>
-    </div>
-    <button class="botao-ficha botao-link" id="copiar-link" hidden>Copiar link da ficha</button>
-    <input type="file" id="importar-ficha" accept=".json,application/json" hidden>
-    <p class="aviso-ficha" id="aviso-ficha" hidden></p>
-  </div>
-  </div>
 </header>
 
 <div class="layout">
@@ -70,7 +69,8 @@
 
   <label for="nome" class="perfil-rotulo">Nome</label>
   <input id="nome" class="perfil-nome" type="text" placeholder="Nome do personagem" data-campo="nome">
-
+  <span class="status-nuvem" id="status-nuvem" data-estado="local"></span>
+  <button class="link-botao perfil-exportar" id="exportar-ficha">Exportar ficha (.json)</button>
 </aside>
 
 <main class="conteudo">
@@ -296,6 +296,10 @@
   </div>
 </aside>
 </div>
+
+</div><!-- fim da tela-ficha -->
+
+<p class="aviso-global" id="aviso-ficha" role="status" hidden></p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="script.js"></script>

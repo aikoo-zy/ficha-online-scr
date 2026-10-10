@@ -118,7 +118,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 }
 .perfil-nome:focus { outline: none; border-bottom-color: var(--sangue); }
 
-.abas { display: flex; gap: 4px; flex-wrap: wrap; }
+.abas { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
 .aba {
   background: transparent;
   border: 2px solid var(--tinta);
@@ -551,12 +551,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .aviso-rolagem strong { font-family: var(--fonte-letreiro); font-size: 1.6rem; font-weight: 400; }
 
 /* ---------- Fichas salvas ---------- */
-.gerenciar {
-  display: flex; flex-direction: column; gap: 6px;
-  margin-top: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--linha);
-}
+.gerenciar { display: flex; flex-direction: column; gap: 6px; }
+
 .seletor-ficha {
   width: 100%;
   background: var(--papel-2);
@@ -588,6 +584,65 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .botao-link { width: 100%; }
 .aviso-ficha { margin: 0; overflow-wrap: anywhere; font-size: 0.8rem; color: #d0786c; text-align: center; }
 .aviso-ficha.bom { color: var(--poeira); }
+
+/* ---------- Topo da ficha: voltar + título ---------- */
+.topo-titulo { display: flex; flex-direction: column; gap: 2px; }
+.voltar { color: var(--poeira); font-size: 0.9rem; text-decoration: none; font-weight: 600; }
+.voltar:hover { color: var(--tinta); }
+.perfil-exportar { align-self: center; font-size: 0.8rem; }
+#status-nuvem { margin-top: 4px; }
+
+/* Aviso que aparece embaixo da tela */
+.aviso-global {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  background: var(--bloco); color: #e3a396;
+  border: 1px solid var(--borda); border-radius: var(--raio);
+  padding: 10px 16px; font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 40;
+}
+.aviso-global.bom { color: var(--tinta); }
+
+/* ---------- Tela inicial ---------- */
+.inicio { max-width: 1100px; margin: 0 auto; padding-block: 48px 32px; display: flex; flex-direction: column; gap: 28px; }
+.inicio-topo { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; border-bottom: 3px solid var(--borda); padding-bottom: 20px; }
+.inicio-topo .marca { margin: 0; font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 400; }
+.inicio-topo .dica { font-size: 1rem; }
+.inicio-status { justify-content: center; }
+.inicio-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 18px; }
+.card-inicio {
+  background: var(--bloco);
+  border: 2px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer; text-align: center;
+  transition: border-color 0.15s, transform 0.15s;
+  min-width: 0;
+}
+.card-inicio:hover { border-color: var(--tinta); transform: translateY(-2px); }
+.card-inicio-foto {
+  width: 100%; aspect-ratio: 3 / 4;
+  border: 1px solid var(--borda); border-radius: var(--raio);
+  background: var(--papel-2) center / 46% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%235a5045' d='M8 38c6 4 14 6 24 6s18-2 24-6c-1 6-9 10-24 10S9 44 8 38zm12-4c0-10 3-22 12-22s12 12 12 22c-4 1-8 2-12 2s-8-1-12-2z'/%3E%3C/svg%3E");
+  overflow: hidden; display: block;
+}
+.card-inicio-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-inicio-nome { font-family: var(--fonte-letreiro); font-size: 1.1rem; overflow-wrap: anywhere; }
+.card-inicio-info { font-size: 0.8rem; color: var(--poeira); }
+.card-nova { border-style: dashed; justify-content: center; }
+.card-nova-mais {
+  width: 100%; aspect-ratio: 3 / 4;
+  display: grid; place-items: center;
+  font-family: var(--fonte-letreiro); font-size: 3.5rem; color: var(--poeira);
+  border: 1px dashed var(--borda); border-radius: var(--raio);
+}
+.card-nova:hover .card-nova-mais { color: var(--tinta); }
+.inicio-rodape { display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; }
+.inicio-rodape .botao-ficha { padding-inline: 14px; }
 
 /* ---------- Mesa do Mestre (mestre.html) ---------- */
 a.botao-ficha { color: var(--tinta); }
@@ -639,10 +694,7 @@ a.botao-ficha { color: var(--tinta); }
   .perfil-rotulo { grid-column: 2; grid-row: 1; }
   .perfil-nome { grid-column: 2; grid-row: 2; }
   .aviso-foto { grid-column: 2; text-align: left; }
-  .gerenciar { grid-column: 2; }
-  .gerenciar-botoes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .gerenciar .perfil-rotulo, .contagem-fichas, .aviso-ficha { text-align: left; }
-  .status-nuvem { justify-content: flex-start; }
+
 }
 
 /* Tela baixa: a mesa deixa de acompanhar a rolagem pra nada ficar escondido */
@@ -661,6 +713,7 @@ a.botao-ficha { color: var(--tinta); }
 }
 @media (max-width: 620px) {
   .grade-2, .coldres { grid-template-columns: minmax(0, 1fr); }
+  .abas { width: 100%; margin-left: 0; }
       .aba { padding: 6px 10px; font-size: 0.9rem; }
 }
 @media (max-width: 400px) {

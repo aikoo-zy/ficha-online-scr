@@ -925,7 +925,6 @@ document.addEventListener("input", e => {
   const el = e.target;
   if (el.dataset.campo) {
     gravarCaminho(el.dataset.campo, el.type === "number" ? Number(el.value) : el.value);
-    if (el.dataset.campo === "nome") desenharListaFichas();
   } else if (el.dataset.lista) {
     ficha[el.dataset.lista][Number(el.dataset.i)][el.dataset.k] = el.value;
   } else return;
@@ -990,17 +989,69 @@ $("remover-foto").addEventListener("click", () => {
   desenharFoto();
 });
 
-// ---------- 9. Fichas salvas: trocar, criar, exportar, importar, excluir ----------
+// ---------- 9. Tela inicial e troca de fichas ----------
+/*
+  Sem "?ficha=" no endereço, a página mostra a TELA INICIAL:
+  a lista de fichas (da nuvem, ou deste aparelho se a nuvem estiver desligada)
+  e o botão de criar ficha. Clicar numa ficha abre index.html?ficha=ID.
+*/
+const naInicio = !idDoLink;
+document.body.classList.toggle("na-inicio", naInicio);
+$("tela-inicio").hidden = !naInicio;
+$("tela-ficha").hidden = naInicio;
 
-function nomeDaFicha(f) { return f.nome.trim() || "Personagem sem nome"; }
+function nomeDaFicha(f) { return (f.nome || "").trim() || "Personagem sem nome"; }
+function irParaFicha(id) { location.href = `index.html?ficha=${encodeURIComponent(id)}`; }
 
-function desenharListaFichas() {
-  const ids = Object.keys(banco.fichas);
-  $("seletor-ficha").innerHTML = ids.map(id =>
-    `<option value="${id}" ${id === banco.atual ? "selected" : ""}>${esc(nomeDaFicha(banco.fichas[id]))}</option>`
-  ).join("");
-  $("contagem-fichas").textContent = ids.length === 1 ? "1 ficha neste aparelho" : `${ids.length} fichas neste aparelho`;
+function quandoFoi(ms) {
+  if (!ms) return "";
+  const min = Math.round((Date.now() - ms) / 60000);
+  if (min < 1) return "agora";
+  if (min < 60) return `há ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `há ${h} h`;
+  return `há ${Math.round(h / 24)} dias`;
 }
+
+// lista = [{ id, ficha, atualizadoEm }]
+function desenharInicio(lista) {
+  lista = lista.filter(x => x.ficha).sort((a, b) => nomeDaFicha(a.ficha).localeCompare(nomeDaFicha(b.ficha), "pt-BR"));
+  const cards = lista.map(({ id, ficha: f, atualizadoEm }) => {
+    const vidaMax = BASE.vida + ((f.atributos || {}).fisico || 0) + (Number(f.vidaBonus) || 0);
+    const resta = Math.max(0, vidaMax - (f.vidaRiscada || 0));
+    return `
+      <button class="card-inicio" data-abrir="${esc(id)}">
+        <span class="card-inicio-foto">${f.foto ? `<img src="${esc(f.foto)}" alt="">` : ""}</span>
+        <span class="card-inicio-nome">${esc(nomeDaFicha(f))}</span>
+        <span class="card-inicio-info">Vida ${resta}/${vidaMax}${atualizadoEm ? ` · ${quandoFoi(atualizadoEm)}` : ""}</span>
+      </button>`;
+  }).join("");
+  $("lista-inicio").innerHTML = `
+    <button class="card-inicio card-nova" id="criar-ficha">
+      <span class="card-nova-mais">+</span>
+      <span class="card-inicio-nome">Criar nova ficha</span>
+    </button>` + cards;
+}
+
+function listaLocal() {
+  return Object.entries(banco.fichas)
+    .filter(([, f]) => temConteudo(f))
+    .map(([id, f]) => ({ id, ficha: f }));
+}
+
+// Uma ficha "tem conteúdo" quando alguém já mexeu nela
+function temConteudo(f) {
+  const { historico, ...resto } = f;
+  const { historico: h0, ...vazia } = fichaNova();
+  return JSON.stringify(resto) !== JSON.stringify(vazia);
+}
+
+$("lista-inicio").addEventListener("click", e => {
+  const card = e.target.closest("button");
+  if (!card) return;
+  if (card.id === "criar-ficha") return irParaFicha(novoId());
+  if (card.dataset.abrir) irParaFicha(card.dataset.abrir);
+});
 
 let timerAvisoFicha;
 function avisoFicha(texto, bom = false) {
@@ -1011,28 +1062,6 @@ function avisoFicha(texto, bom = false) {
   clearTimeout(timerAvisoFicha);
   if (texto) timerAvisoFicha = setTimeout(() => { el.hidden = true; }, 6000);
 }
-
-function abrirFicha(id) {
-  banco.atual = id;
-  ficha = banco.fichas[id];
-  salvarLocal();
-  ouvirNaNuvem(id);
-  cancelarExclusao();
-  desenharTudo();
-  desenharListaFichas();
-}
-
-$("seletor-ficha").addEventListener("change", e => abrirFicha(e.target.value));
-
-$("nova-ficha").addEventListener("click", () => {
-  const id = novoId();
-  banco.fichas[id] = fichaNova();
-  abrirFicha(id);
-  trocarAba("personagem");
-  menuAberto(false);
-  $("nome").focus();
-  avisoFicha("Ficha nova criada. As outras continuam salvas na lista.", true);
-});
 
 // Exportar: baixa a ficha aberta como um arquivo .json
 $("exportar-ficha").addEventListener("click", () => {
@@ -1048,7 +1077,7 @@ $("exportar-ficha").addEventListener("click", () => {
   avisoFicha("Arquivo da ficha baixado. Guarde ele num lugar seguro.", true);
 });
 
-// Importar: lê um .json exportado e adiciona como ficha nova
+// Importar (tela inicial): lê um .json exportado e abre como ficha nova
 $("importar-ficha").addEventListener("change", e => {
   const arquivo = e.target.files[0];
   e.target.value = "";
@@ -1061,8 +1090,9 @@ $("importar-ficha").addEventListener("change", e => {
       if (!f || typeof f !== "object" || !f.atributos) throw new Error("formato");
       const id = novoId();
       banco.fichas[id] = normalizar(f);
-      abrirFicha(id);
-      avisoFicha(`"${nomeDaFicha(ficha)}" foi importada.`, true);
+      banco.atual = id;
+      salvarLocal();
+      irParaFicha(id);
     } catch (erro) {
       avisoFicha("Esse arquivo não é uma ficha exportada daqui. Escolha um arquivo .json gerado pelo botão Exportar.");
     }
@@ -1070,58 +1100,15 @@ $("importar-ficha").addEventListener("change", e => {
   leitor.readAsText(arquivo);
 });
 
-// Excluir: pede confirmação no próprio botão (clicar duas vezes)
-let confirmandoExclusao = false, timerExclusao;
-function cancelarExclusao() {
-  confirmandoExclusao = false;
-  clearTimeout(timerExclusao);
-  $("excluir-ficha").textContent = "Excluir";
-  $("excluir-ficha").classList.remove("confirmar");
-}
-$("excluir-ficha").addEventListener("click", () => {
-  if (!confirmandoExclusao) {
-    confirmandoExclusao = true;
-    $("excluir-ficha").textContent = "Confirmar?";
-    $("excluir-ficha").classList.add("confirmar");
-    timerExclusao = setTimeout(cancelarExclusao, 4000);
-    return;
-  }
-  const nome = nomeDaFicha(ficha);
-  delete banco.fichas[banco.atual];
-  if (!Object.keys(banco.fichas).length) banco.fichas[novoId()] = fichaNova();
-  abrirFicha(Object.keys(banco.fichas)[0]);
-  avisoFicha(nuvem
-    ? `"${nome}" saiu da lista deste aparelho. Ela continua na nuvem e na mesa do mestre.`
-    : `"${nome}" foi excluída.`);
-});
-
-// Abre e fecha o menu "Fichas" do topo
-function menuAberto(abrir) {
-  $("menu-painel").hidden = !abrir;
-  $("abrir-menu").setAttribute("aria-expanded", abrir);
-  if (!abrir) cancelarExclusao();
-}
-$("abrir-menu").addEventListener("click", e => {
-  e.stopPropagation();
-  menuAberto($("menu-painel").hidden);
-});
-document.addEventListener("click", e => {
-  if (!$("menu-painel").hidden && !e.target.closest(".menu-fichas")) menuAberto(false);
-});
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !$("menu-painel").hidden) { menuAberto(false); $("abrir-menu").focus(); }
-});
-
 // ---------- 10. Nuvem (Firebase) ----------
 /*
   O arquivo nuvem.js carrega o Firebase e chama FichaApp.conectarNuvem().
-  A partir daí:
-  - toda mudança na ficha é enviada pra nuvem (meio segundo depois de parar de mexer);
-  - mudanças feitas em outro aparelho chegam aqui sozinhas;
-  - o endereço da página ganha ?ficha=ID, que é o link da ficha.
+  - Na tela inicial: ouve TODAS as fichas pra montar a lista.
+  - Na ficha: toda mudança vai pra nuvem (meio segundo depois de parar de mexer)
+    e mudanças feitas em outro aparelho chegam aqui sozinhas.
 */
 let nuvem = null;              // funções do nuvem.js (null = só no aparelho)
-let pararDeOuvir = null;       // desliga a escuta da ficha anterior
+let pararDeOuvir = null;
 let esperandoNuvem = false;    // ainda não chegou a primeira resposta da nuvem
 let ultimaEdicao = 0;          // hora da última mudança feita aqui
 let timerNuvem;
@@ -1129,8 +1116,18 @@ let timerNuvem;
 window.FichaApp = {
   conectarNuvem(api) {
     nuvem = api;
-    $("copiar-link").hidden = false;
-    ouvirNaNuvem(banco.atual);
+    if (naInicio) {
+      statusNuvem("conectando");
+      api.ouvirTodas(lista => {
+        desenharInicio(lista);
+        statusNuvem("salvo", `Ao vivo · ${lista.length} ${lista.length === 1 ? "ficha" : "fichas"} na nuvem`);
+      }, erro => {
+        console.error(erro);
+        statusNuvem("erro", "Não deu pra ler as fichas da nuvem. Mostrando as deste aparelho.");
+      });
+    } else {
+      ouvirNaNuvem(banco.atual);
+    }
   },
   nuvemIndisponivel(mensagem) {
     statusNuvem("local", mensagem);
@@ -1138,7 +1135,6 @@ window.FichaApp = {
 };
 
 function statusNuvem(estado, texto) {
-  const el = $("status-nuvem");
   const textos = {
     local: "Salvando só neste aparelho",
     conectando: "Conectando na nuvem…",
@@ -1146,10 +1142,9 @@ function statusNuvem(estado, texto) {
     salvo: "Salvo na nuvem",
     erro: "Sem conexão. Salvo só neste aparelho por enquanto.",
   };
+  const el = $(naInicio ? "status-inicio" : "status-nuvem");
   el.textContent = texto || textos[estado];
   el.dataset.estado = estado;
-  $("ponto-nuvem").dataset.estado = estado;
-  $("abrir-menu").title = el.textContent;
 }
 
 function ouvirNaNuvem(id) {
@@ -1157,17 +1152,16 @@ function ouvirNaNuvem(id) {
   if (pararDeOuvir) pararDeOuvir();
   esperandoNuvem = true;
   statusNuvem("conectando");
-  try { history.replaceState(null, "", `?ficha=${id}`); } catch (e) { /* ignora */ }
 
   pararDeOuvir = nuvem.ouvir(id, (dados, ehMinhaGravacao) => {
-    if (id !== banco.atual) return;
     if (ehMinhaGravacao) return; // é o eco da gravação que acabei de fazer
     const primeira = esperandoNuvem;
     esperandoNuvem = false;
 
     if (!dados) {
-      // ficha ainda não existe na nuvem: sobe a deste aparelho
-      enviarNuvem();
+      // ficha ainda não existe na nuvem: só sobe se já tiver algo preenchido
+      if (temConteudo(ficha)) enviarNuvem();
+      else statusNuvem("salvo", "Ficha nova. Ela aparece na lista assim que você preencher algo.");
       return;
     }
     // se a pessoa está mexendo agora, não atropela o que ela digita
@@ -1177,7 +1171,6 @@ function ouvirNaNuvem(id) {
     ficha = banco.fichas[id];
     salvarLocal();
     desenharTudo();
-    desenharListaFichas();
     statusNuvem("salvo");
   }, erro => {
     console.error(erro);
@@ -1187,7 +1180,7 @@ function ouvirNaNuvem(id) {
 }
 
 function agendarNuvem() {
-  if (!nuvem) return;
+  if (!nuvem || naInicio) return;
   ultimaEdicao = Date.now();
   clearTimeout(timerNuvem);
   timerNuvem = setTimeout(enviarNuvem, 600);
@@ -1205,17 +1198,6 @@ async function enviarNuvem() {
   }
 }
 
-// Copiar o link da ficha pra mandar pro jogador ou abrir em outro aparelho
-$("copiar-link").addEventListener("click", async () => {
-  const link = `${location.origin}${location.pathname}?ficha=${banco.atual}`;
-  try {
-    await navigator.clipboard.writeText(link);
-    avisoFicha("Link copiado! Quem abrir esse link vê e edita esta ficha.", true);
-  } catch (e) {
-    avisoFicha(`Copie o link: ${link}`, true);
-  }
-});
-
 // ---------- 11. Utilidades ----------
 
 function esc(t) {
@@ -1226,5 +1208,5 @@ function horaAgora() { return new Date().toLocaleTimeString("pt-BR", { hour: "2-
 
 // ---------- Começa ----------
 desenharTudo();
-desenharListaFichas();
+if (naInicio) desenharInicio(listaLocal());
 statusNuvem("local");
