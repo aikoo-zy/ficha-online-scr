@@ -1116,6 +1116,7 @@ let timerNuvem;
 window.FichaApp = {
   conectarNuvem(api) {
     nuvem = api;
+    nuvemRespondeu = true;
     if (naInicio) {
       statusNuvem("conectando");
       api.ouvirTodas(lista => {
@@ -1130,9 +1131,11 @@ window.FichaApp = {
     }
   },
   nuvemIndisponivel(mensagem) {
+    nuvemRespondeu = true;
     statusNuvem("local", mensagem);
   },
 };
+let nuvemRespondeu = false;
 
 function statusNuvem(estado, texto) {
   const textos = {
@@ -1210,3 +1213,8 @@ function horaAgora() { return new Date().toLocaleTimeString("pt-BR", { hour: "2-
 desenharTudo();
 if (naInicio) desenharInicio(listaLocal());
 statusNuvem("local");
+
+// Se o nuvem.js nem rodar (arquivo faltando no site, por exemplo), avisa depois de 8 segundos
+setTimeout(() => {
+  if (!nuvemRespondeu) statusNuvem("erro", "A nuvem não carregou. Confira se nuvem.js e firebase-config.js estão no site.");
+}, 8000);

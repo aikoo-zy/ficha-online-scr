@@ -5,15 +5,25 @@
 // As fichas ficam na coleção "fichas", uma por documento.
 // ============================================================
 
-import { firebaseConfig } from "./firebase config.js";
-
 const VERSAO_FIREBASE = "12.19.0";
 const app = window.FichaApp;
+
+// Lê a configuração. Se o arquivo faltar ou tiver erro, avisa em vez de travar.
+let firebaseConfig = null;
+let erroConfig = "";
+try {
+  ({ firebaseConfig } = await import("./firebase-config.js"));
+} catch (erro) {
+  console.error("Problema no firebase-config.js:", erro);
+  erroConfig = "Não consegui ler o firebase-config.js. Confira se ele está no site e se começa com \"export const firebaseConfig\".";
+}
 
 const configurado = Boolean(firebaseConfig && firebaseConfig.apiKey && firebaseConfig.apiKey !== "COLE_AQUI" && firebaseConfig.projectId);
 
 if (!app) {
   console.warn("nuvem.js carregou antes da ficha.");
+} else if (erroConfig) {
+  app.nuvemIndisponivel(erroConfig);
 } else if (!configurado) {
   app.nuvemIndisponivel("Salvando só neste aparelho. A nuvem ainda não foi configurada.");
 } else {

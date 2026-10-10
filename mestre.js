@@ -79,8 +79,14 @@ function card({ id, ficha: f, atualizadoEm }) {
   </article>`;
 }
 
+let nuvemRespondeu = false;
+setTimeout(() => {
+  if (!nuvemRespondeu) status("erro", "A nuvem não carregou. Confira se nuvem.js e firebase-config.js estão no site.");
+}, 8000);
+
 window.FichaApp = {
   conectarNuvem(api) {
+    nuvemRespondeu = true;
     status("conectando", "Conectando na nuvem…");
     api.ouvirTodas(lista => {
       lista.sort((a, b) => String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"));
@@ -94,6 +100,7 @@ window.FichaApp = {
     });
   },
   nuvemIndisponivel(mensagem) {
-    status("local", "A nuvem ainda não foi configurada. Preencha o firebase-config.js.");
+    nuvemRespondeu = true;
+    status("local", mensagem);
   },
 };
