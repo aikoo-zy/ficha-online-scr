@@ -188,6 +188,7 @@ function gravarCaminho(caminho, valor) {
 
 // Vida que vem de habilidades (ex.: Parrudeza = +2 cada vez que foi escolhida)
 function vidaDasHabilidades(f) {
+  if (typeof HABILIDADES === "undefined") return 0;
   return (f.habilidadesLista || []).reduce((soma, id) => {
     const h = HABILIDADES.find(x => x.id === id);
     return soma + (h && h.vida ? h.vida : 0);
@@ -1051,6 +1052,10 @@ function desenharHabilidades() {
       <p class="cartas-vazio">Nenhuma habilidade ainda. No nível 1, o livro manda escolher duas.</p>`;
     return;
   }
+  if (typeof HABILIDADES === "undefined") {
+    $("cartas-habilidades").innerHTML = '<p class="cartas-vazio">A lista de habilidades não carregou (falta o habilidades.js no site).</p>';
+    return;
+  }
   $("cartas-habilidades").innerHTML = lista.map((id, i) => {
     const h = HABILIDADES.find(x => x.id === id);
     if (!h) return "";
@@ -1082,6 +1087,10 @@ $("cartas-habilidades").addEventListener("click", e => {
 const semAcento = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 function desenharOpcoes() {
+  if (typeof HABILIDADES === "undefined") {
+    $("lista-habilidades").innerHTML = '<p class="cartas-vazio">Não consegui carregar a lista de habilidades. Confira se o arquivo habilidades.js está no site, com esse nome em minúsculas.</p>';
+    return;
+  }
   const busca = semAcento($("busca-habilidade").value.trim());
   const secoes = ["combate", "profissao"].map(tipo => {
     const opcoes = HABILIDADES
@@ -1094,6 +1103,7 @@ function desenharOpcoes() {
           <button class="opcao-hab carta-${h.tipo}" data-add-hab="${h.id}" ${bloqueada ? "disabled" : ""}>
             <span class="opcao-nome">${esc(h.nome)}${vezes && h.repetir ? ` <small>(tem ${vezes})</small>` : ""}</span>
             <span class="opcao-texto">${esc(h.texto)}</span>
+            ${h.niveis ? `<span class="opcao-niveis">${h.niveis.map(([n, e]) => `<span>Nível ${n}: ${esc(e)}</span>`).join("")}</span>` : ""}
             ${bloqueada ? '<span class="opcao-tem">Já está na ficha</span>' : ""}
           </button>`;
       }).join("");
