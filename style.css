@@ -645,6 +645,8 @@ body.sem-rolagem { overflow: hidden; }
   overflow: hidden;
 }
 .janela-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px 10px; }
+.janela-guia { margin: 0 18px 10px; font-size: 0.85rem; color: var(--poeira); display: flex; flex-direction: column; gap: 4px; }
+.janela-guia b { color: var(--tinta); font-weight: 600; }
 .janela-busca {
   margin: 0 18px 10px;
   background: var(--papel-2); border: 1px solid var(--linha); border-radius: var(--raio);
@@ -668,6 +670,7 @@ body.sem-rolagem { overflow: hidden; }
 .opcao-nome { font-family: var(--fonte-letreiro); font-size: 1.05rem; }
 .opcao-nome small { font-family: var(--fonte-texto); font-size: 0.75rem; color: var(--poeira); }
 .opcao-texto { font-size: 0.82rem; color: var(--poeira); line-height: 1.4; }
+.opcao-niveis { display: flex; flex-direction: column; gap: 1px; font-size: 0.78rem; color: var(--tinta); border-top: 1px solid var(--linha); padding-top: 5px; margin-top: 2px; }
 .opcao-tem { font-size: 0.75rem; font-weight: 700; }
 
 /* Mesa do mestre: nomes das habilidades */
