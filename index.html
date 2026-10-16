@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
   <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
        Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
-  <link rel="stylesheet" href="style.css?v=20261010b">
+  <link rel="stylesheet" href="style.css?v=20261016b">
 </head>
 <body>
 <!-- ============================================================
@@ -71,6 +71,14 @@
 
   <label for="nome" class="perfil-rotulo">Nome</label>
   <input id="nome" class="perfil-nome" type="text" placeholder="Nome do personagem" data-campo="nome">
+  <div class="perfil-nivel">
+    <span class="perfil-rotulo">Nível</span>
+    <div class="ajuste">
+      <button class="mini" data-ajuste="nivel" data-passo="-1" aria-label="Diminuir nível">−</button>
+      <span class="valor-grande" id="val-nivel">1</span>
+      <button class="mini" data-ajuste="nivel" data-passo="1" aria-label="Aumentar nível">+</button>
+    </div>
+  </div>
   <span class="status-nuvem" id="status-nuvem" data-estado="local"></span>
   <button class="link-botao perfil-exportar" id="exportar-ficha">Exportar ficha (.json)</button>
 </aside>
@@ -153,21 +161,26 @@
           <button class="mini" data-barra="vida" data-passo="1" aria-label="Recuperar 1 Ponto de Vida">+</button>
         </div>
         <div class="vida-extra">
-          <span>Vida extra <small>(habilidades)</small></span>
+          <span>Vida extra <small>(outras fontes)</small></span>
           <div class="ajuste">
             <button class="mini" data-ajuste="vidaBonus" data-passo="-1" aria-label="Diminuir vida extra">−</button>
             <span class="valor-grande" id="val-vida-bonus">0</span>
             <button class="mini" data-ajuste="vidaBonus" data-passo="1" aria-label="Aumentar vida extra">+</button>
           </div>
         </div>
-        <p class="dica">6 iniciais + 1 por ponto de Físico + vida extra. Use − e + ou clique na barra pra marcar dano e cura.</p>
+        <p class="dica">6 iniciais + 1 por ponto de Físico + Parrudeza + vida extra. Use − e + ou clique na barra pra marcar dano e cura.</p>
       </div>
     </div>
 
     <!-- HABILIDADES -->
     <div class="bloco">
-      <div class="bloco-cabeca"><h2>Habilidades</h2></div>
-      <textarea id="habilidades" class="texto-livre" rows="6" placeholder="Anote aqui as Habilidades do personagem…" data-campo="habilidades"></textarea>
+      <div class="bloco-cabeca">
+        <h2>Habilidades</h2>
+        <button class="botao" id="abrir-habilidades">+ Adicionar habilidade</button>
+      </div>
+      <div class="cartas" id="cartas-habilidades"></div>
+      <label class="perfil-rotulo anotacoes-rotulo" for="habilidades">Anotações</label>
+      <textarea id="habilidades" class="texto-livre" rows="3" placeholder="Habilidades da sua mesa, detalhes ou lembretes…" data-campo="habilidades"></textarea>
     </div>
   </section>
 
@@ -302,10 +315,23 @@
 
 </div><!-- fim da tela-ficha -->
 
+<!-- ===================== JANELA: ESCOLHER HABILIDADE ===================== -->
+<div class="janela-fundo" id="janela-habilidades" hidden>
+  <div class="janela" role="dialog" aria-modal="true" aria-labelledby="titulo-janela-hab">
+    <header class="janela-topo">
+      <h2 id="titulo-janela-hab">Escolha uma habilidade</h2>
+      <button class="mini" id="fechar-habilidades" aria-label="Fechar">×</button>
+    </header>
+    <input class="janela-busca" id="busca-habilidade" type="search" placeholder="Procurar pelo nome ou pelo efeito…" aria-label="Procurar habilidade">
+    <div class="janela-corpo" id="lista-habilidades"></div>
+  </div>
+</div>
+
 <p class="aviso-global" id="aviso-ficha" role="status" hidden></p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="script.js?v=20261010b"></script>
-<script type="module" src="nuvem.js?v=20261010b"></script>
+<script src="habilidades.js?v=20261016b"></script>
+<script src="script.js?v=20261016b"></script>
+<script type="module" src="nuvem.js?v=20261016b"></script>
 </body>
 </html>
