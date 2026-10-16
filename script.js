@@ -84,7 +84,9 @@ function fichaNova() {
     dor: 0,            // quantos Pontos de Dor riscados
     vidaRiscada: 0,    // quantos Pontos de Vida riscados
     vidaBonus: 0,      // vida extra vinda de habilidades
-    habilidades: "",
+    habilidades: "",   // anotações livres
+    habilidadesLista: [], // ids das habilidades do livro (ver habilidades.js)
+    nivel: 1,
     capacidade: 10,
     itens: [{ nome: "", espaco: "" }],
     coldres: Array.from({ length: 4 }, coldreVazio),
@@ -117,6 +119,8 @@ function normalizar(dados) {
   while (f.coldres.length < TOTAL_COLDRES) f.coldres.push(coldreVazio());
   f.coldres = f.coldres.slice(0, TOTAL_COLDRES).map(c => Object.assign(coldreVazio(), c));
   if (!Array.isArray(f.itens)) f.itens = [];
+  if (!Array.isArray(f.habilidadesLista)) f.habilidadesLista = [];
+  f.nivel = Math.max(1, Number(f.nivel) || 1);
   if (!Array.isArray(f.historico)) f.historico = [];
   return f;
 }
@@ -182,11 +186,19 @@ function gravarCaminho(caminho, valor) {
 // ---------- 3. Contas automáticas ----------
 
 
+// Vida que vem de habilidades (ex.: Parrudeza = +2 cada vez que foi escolhida)
+function vidaDasHabilidades(f) {
+  return (f.habilidadesLista || []).reduce((soma, id) => {
+    const h = HABILIDADES.find(x => x.id === id);
+    return soma + (h && h.vida ? h.vida : 0);
+  }, 0);
+}
+
 function calcular() {
   const at = ficha.atributos;
   const fid = ficha.montaria.fidelidade;
   return {
-    vidaMax: BASE.vida + at.fisico + ficha.vidaBonus,
+    vidaMax: BASE.vida + at.fisico + ficha.vidaBonus + vidaDasHabilidades(ficha),
     movimentos: BASE.movimentos + at.velocidade,
     acoes: BASE.acoes + at.coragem,
     pontosAntecedente: BASE.antecedentes + at.intelecto,
@@ -360,6 +372,8 @@ function desenharTudo() {
   // campos de texto simples
   document.querySelectorAll("[data-campo]").forEach(el => { el.value = lerCaminho(el.dataset.campo); });
   desenharFoto();
+  desenharHabilidades();
+  $("val-nivel").textContent = ficha.nivel;
   desenharAtributos();
   desenharAntecedentes();
   desenharTabelaDor();
@@ -807,7 +821,7 @@ document.addEventListener("click", e => {
 
   // Botões + e −
   if (d.ajuste) {
-    const novo = Math.max(0, lerCaminho(d.ajuste) + Number(d.passo));
+    const novo = Math.max(d.ajuste === "nivel" ? 1 : 0, lerCaminho(d.ajuste) + Number(d.passo));
     gravarCaminho(d.ajuste, d.ajuste === "defesaBonus" ? lerCaminho(d.ajuste) + Number(d.passo) : novo);
     salvar();
     return desenharTudo();
@@ -1012,6 +1026,114 @@ $("remover-foto").addEventListener("click", () => {
   desenharFoto();
 });
 
+// ---------- 8b. Habilidades em cartas ----------
+
+const NOME_TIPO = { combate: "Combate", profissao: "Profissão" };
+
+function tabelaNiveis(h) {
+  if (!h.niveis) return "";
+  // a linha "atual" é o maior nível da tabela que o personagem já alcançou
+  const alcancados = h.niveis.filter(([n]) => n <= ficha.nivel);
+  const atual = alcancados.length ? alcancados[alcancados.length - 1][0] : null;
+  return `
+    <table class="carta-niveis">
+      <thead><tr><th>Nível</th><th>Efeito</th></tr></thead>
+      <tbody>${h.niveis.map(([n, efeito]) =>
+        `<tr class="${n === atual ? "atual" : ""}"><td>${n}</td><td>${esc(efeito)}</td></tr>`).join("")}
+      </tbody>
+    </table>`;
+}
+
+function desenharHabilidades() {
+  const lista = ficha.habilidadesLista;
+  if (!lista.length) {
+    $("cartas-habilidades").innerHTML = `
+      <p class="cartas-vazio">Nenhuma habilidade ainda. No nível 1, o livro manda escolher duas.</p>`;
+    return;
+  }
+  $("cartas-habilidades").innerHTML = lista.map((id, i) => {
+    const h = HABILIDADES.find(x => x.id === id);
+    if (!h) return "";
+    return `
+      <article class="carta carta-${h.tipo}">
+        <header class="carta-topo">
+          <span class="carta-tipo">${NOME_TIPO[h.tipo]}</span>
+          <button class="carta-remover" data-remover-hab="${i}" aria-label="Remover ${esc(h.nome)}">×</button>
+        </header>
+        <h3 class="carta-nome">${esc(h.nome)}</h3>
+        <p class="carta-texto">${esc(h.texto)}</p>
+        ${tabelaNiveis(h)}
+      </article>`;
+  }).join("");
+}
+
+$("cartas-habilidades").addEventListener("click", e => {
+  const botao = e.target.closest("[data-remover-hab]");
+  if (!botao) return;
+  const i = Number(botao.dataset.removerHab);
+  const h = HABILIDADES.find(x => x.id === ficha.habilidadesLista[i]);
+  ficha.habilidadesLista.splice(i, 1);
+  salvar();
+  desenharTudo();
+  if (h) avisoFicha(`${h.nome} saiu da ficha.`, true);
+});
+
+// Janela de escolher habilidade
+const semAcento = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+function desenharOpcoes() {
+  const busca = semAcento($("busca-habilidade").value.trim());
+  const secoes = ["combate", "profissao"].map(tipo => {
+    const opcoes = HABILIDADES
+      .filter(h => h.tipo === tipo)
+      .filter(h => !busca || semAcento(h.nome + " " + h.texto).includes(busca))
+      .map(h => {
+        const vezes = ficha.habilidadesLista.filter(id => id === h.id).length;
+        const bloqueada = vezes > 0 && !h.repetir;
+        return `
+          <button class="opcao-hab carta-${h.tipo}" data-add-hab="${h.id}" ${bloqueada ? "disabled" : ""}>
+            <span class="opcao-nome">${esc(h.nome)}${vezes && h.repetir ? ` <small>(tem ${vezes})</small>` : ""}</span>
+            <span class="opcao-texto">${esc(h.texto)}</span>
+            ${bloqueada ? '<span class="opcao-tem">Já está na ficha</span>' : ""}
+          </button>`;
+      }).join("");
+    return opcoes ? `<h3 class="janela-secao">${NOME_TIPO[tipo]}</h3><div class="opcoes">${opcoes}</div>` : "";
+  }).join("");
+  $("lista-habilidades").innerHTML = secoes || '<p class="cartas-vazio">Nenhuma habilidade com esse nome.</p>';
+}
+
+function janelaHabilidades(abrir) {
+  $("janela-habilidades").hidden = !abrir;
+  document.body.classList.toggle("sem-rolagem", abrir);
+  if (abrir) {
+    $("busca-habilidade").value = "";
+    desenharOpcoes();
+    $("busca-habilidade").focus();
+  } else {
+    $("abrir-habilidades").focus();
+  }
+}
+
+$("abrir-habilidades").addEventListener("click", () => janelaHabilidades(true));
+$("fechar-habilidades").addEventListener("click", () => janelaHabilidades(false));
+$("janela-habilidades").addEventListener("click", e => {
+  if (e.target.id === "janela-habilidades") janelaHabilidades(false); // clicou fora da janela
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("janela-habilidades").hidden) janelaHabilidades(false);
+});
+$("busca-habilidade").addEventListener("input", desenharOpcoes);
+$("lista-habilidades").addEventListener("click", e => {
+  const botao = e.target.closest("[data-add-hab]");
+  if (!botao || botao.disabled) return;
+  const h = HABILIDADES.find(x => x.id === botao.dataset.addHab);
+  ficha.habilidadesLista.push(h.id);
+  salvar();
+  desenharTudo();
+  janelaHabilidades(false);
+  avisoFicha(`${h.nome} entrou na ficha.`, true);
+});
+
 // ---------- 9. Tela inicial e troca de fichas ----------
 /*
   Sem "?ficha=" no endereço, a página mostra a TELA INICIAL:
@@ -1040,7 +1162,7 @@ function quandoFoi(ms) {
 function desenharInicio(lista) {
   lista = lista.filter(x => x.ficha).sort((a, b) => nomeDaFicha(a.ficha).localeCompare(nomeDaFicha(b.ficha), "pt-BR"));
   const cards = lista.map(({ id, ficha: f, atualizadoEm }) => {
-    const vidaMax = BASE.vida + ((f.atributos || {}).fisico || 0) + (Number(f.vidaBonus) || 0);
+    const vidaMax = BASE.vida + ((f.atributos || {}).fisico || 0) + (Number(f.vidaBonus) || 0) + vidaDasHabilidades(f);
     const resta = Math.max(0, vidaMax - (f.vidaRiscada || 0));
     return `
       <button class="card-inicio" data-abrir="${esc(id)}">
