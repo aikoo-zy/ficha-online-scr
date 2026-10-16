@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
   <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
        Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
-  <link rel="stylesheet" href="style.css?v=20261016c">
+  <link rel="stylesheet" href="style.css?v=20261016d">
 </head>
 <body>
 <!-- ============================================================
@@ -39,7 +39,10 @@
 <header class="topo">
   <div class="topo-titulo">
     <a class="voltar" href="index.html">← Todas as fichas</a>
-    <div class="marca">Ficha de Personagem</div>
+    <div class="titulo-linha">
+      <div class="marca">Ficha de Personagem</div>
+      <button class="botao-guia" id="abrir-guia">Guia Rápido do Jogador</button>
+    </div>
   </div>
   <nav class="abas" role="tablist" aria-label="Partes da ficha">
     <button class="aba ativa" role="tab" data-aba="personagem" id="aba-personagem">Personagem</button>
@@ -315,6 +318,115 @@
 
 </div><!-- fim da tela-ficha -->
 
+<!-- ===================== JANELA: GUIA RÁPIDO DO JOGADOR ===================== -->
+<div class="janela-fundo" id="janela-guia" hidden>
+  <div class="janela" role="dialog" aria-modal="true" aria-labelledby="titulo-guia">
+    <header class="janela-topo">
+      <h2 id="titulo-guia">Guia Rápido do Jogador</h2>
+      <button class="mini" id="fechar-guia" aria-label="Fechar">×</button>
+    </header>
+    <nav class="guia-indice" aria-label="Partes do guia">
+      <a href="#guia-rolagens">Rolagens</a>
+      <a href="#guia-combate">Combate</a>
+      <a href="#guia-vida">Vida, Dor e Morte</a>
+      <a href="#guia-montaria">Montaria</a>
+      <a href="#guia-equipamento">Equipamento</a>
+    </nav>
+    <div class="janela-corpo guia" id="guia-corpo">
+
+      <section id="guia-rolagens">
+        <h3>Rolagens</h3>
+        <dl>
+          <dt>Teste de Antecedente</dt>
+          <dd>Quando o seu personagem <b>age</b> e algo pode dar errado. Rola 1d6 e soma os pontos do Antecedente que o mestre pedir. Na ficha, é só clicar no nome do Antecedente.</dd>
+          <dt>Teste de Resistência</dt>
+          <dd>Quando algo <b>afeta</b> o personagem: veneno, frio, medo, uma mentira. Rola 1d6 e soma o Atributo (Físico, Velocidade, Intelecto ou Coragem). Na ficha, é só clicar no nome do Atributo.</dd>
+          <dt>Dificuldade</dt>
+          <dd>O número que a rolagem precisa alcançar pra dar certo. Quem define é o mestre.</dd>
+          <dt>Forçar a rolagem</dt>
+          <dd>Depois de falhar, você pode tentar de novo uma vez, com a dificuldade 1 ponto menor. Mas algo ruim acontece junto, mesmo que dê certo. Use o botão "Rolar de novo".</dd>
+          <dt>Teste de Sorte</dt>
+          <dd>Pra perguntas de puro acaso ("tem comida nessa gaveta?"). Botão Sorte: par é SIM, ímpar é NÃO.</dd>
+          <dt>Rola 2 dados e usa o maior</dt>
+          <dd>Algumas habilidades dão essa vantagem: no teste, em vez de 1d6, você rola 2d6 e fica só com o dado mais alto.</dd>
+          <dt>Acerto e falha crítica</dt>
+          <dd>Só nos Testes de Violência. Tirou 6? Rola de novo: outro 6 é <b>acerto crítico</b>. Tirou 1? Rola de novo: outro 1 é <b>falha crítica</b>. A ficha faz isso sozinha e sorteia o efeito. Chance de cada um: 1 em 36.</dd>
+        </dl>
+      </section>
+
+      <section id="guia-combate">
+        <h3>Combate</h3>
+        <dl>
+          <dt>Iniciativa</dt>
+          <dd>Decide a ordem de quem age. Cada um puxa uma carta do baralho: a maior age primeiro (Ás é a maior, 2 é a menor). Se empatar com um inimigo, o inimigo age antes.</dd>
+          <dt>Cartas especiais</dt>
+          <dd><b>Ás</b>: +1 nos Testes de Violência · <b>Rei</b>: +1 Ação de Combate · <b>Dama</b>: +1 Movimento · <b>Valete</b>: +1 Ponto de Vida. Pra ganhar o bônus, você descarta a carta e vai pro fim da fila. Se preferir, mantém o lugar e fica sem o bônus. Vale só naquele combate.</dd>
+          <dt>Ações de Combate</dt>
+          <dd>O que você faz no seu turno: atirar, socar, dar uma facada, jogar uma bomba, recarregar, se render.</dd>
+          <dt>Movimentos</dt>
+          <dd>Cada Movimento anda uns 3 metros, ou serve pra entrar e sair de uma cobertura. Algumas habilidades também gastam Movimentos.</dd>
+          <dt>Defesa</dt>
+          <dd>Um ataque só acerta se o Teste de Violência de quem ataca for <b>igual ou maior</b> que a sua Defesa (5, se não tiver bônus).</dd>
+          <dt>Cobertura</dt>
+          <dd>Gaste 1 Movimento pra se proteger atrás de um barril, carroça ou pilastra. <b>Parcial</b> (boa parte do corpo à mostra): +1 de Defesa. <b>Completa</b> (quase nada à mostra): +2 de Defesa, mas −1 pra atirar de lá. Sair da cobertura gasta outro Movimento.</dd>
+          <dt>Surpresa</dt>
+          <dd>Quem é pego desprevenido fica com a Defesa em 3. Um <b>ataque surpresa</b> é atacar alguém que não viu você chegar.</dd>
+          <dt>Posição vantajosa</dt>
+          <dd>Estar no alto, escondido ou com o alvo bem exposto. O mestre decide se a situação conta.</dd>
+          <dt>Imobilizado</dt>
+          <dd>O alvo fica preso num agarrão. O mestre diz o que ele ainda consegue fazer e como pode tentar se soltar.</dd>
+          <dt>Fuga</dt>
+          <dd>Pra escapar de uma briga, gaste todas as suas Ações e Movimentos e faça um teste de Suor (a pé) ou de Montaria (a cavalo). Se falhar, a briga continua.</dd>
+        </dl>
+      </section>
+
+      <section id="guia-vida">
+        <h3>Vida, Dor e Morte</h3>
+        <dl>
+          <dt>Pontos de Vida</dt>
+          <dd>Os ferimentos graves. Tiros tiram Pontos de Vida direto. Começa com 6, mais 1 por ponto de Físico.</dd>
+          <dt>Pontos de Dor</dt>
+          <dd>Pancadas, socos e quedas. Todo mundo tem 6.</dd>
+          <dt>Dano Letal e Dano de Dor</dt>
+          <dd><b>Dano Letal</b> tira Pontos de Vida. <b>Dano de Dor</b> tira Pontos de Dor.</dd>
+          <dt>Quando a Dor acaba</dt>
+          <dd>Ao perder os 6 Pontos de Dor, você perde 1 Ponto de Vida, sofre uma penalidade sorteada (tabela na ficha) e a Dor volta cheia. A ficha mostra o botão "Rolar penalidade".</dd>
+          <dt>Teste de Morte</dt>
+          <dd>Quando os Pontos de Vida acabam, rola 1d6. Saiu <b>1 ou 6</b>: está vivo; gaste 1 Movimento e 1 Ação de Combate pra voltar com 3 Pontos de Vida. Qualquer outro número: o personagem morre. Só dá pra fazer um Teste de Morte por combate.</dd>
+          <dt>Pontos de Vida temporários</dt>
+          <dd>Pontos extras que valem por um tempo (por exemplo, da Canção da Emoção). O mestre diz até quando duram.</dd>
+          <dt>Curar no meio do combate</dt>
+          <dd>Só com a habilidade Cuspe e Cola. Fora do combate, a cura é com Medicina.</dd>
+        </dl>
+      </section>
+
+      <section id="guia-montaria">
+        <h3>Montaria</h3>
+        <dl>
+          <dt>Potência</dt>
+          <dd>Velocidade e força do animal. Em corridas e perseguições: 1d6 + Potência + o seu Antecedente Montaria (clique em "Potência" na ficha).</dd>
+          <dt>Resistência</dt>
+          <dd>Cada ponto dá +1 Ponto de Vida pra montaria.</dd>
+          <dt>Fidelidade</dt>
+          <dd>O quanto o animal confia em você, de 0 a 5. Cada nível libera um bônus, listado na aba Montaria.</dd>
+          <dt>Dor da montaria</dt>
+          <dd>Quando a montaria perde os 6 Pontos de Dor, ela perde 1 Ponto de Vida e a Dor volta cheia. A ficha faz isso sozinha.</dd>
+        </dl>
+      </section>
+
+      <section id="guia-equipamento">
+        <h3>Equipamento</h3>
+        <dl>
+          <dt>Espaço na bolsa</dt>
+          <dd>A bolsa tem 10 espaços. A maioria dos itens ocupa 1, itens maiores ocupam 2 ou 3, e coisas pequenas ocupam meio espaço. Roupa, chapéu e bota que você está vestindo não ocupam. As armas dos coldres também contam.</dd>
+          <dt>Itens comuns, especiais e raros</dt>
+          <dd>Itens comuns são os da tabela de preços. Especiais e raros são mais difíceis de achar, e descontos como o do Sorrisão não valem pra eles.</dd>
+        </dl>
+      </section>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== JANELA: ESCOLHER HABILIDADE ===================== -->
 <div class="janela-fundo" id="janela-habilidades" hidden>
   <div class="janela" role="dialog" aria-modal="true" aria-labelledby="titulo-janela-hab">
@@ -335,8 +447,8 @@
 <p class="aviso-global" id="aviso-ficha" role="status" hidden></p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="habilidades.js?v=20261016c"></script>
-<script src="script.js?v=20261016c"></script>
-<script type="module" src="nuvem.js?v=20261016c"></script>
+<script src="habilidades.js?v=20261016d"></script>
+<script src="script.js?v=20261016d"></script>
+<script type="module" src="nuvem.js?v=20261016d"></script>
 </body>
 </html>
