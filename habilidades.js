@@ -41,7 +41,7 @@ const HABILIDADES = [
     texto: "Dispara dois tiros de revólver com uma só Ação de Combate, gastando também um Movimento. Com mais Ações e Movimentos, segue atirando até o revólver esvaziar. Recarregar gasta Ações de Combate." },
 
   { id: "livramento", nome: "Livramento", tipo: "combate",
-    texto: "Quando todos os Pontos de Vida acabam, cai no chão mas recupera 2 Pontos de Vida e continua vivo. Funciona uma vez por combate: se cair de novo, segue a regra normal de morte do livro." },
+    texto: "Quando todos os Pontos de Vida acabam, cai no chão mas recupera 2 Pontos de Vida e continua vivo. Funciona uma vez por combate: se cair de novo, faz o Teste de Morte (veja o Guia Rápido)." },
 
   { id: "marretada", nome: "Marretada", tipo: "combate",
     texto: "Ataques desarmados causam +1 de Dano de Dor para cada ponto de Físico." },
@@ -53,7 +53,7 @@ const HABILIDADES = [
     texto: "Pode usar Movimentos para fazer ataques desarmados." },
 
   { id: "quebra-ossos", nome: "Quebra-Ossos", tipo: "combate",
-    texto: "Gastando um Movimento e uma Ação de Combate, aplica agarrão, arremesso ou suplex. Escolha: deixa o oponente preso (imobilizado) ou causa o dano da tabela.",
+    texto: "Gastando um Movimento e uma Ação de Combate, aplica agarrão, arremesso ou suplex. Escolha: deixa o oponente imobilizado (preso, veja o Guia Rápido) ou causa o dano da tabela.",
     niveis: [[1, "1 Dano Letal + 1 Dano de Dor"], [3, "1 Dano Letal + 2 Dano de Dor"], [6, "2 Dano Letal + 3 Dano de Dor"]] },
 
   { id: "sorte-dos-covardes", nome: "Sorte dos Covardes", tipo: "combate",
