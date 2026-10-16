@@ -1031,6 +1031,18 @@ $("remover-foto").addEventListener("click", () => {
 
 const NOME_TIPO = { combate: "Combate", profissao: "Profissão" };
 
+// Quebra o texto da habilidade em frases curtas (uma por linha)
+// e destaca números, tipos de dano e a regra dos 2 dados.
+function regrasHtml(texto) {
+  const frases = texto.split(/(?<=[.!])\s+(?=[A-ZÀ-Ú+−♣])/);
+  const destacar = f => esc(f)
+    .replace(/(\+?\d+ (?:de )?Dano Letal|Dano Letal extra|Dano Letal)/g, '<span class="dano-letal">$1</span>')
+    .replace(/(\+?\d+ de Dano de Dor|Dano de Dor)/g, '<span class="dano-dor">$1</span>')
+    .replace(/(rola 2 dados e usa o maior)/g, "<b>$1</b>")
+    .replace(/(^|[\s(])([+−]\d+(?:%)?)(?![^<]*<\/span>)/g, "$1<b>$2</b>");
+  return `<ul class="regras">${frases.map(f => `<li>${destacar(f)}</li>`).join("")}</ul>`;
+}
+
 function tabelaNiveis(h) {
   if (!h.niveis) return "";
   // a linha "atual" é o maior nível da tabela que o personagem já alcançou
@@ -1066,7 +1078,7 @@ function desenharHabilidades() {
           <button class="carta-remover" data-remover-hab="${i}" aria-label="Remover ${esc(h.nome)}">×</button>
         </header>
         <h3 class="carta-nome">${esc(h.nome)}</h3>
-        <p class="carta-texto">${esc(h.texto)}</p>
+        ${regrasHtml(h.texto)}
         ${tabelaNiveis(h)}
       </article>`;
   }).join("");
@@ -1100,12 +1112,12 @@ function desenharOpcoes() {
         const vezes = ficha.habilidadesLista.filter(id => id === h.id).length;
         const bloqueada = vezes > 0 && !h.repetir;
         return `
-          <button class="opcao-hab carta-${h.tipo}" data-add-hab="${h.id}" ${bloqueada ? "disabled" : ""}>
+          <div class="opcao-hab carta-${h.tipo}" role="button" tabindex="${bloqueada ? -1 : 0}" data-add-hab="${h.id}" aria-disabled="${bloqueada}">
             <span class="opcao-nome">${esc(h.nome)}${vezes && h.repetir ? ` <small>(tem ${vezes})</small>` : ""}</span>
-            <span class="opcao-texto">${esc(h.texto)}</span>
-            ${h.niveis ? `<span class="opcao-niveis">${h.niveis.map(([n, e]) => `<span>Nível ${n}: ${esc(e)}</span>`).join("")}</span>` : ""}
+            ${regrasHtml(h.texto)}
+            ${h.niveis ? `<span class="opcao-niveis">${h.niveis.map(([n, e]) => `<span class="nv">Nível ${n}</span><span>${esc(e)}</span>`).join("")}</span>` : ""}
             ${bloqueada ? '<span class="opcao-tem">Já está na ficha</span>' : ""}
-          </button>`;
+          </div>`;
       }).join("");
     return opcoes ? `<h3 class="janela-secao">${NOME_TIPO[tipo]}</h3><div class="opcoes">${opcoes}</div>` : "";
   }).join("");
@@ -1133,15 +1145,19 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !$("janela-habilidades").hidden) janelaHabilidades(false);
 });
 $("busca-habilidade").addEventListener("input", desenharOpcoes);
-$("lista-habilidades").addEventListener("click", e => {
+function escolherHabilidade(e) {
   const botao = e.target.closest("[data-add-hab]");
-  if (!botao || botao.disabled) return;
+  if (!botao || botao.getAttribute("aria-disabled") === "true") return;
   const h = HABILIDADES.find(x => x.id === botao.dataset.addHab);
   ficha.habilidadesLista.push(h.id);
   salvar();
   desenharTudo();
   janelaHabilidades(false);
   avisoFicha(`${h.nome} entrou na ficha.`, true);
+}
+$("lista-habilidades").addEventListener("click", escolherHabilidade);
+$("lista-habilidades").addEventListener("keydown", e => {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); escolherHabilidade(e); }
 });
 
 // ---------- 8c. Guia Rápido do Jogador ----------
