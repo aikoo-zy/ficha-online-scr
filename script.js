@@ -1144,6 +1144,28 @@ $("lista-habilidades").addEventListener("click", e => {
   avisoFicha(`${h.nome} entrou na ficha.`, true);
 });
 
+// ---------- 8c. Guia Rápido do Jogador ----------
+function janelaGuia(abrir) {
+  $("janela-guia").hidden = !abrir;
+  document.body.classList.toggle("sem-rolagem", abrir);
+  if (abrir) { $("guia-corpo").scrollTop = 0; $("fechar-guia").focus(); }
+  else $("abrir-guia").focus();
+}
+$("abrir-guia").addEventListener("click", () => janelaGuia(true));
+$("fechar-guia").addEventListener("click", () => janelaGuia(false));
+$("janela-guia").addEventListener("click", e => {
+  if (e.target.id === "janela-guia") janelaGuia(false);
+  // links do índice: rola até a parte certa sem mudar o endereço da página
+  const link = e.target.closest(".guia-indice a");
+  if (link) {
+    e.preventDefault();
+    document.querySelector(link.getAttribute("href")).scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+});
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("janela-guia").hidden) janelaGuia(false);
+});
+
 // ---------- 9. Tela inicial e troca de fichas ----------
 /*
   Sem "?ficha=" no endereço, a página mostra a TELA INICIAL:
