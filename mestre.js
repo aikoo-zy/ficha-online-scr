@@ -42,7 +42,8 @@ function quandoFoi(ms) {
 function card({ id, ficha: f, atualizadoEm }) {
   if (!f) return "";
   const at = f.atributos || {};
-  const vidaMax = 6 + (at.fisico || 0) + (Number(f.vidaBonus) || 0);
+  const habs = (f.habilidadesLista || []).map(id => HABILIDADES.find(h => h.id === id)).filter(Boolean);
+  const vidaMax = 6 + (at.fisico || 0) + (Number(f.vidaBonus) || 0) + habs.reduce((s, h) => s + (h.vida || 0), 0);
   const defesa = 5 + (Number(f.defesaBonus) || 0);
   const m = f.montaria || {};
   const montariaVidaMax = 6 + (m.resistencia || 0);
@@ -54,7 +55,7 @@ function card({ id, ficha: f, atualizadoEm }) {
       <div class="card-mestre-foto">${f.foto ? `<img src="${esc(f.foto)}" alt="">` : ""}</div>
       <div class="card-mestre-id">
         <h2>${esc(f.nome || "Personagem sem nome")}</h2>
-        <span class="dica">Atualizada ${quandoFoi(atualizadoEm)}</span>
+        <span class="dica">Nível ${Number(f.nivel) || 1} · atualizada ${quandoFoi(atualizadoEm)}</span>
       </div>
     </div>
 
@@ -67,6 +68,8 @@ function card({ id, ficha: f, atualizadoEm }) {
       <div><dt>Ações</dt><dd>${1 + (at.coragem || 0)}</dd></div>
       <div><dt>Iniciativa</dt><dd>${esc(f.iniciativa) || "–"}</dd></div>
     </dl>
+
+    ${habs.length ? `<p class="mestre-habs">${habs.map(h => esc(h.nome)).join(" · ")}</p>` : ""}
 
     ${armas.length ? `
     <ul class="mestre-armas">
