@@ -710,19 +710,19 @@ async function fazerRolagem(r) {
   const total = valor + r.bonus;
 
   let extra = null;
-  // Crítico de Violência: só olha o dado, não depende de NA
+  // Crítico de Violência: tirou 6 (ou 1), rola de novo; se sair 6 ou 1, confirma o crítico
   if (r.violencia) {
     if (valor === 6) {
       const conf = rolar(6);
-      if (conf === 6) {
+      if (conf === 6 || conf === 1) { // regra da mesa: na confirmação, 6 ou 1 confirma
         const efeito = rolar(6);
-        extra = { bom: true, texto: `Acerto crítico! (6 e 6) · Efeito ${efeito}: ${ACERTO_CRITICO[efeito - 1]}` };
+        extra = { bom: true, texto: `Acerto crítico! (6 e depois ${conf}) · Efeito ${efeito}: ${ACERTO_CRITICO[efeito - 1]}` };
       } else extra = { bom: true, texto: `Tirou 6, rolou de novo e saiu ${conf}: sem crítico.` };
     } else if (valor === 1) {
       const conf = rolar(6);
-      if (conf === 1) {
+      if (conf === 1 || conf === 6) { // regra da mesa: na confirmação, 1 ou 6 confirma
         const efeito = rolar(6);
-        extra = { bom: false, texto: `Falha crítica! (1 e 1) · Efeito ${efeito}: ${FALHA_CRITICA[efeito - 1]}` };
+        extra = { bom: false, texto: `Falha crítica! (1 e depois ${conf}) · Efeito ${efeito}: ${FALHA_CRITICA[efeito - 1]}` };
       } else extra = { bom: true, texto: `Tirou 1, rolou de novo e saiu ${conf}: sem falha crítica.` };
     }
   }
