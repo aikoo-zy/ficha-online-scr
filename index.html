@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
   <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
        Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
-  <link rel="stylesheet" href="style.css?v=20261016b">
+  <link rel="stylesheet" href="style.css?v=20261016c">
 </head>
 <body>
 <!-- ============================================================
@@ -168,7 +168,7 @@
             <button class="mini" data-ajuste="vidaBonus" data-passo="1" aria-label="Aumentar vida extra">+</button>
           </div>
         </div>
-        <p class="dica">6 iniciais + 1 por ponto de Físico + Parrudeza + vida extra. Use − e + ou clique na barra pra marcar dano e cura.</p>
+        <p class="dica">6 Pontos iniciais +1 por ponto de Físico (mais Parrudeza e vida extra). Use − e + ou clique na barra pra marcar dano e cura.</p>
       </div>
     </div>
 
@@ -322,6 +322,11 @@
       <h2 id="titulo-janela-hab">Escolha uma habilidade</h2>
       <button class="mini" id="fechar-habilidades" aria-label="Fechar">×</button>
     </header>
+    <p class="janela-guia">
+      Clique numa carta pra colocar na ficha. No nível 1, escolha duas.
+      <span><b>Dano Letal</b> tira Pontos de Vida do alvo · <b>Dano de Dor</b> tira Pontos de Dor ·
+      <b>Rola 2 dados e usa o maior</b>: no teste, em vez de 1d6, rola 2d6 e fica com o dado mais alto.</span>
+    </p>
     <input class="janela-busca" id="busca-habilidade" type="search" placeholder="Procurar pelo nome ou pelo efeito…" aria-label="Procurar habilidade">
     <div class="janela-corpo" id="lista-habilidades"></div>
   </div>
@@ -330,8 +335,8 @@
 <p class="aviso-global" id="aviso-ficha" role="status" hidden></p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="habilidades.js?v=20261016b"></script>
-<script src="script.js?v=20261016b"></script>
-<script type="module" src="nuvem.js?v=20261016b"></script>
+<script src="habilidades.js?v=20261016c"></script>
+<script src="script.js?v=20261016c"></script>
+<script type="module" src="nuvem.js?v=20261016c"></script>
 </body>
 </html>
