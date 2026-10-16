@@ -676,6 +676,32 @@ body.sem-rolagem { overflow: hidden; }
 /* Mesa do mestre: nomes das habilidades */
 .mestre-habs { margin: 0; font-size: 0.8rem; color: var(--poeira); }
 
+/* ---------- Guia Rápido do Jogador ---------- */
+.titulo-linha { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.botao-guia {
+  background: var(--bloco);
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 0.85rem; font-weight: 700;
+  cursor: pointer;
+}
+.botao-guia:hover { border-color: var(--tinta); }
+.guia-indice { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0 18px 10px; border-bottom: 1px solid var(--linha); }
+.guia-indice a { color: var(--poeira); font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+.guia-indice a:hover { color: var(--tinta); }
+.guia { gap: 22px; padding-top: 14px; }
+.guia section { scroll-margin-top: 8px; }
+.guia h3 { font-size: 1.25rem; margin: 0 0 8px; color: var(--tinta); }
+.guia dl { margin: 0; display: grid; grid-template-columns: 13em minmax(0, 1fr); gap: 10px 18px; }
+.guia dt { font-weight: 700; }
+.guia dd { margin: 0; font-size: 0.92rem; line-height: 1.5; color: color-mix(in srgb, var(--tinta) 85%, transparent); }
+.guia dd b { color: var(--tinta); }
+@media (max-width: 620px) {
+  .guia dl { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .guia dd { margin-bottom: 10px; }
+}
+
 /* ---------- Topo da ficha: voltar + título ---------- */
 .topo-titulo { display: flex; flex-direction: column; gap: 2px; }
 .voltar { color: var(--poeira); font-size: 0.9rem; text-decoration: none; font-weight: 600; }
