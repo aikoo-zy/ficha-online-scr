@@ -450,51 +450,103 @@ const Arena = (() => {
 
   const desenhar = () => { if (ok) renderer.render(cena, camera); };
 
-  // Desenha uma face num canvas e vira textura
-  function textura(pintar) {
+  // Desenha uma face num canvas e vira textura.
+  // Guarda a receita de cada face pra repintar quando a imagem do crânio terminar de carregar.
+  const texturas = [];
+  function textura(pintar, tam = 256) {
     const c = document.createElement("canvas");
-    c.width = c.height = 256;
+    c.width = c.height = tam;
     pintar(c.getContext("2d"));
     const t = new THREE.CanvasTexture(c);
     t.anisotropy = 4;
+    texturas.push({ c, pintar, t });
     return t;
   }
 
-  // Pinta um pedaço de galáxia roxa: nebulosas + estrelas
-  function pintarGalaxia(g, tam) {
-    g.fillStyle = "#14061f";
+  // Imagem do crânio (caveira.png) usada no 6 do d6 e no 12 do d12
+  const IMG_CAVEIRA = new Image();
+  IMG_CAVEIRA.onload = () => {
+    texturas.forEach(({ c, pintar, t }) => {
+      const g = c.getContext("2d");
+      g.clearRect(0, 0, c.width, c.height);
+      pintar(g);
+      t.needsUpdate = true;
+    });
+    desenhar();
+  };
+  IMG_CAVEIRA.src = "caveira.png?v=20261017b";
+
+  // Pinta um pedaço de madeira clara com veios (cada face fica um pouco diferente)
+  function pintarMadeira(g, tam, semente = Math.random() * 1000) {
+    let s = semente;
+    const aleatorio = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+    const fundo = g.createLinearGradient(0, 0, tam, tam);
+    fundo.addColorStop(0, "#d9b27a");
+    fundo.addColorStop(0.5, "#c99c60");
+    fundo.addColorStop(1, "#b98a50");
+    g.fillStyle = fundo;
     g.fillRect(0, 0, tam, tam);
-    g.globalCompositeOperation = "lighter";
-    const cores = ["rgba(140,60,220,0.55)", "rgba(220,70,200,0.35)", "rgba(70,90,230,0.35)", "rgba(110,40,180,0.5)"];
-    for (let i = 0; i < 7; i++) {
-      const x = Math.random() * tam, y = Math.random() * tam, r = tam * (0.25 + Math.random() * 0.45);
-      const nebulosa = g.createRadialGradient(x, y, 0, x, y, r);
-      nebulosa.addColorStop(0, cores[i % cores.length]);
-      nebulosa.addColorStop(1, "rgba(0,0,0,0)");
-      g.fillStyle = nebulosa;
-      g.fillRect(0, 0, tam, tam);
+    // veios
+    for (let i = 0; i < Math.round(tam / 6); i++) {
+      const y0 = aleatorio() * tam;
+      const amp = 1 + aleatorio() * (tam / 90);
+      const freq = (0.5 + aleatorio()) * (Math.PI * 2 / tam) * 1.5;
+      const fase = aleatorio() * Math.PI * 2;
+      g.beginPath();
+      for (let x = 0; x <= tam; x += 4) {
+        const y = y0 + Math.sin(x * freq + fase) * amp + Math.sin(x * freq * 3.1 + fase) * amp * 0.3;
+        x === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
+      }
+      g.strokeStyle = `rgba(${90 + aleatorio() * 30 | 0}, ${55 + aleatorio() * 20 | 0}, 25, ${0.08 + aleatorio() * 0.22})`;
+      g.lineWidth = 0.6 + aleatorio() * (tam / 120);
+      g.stroke();
     }
-    for (let i = 0; i < tam * 0.6; i++) {
-      const x = Math.random() * tam, y = Math.random() * tam;
-      const r = Math.random() < 0.92 ? Math.random() * 1.1 + 0.3 : Math.random() * 2 + 1.2;
-      g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2);
-      g.fillStyle = `rgba(255,${230 + Math.random() * 25 | 0},255,${0.5 + Math.random() * 0.5})`;
-      g.fill();
+    // um nó na madeira, às vezes
+    if (aleatorio() < 0.5) {
+      const x = aleatorio() * tam, y = aleatorio() * tam, r = tam * (0.04 + aleatorio() * 0.05);
+      const no = g.createRadialGradient(x, y, 0, x, y, r * 2.2);
+      no.addColorStop(0, "rgba(80,45,18,0.55)");
+      no.addColorStop(0.4, "rgba(110,65,28,0.25)");
+      no.addColorStop(1, "rgba(110,65,28,0)");
+      g.fillStyle = no;
+      g.beginPath(); g.ellipse(x, y, r * 2.2, r * 1.2, aleatorio() * 0.6, 0, Math.PI * 2); g.fill();
     }
-    g.globalCompositeOperation = "source-over";
+    // bordas mais escuras, como madeira gasta
+    const borda = g.createRadialGradient(tam / 2, tam / 2, tam * 0.3, tam / 2, tam / 2, tam * 0.75);
+    borda.addColorStop(0, "rgba(60,35,15,0)");
+    borda.addColorStop(1, "rgba(60,35,15,0.45)");
+    g.fillStyle = borda;
+    g.fillRect(0, 0, tam, tam);
   }
 
-  // Crânio de cervo com chifres no lugar do número mais alto (6 no d6, 12 no d12).
+  // Crânio "queimado" na madeira. Usa a imagem; enquanto ela não carrega, usa o desenho simples.
+  function pintarCaveira(g, cx, cy, tamanho, sobreMadeira) {
+    if (!IMG_CAVEIRA.complete || !IMG_CAVEIRA.naturalWidth) return caveiraDesenhada(g, cx, cy, tamanho);
+    const r = IMG_CAVEIRA.naturalWidth / IMG_CAVEIRA.naturalHeight;
+    const w = r > 1 ? tamanho : tamanho * r, h = r > 1 ? tamanho / r : tamanho;
+    g.save();
+    if (sobreMadeira) {
+      g.globalCompositeOperation = "multiply"; // mistura com a madeira, como marca de ferro quente
+      g.drawImage(IMG_CAVEIRA, cx - w / 2, cy - h / 2, w, h);
+    } else {
+      g.drawImage(IMG_CAVEIRA, cx - w / 2, cy - h / 2, w, h);
+      g.globalCompositeOperation = "source-atop"; // escurece só o desenho
+      g.fillStyle = "rgba(45, 25, 8, 0.4)";
+      g.fillRect(cx - w / 2, cy - h / 2, w, h);
+    }
+    g.restore();
+  }
+
+  // Desenho simples do crânio (reserva, caso a imagem não carregue).
   // Desenhado em uma grade de 256 × 256 e redimensionado pro tamanho pedido.
-  function pintarCaveira(g, cx, cy, tamanho) {
+  function caveiraDesenhada(g, cx, cy, tamanho) {
     const esc = tamanho / 230;
     g.save();
     g.translate(cx, cy);
     g.scale(esc, esc);
     g.translate(-128, -122);
     g.lineCap = "round"; g.lineJoin = "round";
-    g.shadowColor = "#e7c8ff"; g.shadowBlur = 10;
-    g.strokeStyle = "#fbf6ff"; g.fillStyle = "#fbf6ff";
+    g.strokeStyle = "#2a180b"; g.fillStyle = "#2a180b";
 
     // chifres: desenha um lado e espelha pro outro
     for (const lado of [1, -1]) {
@@ -526,8 +578,7 @@ const Arena = (() => {
     g.fill();
 
     // detalhes escuros (órbitas, furos, nariz e a linha do meio)
-    g.shadowBlur = 0;
-    g.fillStyle = "#1a0a2a"; g.strokeStyle = "#1a0a2a";
+    g.fillStyle = "#c99c60"; g.strokeStyle = "#c99c60";
     const elipse = (x, y, rx, ry, rot) => { g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fill(); };
     elipse(103, 128, 8, 12, -0.5);
     elipse(153, 128, 8, 12, 0.5);
@@ -540,7 +591,7 @@ const Arena = (() => {
     g.restore();
   }
 
-  // ---- d6: cubo galáxia com bolinhas brancas brilhantes ----
+  // ---- d6: cubo de madeira com bolinhas pretas ----
   const PIPS6 = { 1: [[.5,.5]], 2: [[.27,.27],[.73,.73]], 3: [[.27,.27],[.5,.5],[.73,.73]],
     4: [[.27,.27],[.73,.27],[.27,.73],[.73,.73]], 5: [[.27,.27],[.73,.27],[.5,.5],[.27,.73],[.73,.73]],
     6: [[.27,.25],[.73,.25],[.27,.5],[.73,.5],[.27,.75],[.73,.75]] };
@@ -549,21 +600,19 @@ const Arena = (() => {
     // ordem das faces no three.js: +x, -x, +y, -y, +z, -z (opostos somam 7)
     const valores = [3, 4, 5, 2, 1, 6];
     const normais = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
-    const materiais = valores.map(v => new THREE.MeshStandardMaterial({
-      roughness: 0.3,
-      metalness: 0.15,
-      emissive: 0x1a0830,
+    const materiais = valores.map((v, i) => new THREE.MeshStandardMaterial({
+      roughness: 0.75,
+      metalness: 0,
       map: textura(g => {
-        pintarGalaxia(g, 256);
-        g.strokeStyle = "rgba(200,160,255,0.45)"; g.lineWidth = 6;
-        g.strokeRect(3, 3, 250, 250);
-        if (v === 6) return pintarCaveira(g, 128, 128, 215);
-        g.shadowColor = "#e7c8ff"; g.shadowBlur = 18;
+        pintarMadeira(g, 256, 17 + i * 31);
+        if (v === 6) return pintarCaveira(g, 128, 128, 210, true);
         PIPS6[v].forEach(([x, y]) => {
-          g.beginPath(); g.arc(x * 256, y * 256, v === 1 ? 28 : 21, 0, Math.PI * 2);
-          g.fillStyle = "#fbf6ff"; g.fill();
+          const px = x * 256, py = y * 256, r = v === 1 ? 26 : 21;
+          g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2);
+          g.fillStyle = "#160f08"; g.fill();
+          g.beginPath(); g.arc(px - r * 0.25, py - r * 0.25, r * 0.3, 0, Math.PI * 2);
+          g.fillStyle = "rgba(255, 240, 220, 0.08)"; g.fill(); // brilho de furo entalhado
         });
-        g.shadowBlur = 0;
       }),
     }));
     const malha = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materiais);
@@ -573,18 +622,13 @@ const Arena = (() => {
     return { malha, faces, altura: 0.5 };
   }
 
-  // ---- d12: dodecaedro galáxia com números brancos ----
+  // ---- d12: dodecaedro de madeira com números pretos ----
   function montarD12() {
     const raio = 0.78;
     const geo = new THREE.DodecahedronGeometry(raio, 0);
     const malha = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      map: (() => {
-        const c = document.createElement("canvas");
-        c.width = c.height = 512;
-        pintarGalaxia(c.getContext("2d"), 512);
-        return new THREE.CanvasTexture(c);
-      })(),
-      emissive: 0x1a0830, roughness: 0.3, metalness: 0.15, flatShading: true,
+      map: textura(g => pintarMadeira(g, 512, 91), 512),
+      roughness: 0.75, metalness: 0, flatShading: true,
     }));
     malha.castShadow = true;
 
@@ -612,9 +656,8 @@ const Arena = (() => {
     Object.entries(faces).forEach(([num, n]) => {
       const tex = textura(g => {
         g.clearRect(0, 0, 256, 256);
-        if (num === "12") return pintarCaveira(g, 128, 128, 225);
-        g.fillStyle = "#fbf6ff";
-        g.shadowColor = "#d9a8ff"; g.shadowBlur = 16;
+        if (num === "12") return pintarCaveira(g, 128, 128, 225, false);
+        g.fillStyle = "#1a1109";
         g.font = "bold 150px Rye, Georgia, serif";
         g.textAlign = "center"; g.textBaseline = "middle";
         g.fillText(num, 128, 140);
@@ -622,7 +665,7 @@ const Arena = (() => {
       });
       const adesivo = new THREE.Mesh(
         new THREE.PlaneGeometry(0.62, 0.62),
-        new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.5, metalness: 0.3 })
+        new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.8, metalness: 0 })
       );
       const d = normais.find(x => x.n === n).d;
       adesivo.position.copy(n.clone().multiplyScalar(d + 0.003));
