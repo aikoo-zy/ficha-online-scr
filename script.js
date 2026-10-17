@@ -522,6 +522,69 @@ const Arena = (() => {
     g.fillRect(0, 0, tam, tam);
   }
 
+  // ---- Couro curtido ----
+  // Gerador de números "aleatórios" repetíveis: a mesma semente sempre dá o mesmo desenho
+  function sorteador(semente) {
+    let s = semente;
+    return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  }
+  function pintarCouro(g, tam, semente = 7, costura = true) {
+    const aleatorio = sorteador(semente);
+    // cor de base, mais clara num canto como couro gasto pelo uso
+    const base = g.createRadialGradient(tam * 0.4, tam * 0.35, tam * 0.04, tam / 2, tam / 2, tam * 0.75);
+    base.addColorStop(0, "#9a6436");
+    base.addColorStop(1, "#5c3618");
+    g.fillStyle = base;
+    g.fillRect(0, 0, tam, tam);
+    // poros do couro
+    for (let i = 0; i < tam * 16; i++) {
+      g.fillStyle = `rgba(40, 20, 8, ${aleatorio() * 0.3})`;
+      const p = 1 + aleatorio() * 2;
+      g.fillRect(aleatorio() * tam, aleatorio() * tam, p, p);
+    }
+    // manchas escuras
+    for (let i = 0; i < 8; i++) {
+      const x = aleatorio() * tam, y = aleatorio() * tam, r = tam * (0.06 + aleatorio() * 0.14);
+      const m = g.createRadialGradient(x, y, 0, x, y, r);
+      m.addColorStop(0, "rgba(40, 20, 8, 0.35)");
+      m.addColorStop(1, "rgba(40, 20, 8, 0)");
+      g.fillStyle = m;
+      g.beginPath(); g.ellipse(x, y, r, r * (0.6 + aleatorio() * 0.6), aleatorio() * 3, 0, Math.PI * 2); g.fill();
+    }
+    // vincos finos
+    for (let i = 0; i < 10; i++) {
+      let x = aleatorio() * tam, y = aleatorio() * tam;
+      g.beginPath(); g.moveTo(x, y);
+      for (let k = 0; k < 5; k++) { x += (aleatorio() - 0.5) * tam * 0.16; y += (aleatorio() - 0.5) * tam * 0.16; g.lineTo(x, y); }
+      g.strokeStyle = "rgba(30, 15, 5, 0.35)";
+      g.lineWidth = 0.6 + aleatorio();
+      g.stroke();
+    }
+    // costura em volta da face
+    if (costura) {
+      const m = tam * 0.0625;
+      g.setLineDash([tam * 0.035, tam * 0.027]);
+      g.strokeStyle = "rgba(225, 200, 150, 0.75)";
+      g.lineWidth = tam * 0.01;
+      g.strokeRect(m, m, tam - m * 2, tam - m * 2);
+      g.setLineDash([]);
+    }
+    // bordas mais escuras
+    const borda = g.createRadialGradient(tam / 2, tam / 2, tam * 0.3, tam / 2, tam / 2, tam * 0.75);
+    borda.addColorStop(0, "rgba(25, 12, 4, 0)");
+    borda.addColorStop(1, "rgba(25, 12, 4, 0.5)");
+    g.fillStyle = borda;
+    g.fillRect(0, 0, tam, tam);
+  }
+
+  // Qual material usar nos dados: "couro" ou "madeira"
+  const MATERIAL_DADO = "couro";
+  function pintarMaterial(g, tam, semente, ehFace) {
+    if (MATERIAL_DADO === "couro") return pintarCouro(g, tam, semente, ehFace);
+    pintarMadeira(g, tam, semente);
+    if (ehFace) pintarChanfro(g, tam);
+  }
+
   // Quinas escurecidas, como um dado gasto de cantos arredondados (só nas faces do d6)
   function pintarChanfro(g, tam) {
     const b = tam * 0.06;
@@ -611,7 +674,7 @@ const Arena = (() => {
     g.restore();
   }
 
-  // ---- d6: cubo de madeira com bolinhas pretas ----
+  // ---- d6: cubo (couro ou madeira) com bolinhas pretas ----
   const PIPS6 = { 1: [[.5,.5]], 2: [[.27,.27],[.73,.73]], 3: [[.27,.27],[.5,.5],[.73,.73]],
     4: [[.27,.27],[.73,.27],[.27,.73],[.73,.73]], 5: [[.27,.27],[.73,.27],[.5,.5],[.27,.73],[.73,.73]],
     6: [[.27,.25],[.73,.25],[.27,.5],[.73,.5],[.27,.75],[.73,.75]] };
@@ -624,15 +687,14 @@ const Arena = (() => {
       roughness: 0.75,
       metalness: 0,
       map: textura(g => {
-        pintarMadeira(g, 256, 17 + i * 31);
-        pintarChanfro(g, 256);
+        pintarMaterial(g, 256, 17 + i * 31, true);
         if (v === 6) return pintarMedalhao(g, 128, 128, 100);
         PIPS6[v].forEach(([x, y]) => {
           const px = x * 256, py = y * 256, r = v === 1 ? 26 : 21;
           g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2);
           g.fillStyle = "#160f08"; g.fill();
           g.beginPath(); g.arc(px - r * 0.25, py - r * 0.25, r * 0.3, 0, Math.PI * 2);
-          g.fillStyle = "rgba(255, 240, 220, 0.08)"; g.fill(); // brilho de furo entalhado
+          g.fillStyle = "rgba(255, 240, 220, 0.08)"; g.fill(); // brilho leve na marca
         });
       }),
     }));
@@ -643,12 +705,12 @@ const Arena = (() => {
     return { malha, faces, altura: 0.5 };
   }
 
-  // ---- d12: dodecaedro de madeira com números pretos ----
+  // ---- d12: dodecaedro (couro ou madeira) com números pretos ----
   function montarD12() {
     const raio = 0.78;
     const geo = new THREE.DodecahedronGeometry(raio, 0);
     const malha = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      map: textura(g => pintarMadeira(g, 512, 91), 512),
+      map: textura(g => pintarMaterial(g, 512, 91, false), 512),
       roughness: 0.75, metalness: 0, flatShading: true,
     }));
     malha.castShadow = true;
