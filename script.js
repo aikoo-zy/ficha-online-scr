@@ -519,22 +519,13 @@ const Arena = (() => {
     g.fillRect(0, 0, tam, tam);
   }
 
-  // Crânio "queimado" na madeira. Usa a imagem; enquanto ela não carrega, usa o desenho simples.
-  function pintarCaveira(g, cx, cy, tamanho, sobreMadeira) {
+  // Crânio da imagem caveira.png, do jeito que ela é (sem efeitos).
+  // Enquanto a imagem não carrega (ou se faltar no site), usa o desenho simples.
+  function pintarCaveira(g, cx, cy, tamanho) {
     if (!IMG_CAVEIRA.complete || !IMG_CAVEIRA.naturalWidth) return caveiraDesenhada(g, cx, cy, tamanho);
     const r = IMG_CAVEIRA.naturalWidth / IMG_CAVEIRA.naturalHeight;
     const w = r > 1 ? tamanho : tamanho * r, h = r > 1 ? tamanho / r : tamanho;
-    g.save();
-    if (sobreMadeira) {
-      g.globalCompositeOperation = "multiply"; // mistura com a madeira, como marca de ferro quente
-      g.drawImage(IMG_CAVEIRA, cx - w / 2, cy - h / 2, w, h);
-    } else {
-      g.drawImage(IMG_CAVEIRA, cx - w / 2, cy - h / 2, w, h);
-      g.globalCompositeOperation = "source-atop"; // escurece só o desenho
-      g.fillStyle = "rgba(45, 25, 8, 0.4)";
-      g.fillRect(cx - w / 2, cy - h / 2, w, h);
-    }
-    g.restore();
+    g.drawImage(IMG_CAVEIRA, cx - w / 2, cy - h / 2, w, h);
   }
 
   // Desenho simples do crânio (reserva, caso a imagem não carregue).
@@ -605,7 +596,7 @@ const Arena = (() => {
       metalness: 0,
       map: textura(g => {
         pintarMadeira(g, 256, 17 + i * 31);
-        if (v === 6) return pintarCaveira(g, 128, 128, 210, true);
+        if (v === 6) return pintarCaveira(g, 128, 128, 215);
         PIPS6[v].forEach(([x, y]) => {
           const px = x * 256, py = y * 256, r = v === 1 ? 26 : 21;
           g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2);
@@ -656,7 +647,7 @@ const Arena = (() => {
     Object.entries(faces).forEach(([num, n]) => {
       const tex = textura(g => {
         g.clearRect(0, 0, 256, 256);
-        if (num === "12") return pintarCaveira(g, 128, 128, 225, false);
+        if (num === "12") return pintarCaveira(g, 128, 128, 225);
         g.fillStyle = "#1a1109";
         g.font = "bold 150px Rye, Georgia, serif";
         g.textAlign = "center"; g.textBaseline = "middle";
