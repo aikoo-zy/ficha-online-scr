@@ -41,7 +41,7 @@ const HABILIDADES = [
     texto: "Dispara dois tiros de revólver com uma só Ação de Combate, gastando também um Movimento. Com mais Ações e Movimentos, segue atirando até o revólver esvaziar. Recarregar gasta Ações de Combate." },
 
   { id: "livramento", nome: "Livramento", tipo: "combate",
-    texto: "Quando todos os Pontos de Vida acabam, cai no chão mas recupera 2 Pontos de Vida e continua vivo. Funciona uma vez por combate: se cair de novo, faz o Teste de Morte (veja o Guia Rápido)." },
+    texto: "Quando todos os Pontos de Vida acabam, cai no chão mas recupera 2 Pontos de Vida e continua vivo. Funciona uma vez por combate: se cair de novo, entra no estado morrendo (veja o Guia Rápido)." },
 
   { id: "marretada", nome: "Marretada", tipo: "combate",
     texto: "Ataques desarmados causam +1 de Dano de Dor para cada ponto de Físico." },
