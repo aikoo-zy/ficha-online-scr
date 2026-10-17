@@ -420,7 +420,7 @@ const Arena = (() => {
     camera.lookAt(0, 0, 0.2);
 
     cena.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const luz = new THREE.DirectionalLight(0xfff0d0, 0.95);
+    const luz = new THREE.DirectionalLight(0xfff0d0, 0.85);
     luz.position.set(-3, 9, 3);
     luz.castShadow = true;
     luz.shadow.mapSize.set(1024, 1024);
@@ -474,7 +474,7 @@ const Arena = (() => {
     });
     desenhar();
   };
-  IMG_CAVEIRA.src = "caveira.png?v=20261017d";
+  IMG_CAVEIRA.src = "caveira.png?v=20261017e";
 
   // Pinta um pedaço de madeira clara com veios (cada face fica um pouco diferente)
   function pintarMadeira(g, tam, semente = Math.random() * 1000) {
@@ -517,15 +517,44 @@ const Arena = (() => {
     borda.addColorStop(1, "rgba(60,35,15,0.45)");
     g.fillStyle = borda;
     g.fillRect(0, 0, tam, tam);
+    // tom mais escuro e menos amarelo
+    g.fillStyle = "rgba(70, 40, 15, 0.22)";
+    g.fillRect(0, 0, tam, tam);
   }
 
-  // Crânio da imagem caveira.png, do jeito que ela é (sem efeitos).
-  // Enquanto a imagem não carrega (ou se faltar no site), usa o desenho simples.
-  function pintarCaveira(g, cx, cy, tamanho) {
-    if (!IMG_CAVEIRA.complete || !IMG_CAVEIRA.naturalWidth) return caveiraDesenhada(g, cx, cy, tamanho);
-    const r = IMG_CAVEIRA.naturalWidth / IMG_CAVEIRA.naturalHeight;
-    const w = r > 1 ? tamanho : tamanho * r, h = r > 1 ? tamanho / r : tamanho;
-    g.drawImage(IMG_CAVEIRA, cx - w / 2, cy - h / 2, w, h);
+  // Quinas escurecidas, como um dado gasto de cantos arredondados (só nas faces do d6)
+  function pintarChanfro(g, tam) {
+    const b = tam * 0.06;
+    const sombra = (x0, y0, x1, y1) => {
+      const l = g.createLinearGradient(x0, y0, x1, y1);
+      l.addColorStop(0, "rgba(40,22,8,0.55)");
+      l.addColorStop(1, "rgba(40,22,8,0)");
+      return l;
+    };
+    g.fillStyle = sombra(0, 0, b, 0); g.fillRect(0, 0, b, tam);
+    g.fillStyle = sombra(tam, 0, tam - b, 0); g.fillRect(tam - b, 0, b, tam);
+    g.fillStyle = sombra(0, 0, 0, b); g.fillRect(0, 0, tam, b);
+    g.fillStyle = sombra(0, tam, 0, tam - b); g.fillRect(0, tam - b, tam, b);
+  }
+
+  // Medalhão: círculo preto com o crânio vazado, mostrando a madeira por baixo.
+  // A imagem caveira.png é só o formato do crânio (silhueta); ela "fura" o círculo.
+  function pintarMedalhao(g, cx, cy, raio) {
+    const tela = document.createElement("canvas");
+    tela.width = tela.height = g.canvas.width;
+    const m = tela.getContext("2d");
+    m.beginPath(); m.arc(cx, cy, raio, 0, Math.PI * 2);
+    m.fillStyle = "#160f08"; m.fill();
+    m.globalCompositeOperation = "destination-out"; // tudo que for desenhado agora vira buraco
+    const tamanho = raio * 1.5;
+    if (IMG_CAVEIRA.complete && IMG_CAVEIRA.naturalWidth) {
+      const r = IMG_CAVEIRA.naturalWidth / IMG_CAVEIRA.naturalHeight;
+      const w = r > 1 ? tamanho : tamanho * r, h = r > 1 ? tamanho / r : tamanho;
+      m.drawImage(IMG_CAVEIRA, cx - w / 2, cy - h / 2, w, h);
+    } else {
+      caveiraDesenhada(m, cx, cy, tamanho); // reserva, se a imagem não carregar
+    }
+    g.drawImage(tela, 0, 0);
   }
 
   // Desenho simples do crânio (reserva, caso a imagem não carregue).
@@ -596,7 +625,8 @@ const Arena = (() => {
       metalness: 0,
       map: textura(g => {
         pintarMadeira(g, 256, 17 + i * 31);
-        if (v === 6) return pintarCaveira(g, 128, 128, 215);
+        pintarChanfro(g, 256);
+        if (v === 6) return pintarMedalhao(g, 128, 128, 100);
         PIPS6[v].forEach(([x, y]) => {
           const px = x * 256, py = y * 256, r = v === 1 ? 26 : 21;
           g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2);
@@ -647,7 +677,7 @@ const Arena = (() => {
     Object.entries(faces).forEach(([num, n]) => {
       const tex = textura(g => {
         g.clearRect(0, 0, 256, 256);
-        if (num === "12") return pintarCaveira(g, 128, 128, 225);
+        if (num === "12") return pintarMedalhao(g, 128, 128, 100);
         g.fillStyle = "#1a1109";
         g.font = "bold 150px Rye, Georgia, serif";
         g.textAlign = "center"; g.textBaseline = "middle";
