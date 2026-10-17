@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
   <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
        Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
-  <link rel="stylesheet" href="style.css?v=20261016h">
+  <link rel="stylesheet" href="style.css?v=20261017b">
 </head>
 <body>
 <!-- ============================================================
@@ -197,8 +197,19 @@
       <p class="dica">
         Bolsa com
         <input id="capacidade" class="campo-curto" type="number" min="0" step="1" data-campo="capacidade" aria-label="Capacidade da bolsa">
-        espaços. Armas dos coldres também contam.
+        espaços.
       </p>
+      <div class="espacos">
+        <span class="espacos-titulo">Quanto cada coisa ocupa</span>
+        <ul class="espacos-lista">
+          <li><b>Não ocupa</b><span>roupas e o que estiver vestindo · coisas miúdas (moedas, botões, fósforos, cantil, bússola, dados)</span></li>
+          <li><b>½ espaço</b><span>itens pequenos (cadeado, brinquedo) · faca · dinamite</span></li>
+          <li><b>1 espaço</b><span>a maioria dos itens (corda, corrente, ferramentas) · revólver · garrucha · machadinha · arco · caixa de munição (12 balas de revólver ou 6 de espingarda ou fuzil)</span></li>
+          <li><b>2 espaços</b><span>espingarda · machado de lenha</span></li>
+          <li><b>3 espaços</b><span>fuzil</span></li>
+        </ul>
+        <span class="espacos-nota">As armas dos coldres também contam na bolsa.</span>
+      </div>
       <div class="tabela-rolagem">
         <table class="tabela">
           <thead><tr><th>Item</th><th class="col-num">Espaço</th><th class="col-acao"></th></tr></thead>
@@ -394,8 +405,16 @@
           <dd><b>Dano Letal</b> tira Pontos de Vida. <b>Dano de Dor</b> tira Pontos de Dor.</dd></div>
           <div class="guia-item"><dt>Quando a Dor acaba</dt>
           <dd>Ao perder os 6 Pontos de Dor, você perde 1 Ponto de Vida, sofre uma penalidade sorteada (tabela na ficha) e a Dor volta cheia. A ficha mostra o botão "Rolar penalidade".</dd></div>
+          <div class="guia-item"><dt>Morrendo</dt>
+          <dd>Ao zerar os Pontos de Vida, você entra no estado <b>morrendo</b>. Só dá pra entrar nesse estado <b>uma vez por combate</b>: se a vida zerar de novo no mesmo combate, a morte é certa.</dd></div>
           <div class="guia-item"><dt>Teste de Morte</dt>
-          <dd>Quando os Pontos de Vida acabam, rola 1d6. Saiu <b>1 ou 6</b>: está vivo; gaste 1 Movimento e 1 Ação de Combate pra voltar com 3 Pontos de Vida. Qualquer outro número: o personagem morre. Só dá pra fazer um Teste de Morte por combate.</dd></div>
+          <dd>Morrendo, quando chegar o seu turno, rola 1d6. Saiu <b>1 ou 6</b>: você levanta com <b>3 Pontos de Vida</b>. Qualquer outro número: morte na certa.</dd></div>
+          <div class="guia-item"><dt>Levantar um aliado</dt>
+          <dd>Um aliado pode gastar <b>todas</b> as Ações de Combate e Movimentos do turno dele pra te levantar na hora, com <b>3 Pontos de Vida</b>. Pra isso, ele precisa estar fora da mira dos inimigos.</dd></div>
+          <div class="guia-item"><dt>Estabilizar</dt>
+          <dd>Um aliado pode gastar <b>2 ações</b> (de Combate, de Movimento ou uma de cada, à escolha dele) pra estabilizar você. Isso te dá a chance de fazer o Teste de Morte por mais 1 turno.</dd></div>
+          <div class="guia-item"><dt>Infecção</dt>
+          <dd>Quando é assimilado pela infecção, você faz <b>Testes de Resistência de Físico</b> com uma DT (dificuldade) definida pelo mestre. Quanto mais vezes você resiste à infecção, maior fica a DT.</dd></div>
           <div class="guia-item"><dt>Pontos de Vida temporários</dt>
           <dd>Pontos extras que valem por um tempo (por exemplo, da Canção da Emoção). O mestre diz até quando duram.</dd></div>
           <div class="guia-item"><dt>Curar no meio do combate</dt>
@@ -423,7 +442,7 @@
         <p class="guia-intro">O que dá pra carregar.</p>
         <dl>
           <div class="guia-item"><dt>Espaço na bolsa</dt>
-          <dd>A bolsa tem 10 espaços. A maioria dos itens ocupa 1, itens maiores ocupam 2 ou 3, e coisas pequenas ocupam meio espaço. Roupa, chapéu e bota que você está vestindo não ocupam. As armas dos coldres também contam.</dd></div>
+          <dd>A bolsa tem 10 espaços. A maioria dos itens ocupa 1, itens maiores ocupam 2 ou 3, e coisas pequenas ocupam meio espaço. Roupa, chapéu e bota que você está vestindo não ocupam. As armas dos coldres também contam. A tabela completa está na aba Equipamento.</dd></div>
           <div class="guia-item"><dt>Itens comuns, especiais e raros</dt>
           <dd>Itens comuns são os da tabela de preços. Especiais e raros são mais difíceis de achar, e descontos como o do Sorrisão não valem pra eles.</dd></div>
         </dl>
@@ -450,8 +469,8 @@
 <p class="aviso-global" id="aviso-ficha" role="status" hidden></p>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="habilidades.js?v=20261016h"></script>
-<script src="script.js?v=20261016h"></script>
-<script type="module" src="nuvem.js?v=20261016h"></script>
+<script src="habilidades.js?v=20261017b"></script>
+<script src="script.js?v=20261017b"></script>
+<script type="module" src="nuvem.js?v=20261017b"></script>
 </body>
 </html>
