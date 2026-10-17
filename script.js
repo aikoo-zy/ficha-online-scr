@@ -705,12 +705,31 @@ const Arena = (() => {
     return { malha, faces, altura: 0.5 };
   }
 
+  // Uma face do d12: o material inteiro dentro de um pentágono (com costura, se for couro)
+  function pintarFaceD12(g, tam) {
+    pintarMaterial(g, tam, 91, false);
+    if (MATERIAL_DADO !== "couro") return;
+    const raio = tam * 0.4;
+    g.beginPath();
+    for (let k = 0; k < 5; k++) {
+      const ang = -Math.PI / 2 + k * (Math.PI * 2 / 5); // primeira ponta pra cima
+      const x = tam / 2 + Math.cos(ang) * raio, y = tam / 2 + Math.sin(ang) * raio;
+      k === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
+    }
+    g.closePath();
+    g.setLineDash([tam * 0.035, tam * 0.027]);
+    g.strokeStyle = "rgba(225, 200, 150, 0.75)";
+    g.lineWidth = tam * 0.01;
+    g.stroke();
+    g.setLineDash([]);
+  }
+
   // ---- d12: dodecaedro (couro ou madeira) com números pretos ----
   function montarD12() {
     const raio = 0.78;
     const geo = new THREE.DodecahedronGeometry(raio, 0);
     const malha = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      map: textura(g => pintarMaterial(g, 512, 91, false), 512),
+      map: textura(g => pintarFaceD12(g, 512), 512),
       roughness: 0.75, metalness: 0, flatShading: true,
     }));
     malha.castShadow = true;
@@ -726,6 +745,34 @@ const Arena = (() => {
       if (n.dot(a) < 0) n.negate(); // garante que a normal aponta pra fora
       if (!normais.some(m => m.n.distanceTo(n) < 0.01)) normais.push({ n, d: n.dot(a) });
     }
+    // UV por face: cada pentágono recebe a textura inteira, sem esticar.
+    // A "ponta de cima" da textura fica apontando pra um dos cantos da face.
+    const uv = new Float32Array(pos.count * 2);
+    const grupos = normais.map(() => []);
+    for (let i = 0; i < pos.count; i += 3) {
+      const a = new THREE.Vector3().fromBufferAttribute(pos, i);
+      const b = new THREE.Vector3().fromBufferAttribute(pos, i + 1);
+      const c = new THREE.Vector3().fromBufferAttribute(pos, i + 2);
+      const n = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
+      if (n.dot(a) < 0) n.negate();
+      grupos[normais.findIndex(m => m.n.distanceTo(n) < 0.01)].push(i, i + 1, i + 2);
+    }
+    grupos.forEach((indices, k) => {
+      const pontos = indices.map(i => new THREE.Vector3().fromBufferAttribute(pos, i));
+      const cantos = [];
+      pontos.forEach(p => { if (!cantos.some(q => q.distanceTo(p) < 1e-4)) cantos.push(p); });
+      const centro = cantos.reduce((soma, p) => soma.add(p), new THREE.Vector3()).divideScalar(cantos.length);
+      const raioFace = cantos[0].distanceTo(centro);
+      const eixoV = cantos[0].clone().sub(centro).normalize();
+      const eixoU = new THREE.Vector3().crossVectors(eixoV, normais[k].n).normalize();
+      indices.forEach((i, j) => {
+        const d = pontos[j].clone().sub(centro);
+        uv[i * 2] = 0.5 + (d.dot(eixoU) / (2 * raioFace)) * 0.98;
+        uv[i * 2 + 1] = 0.5 + (d.dot(eixoV) / (2 * raioFace)) * 0.98;
+      });
+    });
+    geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+
     // números em faces opostas somam 13
     const faces = {};
     let prox = 1;
