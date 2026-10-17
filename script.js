@@ -474,7 +474,7 @@ const Arena = (() => {
     });
     desenhar();
   };
-  IMG_CAVEIRA.src = "caveira.png?v=20261017b";
+  IMG_CAVEIRA.src = "caveira.png?v=20261017d";
 
   // Pinta um pedaço de madeira clara com veios (cada face fica um pouco diferente)
   function pintarMadeira(g, tam, semente = Math.random() * 1000) {
