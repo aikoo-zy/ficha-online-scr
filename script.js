@@ -33,24 +33,6 @@ const TABELA_DOR = [
   ["Desorientação", "−1 em Testes de Violência no próximo turno."],
 ];
 
-const ACERTO_CRITICO = [
-  "Mortal: +2 de dano no seu turno.",
-  "Dança Maluca: o inimigo perde seu próximo turno no combate.",
-  "Desarmar: o inimigo não pode mais atirar com aquela arma.",
-  "Vantagem Moral: +1 nos seus Testes de Violência até o fim do combate.",
-  "Vantagem Tática: +1 Movimento no seu turno até o fim do combate.",
-  "Marca da Vingança: o inimigo foge, mas jura vingança contra você.",
-];
-
-const FALHA_CRITICA = [
-  "Seu ataque acerta um aliado ou uma pessoa inocente.",
-  "Sua arma quebra ou, em caso de porrada, o dano é anulado.",
-  "Guarda aberta: +1 nos testes dos inimigos contra você até o fim do combate.",
-  "Pressão: −1 no ataque contra os inimigos até o fim do combate.",
-  "Você está abatido e perde seu próximo turno para se recompor.",
-  "Você cai feio e perde duas ações de qualquer tipo para levantar.",
-];
-
 const FIDELIDADE = [
   "Montaria estranha: sem bônus.",
   "Atende quando chamada pelo nome.",
@@ -882,23 +864,8 @@ async function fazerRolagem(r) {
   const valor = rolar(r.lados);
   const total = valor + r.bonus;
 
-  let extra = null;
-  // Crítico de Violência: tirou 6 (ou 1), rola de novo; se sair 6 ou 1, confirma o crítico
-  if (r.violencia) {
-    if (valor === 6) {
-      const conf = rolar(6);
-      if (conf === 6 || conf === 1) { // regra da mesa: na confirmação, 6 ou 1 confirma
-        const efeito = rolar(6);
-        extra = { bom: true, texto: `Acerto crítico! (6 e depois ${conf}) · Efeito ${efeito}: ${ACERTO_CRITICO[efeito - 1]}` };
-      } else extra = { bom: true, texto: `Tirou 6, rolou de novo e saiu ${conf}: sem crítico.` };
-    } else if (valor === 1) {
-      const conf = rolar(6);
-      if (conf === 1 || conf === 6) { // regra da mesa: na confirmação, 1 ou 6 confirma
-        const efeito = rolar(6);
-        extra = { bom: false, texto: `Falha crítica! (1 e depois ${conf}) · Efeito ${efeito}: ${FALHA_CRITICA[efeito - 1]}` };
-      } else extra = { bom: true, texto: `Tirou 1, rolou de novo e saiu ${conf}: sem falha crítica.` };
-    }
-  }
+  // Críticos não são resolvidos pela ficha: o mestre narra e decide o efeito.
+  const extra = null;
 
   // Teste de Sorte: par = SIM, ímpar = NÃO
   const textoTotal = r.sorte ? (valor % 2 === 0 ? "SIM" : "NÃO") : String(total);
