@@ -912,3 +912,7 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 .vd-btn:hover { filter: brightness(1.25); }
 .vd-btn[data-vd="vant"].ativo { background: rgba(90, 160, 80, 0.28); color: #d6f0cb; border-color: #7fb36f; }
 .vd-btn[data-vd="desv"].ativo { background: rgba(200, 70, 60, 0.28); color: #f6d4cf; border-color: #d4766b; }
+
+/* ---------- Símbolo do nível do personagem ---------- */
+#val-nivel { display: inline-flex; align-items: center; gap: 6px; min-width: 88px; justify-content: center; }
+.nivel-img { width: 84px; height: 84px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55)); }
