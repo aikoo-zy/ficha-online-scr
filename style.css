@@ -519,7 +519,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .resultado-extra.bom { border-color: var(--tinta); }
 
 /* Três botões de dado */
-.botoes-dados { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.botoes-dados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .botao-dado {
   background: var(--bloco);
   border: 2px solid var(--borda);
@@ -898,7 +898,7 @@ body[data-tema-dado="azul"] .tema-rotulo[data-tema="azul"] { color: var(--tinta)
   background: #c99c60; transition: transform 0.2s, background 0.2s;
 }
 body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); background: #6fa8ff; }
-.botao-dado-img { width: 52px; height: 52px; border-radius: 10px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5); }
+.botao-dado-img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55)); }
 
 /* ---------- Vantagem / desvantagem nos atributos ---------- */
 .atributo-nome { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
