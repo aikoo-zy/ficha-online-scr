@@ -195,13 +195,25 @@ function calcular() {
 
 const $ = id => document.getElementById(id);
 
+// Vantagem / desvantagem marcadas em cada atributo (vale só pra próxima rolagem)
+let vantagens = {};
+const rotuloVD = vd => vd === "vant" ? " (vantagem)" : vd === "desv" ? " (desvantagem)" : "";
+
 
 function desenharAtributos() {
   const lista = $("lista-atributos");
-  lista.innerHTML = ATRIBUTOS.map(a => `
+  lista.innerHTML = ATRIBUTOS.map(a => {
+    const vd = vantagens[a.id] || null;
+    return `
     <div>
       <div class="atributo-linha">
-        <button class="nome-rolavel" data-rolar-atributo="${a.id}">${a.nome}</button>
+        <div class="atributo-nome">
+          <button class="nome-rolavel" data-rolar-atributo="${a.id}">${a.nome}</button>
+          <span class="vd" role="group" aria-label="Vantagem ou desvantagem em ${a.nome}">
+            <button class="vd-btn ${vd === "vant" ? "ativo" : ""}" data-vd-atributo="${a.id}" data-vd="vant" aria-pressed="${vd === "vant"}" title="Rola 2d6 e fica com o maior">Vant.</button>
+            <button class="vd-btn ${vd === "desv" ? "ativo" : ""}" data-vd-atributo="${a.id}" data-vd="desv" aria-pressed="${vd === "desv"}" title="Rola 2d6 e fica com o menor">Desv.</button>
+          </span>
+        </div>
         <div class="ajuste">
           <button class="mini" data-ajuste="atributos.${a.id}" data-passo="-1" aria-label="Diminuir ${a.nome}">−</button>
           <span class="valor-grande">${ficha.atributos[a.id]}</span>
@@ -209,7 +221,8 @@ function desenharAtributos() {
         </div>
       </div>
       <div class="atributo-efeito">${a.efeito}</div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 function desenharAntecedentes() {
@@ -382,6 +395,15 @@ const Arena = (() => {
   let renderer, cena, camera, ok = false;
   const dados = {};         // dados já montados: { 6: {...}, 12: {...} }
   let atual = null;         // dado que está na mesa
+  let extras = [];          // dados extras da mesma rolagem (ex.: o 2º dado da vantagem)
+
+  // Temas do dado: "classico" (couro) e "azul" (azul arcano)
+  let tema = "classico";
+  const PALETA = {
+    classico: { base: ["#9a6436", "#5c3618"], escuro: "rgba(40, 20, 8,", pips: "#160f08", numero: "#1a1109", costura: "rgba(225, 200, 150, 0.75)" },
+    azul:     { base: ["#4f8fd6", "#17386e"], escuro: "rgba(4, 14, 36,",  pips: "#eaf3ff", numero: "#eaf3ff", costura: "rgba(190, 220, 255, 0.8)" },
+  };
+  const P = () => PALETA[tema];
   let animacao = 0;         // id pra cancelar animação antiga
   const CIMA = () => new THREE.Vector3(0, 1, 0);
   const semMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -514,13 +536,13 @@ const Arena = (() => {
     const aleatorio = sorteador(semente);
     // cor de base, mais clara num canto como couro gasto pelo uso
     const base = g.createRadialGradient(tam * 0.4, tam * 0.35, tam * 0.04, tam / 2, tam / 2, tam * 0.75);
-    base.addColorStop(0, "#9a6436");
-    base.addColorStop(1, "#5c3618");
+    base.addColorStop(0, P().base[0]);
+    base.addColorStop(1, P().base[1]);
     g.fillStyle = base;
     g.fillRect(0, 0, tam, tam);
     // poros do couro
     for (let i = 0; i < tam * 16; i++) {
-      g.fillStyle = `rgba(40, 20, 8, ${aleatorio() * 0.3})`;
+      g.fillStyle = `${P().escuro} ${aleatorio() * 0.3})`;
       const p = 1 + aleatorio() * 2;
       g.fillRect(aleatorio() * tam, aleatorio() * tam, p, p);
     }
@@ -528,8 +550,8 @@ const Arena = (() => {
     for (let i = 0; i < 8; i++) {
       const x = aleatorio() * tam, y = aleatorio() * tam, r = tam * (0.06 + aleatorio() * 0.14);
       const m = g.createRadialGradient(x, y, 0, x, y, r);
-      m.addColorStop(0, "rgba(40, 20, 8, 0.35)");
-      m.addColorStop(1, "rgba(40, 20, 8, 0)");
+      m.addColorStop(0, `${P().escuro} 0.35)`);
+      m.addColorStop(1, `${P().escuro} 0)`);
       g.fillStyle = m;
       g.beginPath(); g.ellipse(x, y, r, r * (0.6 + aleatorio() * 0.6), aleatorio() * 3, 0, Math.PI * 2); g.fill();
     }
@@ -546,7 +568,7 @@ const Arena = (() => {
     if (costura) {
       const m = tam * 0.0625;
       g.setLineDash([tam * 0.035, tam * 0.027]);
-      g.strokeStyle = "rgba(225, 200, 150, 0.75)";
+      g.strokeStyle = P().costura;
       g.lineWidth = tam * 0.01;
       g.strokeRect(m, m, tam - m * 2, tam - m * 2);
       g.setLineDash([]);
@@ -674,7 +696,7 @@ const Arena = (() => {
         PIPS6[v].forEach(([x, y]) => {
           const px = x * 256, py = y * 256, r = v === 1 ? 26 : 21;
           g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2);
-          g.fillStyle = "#160f08"; g.fill();
+          g.fillStyle = P().pips; g.fill();
           g.beginPath(); g.arc(px - r * 0.25, py - r * 0.25, r * 0.3, 0, Math.PI * 2);
           g.fillStyle = "rgba(255, 240, 220, 0.08)"; g.fill(); // brilho leve na marca
         });
@@ -700,7 +722,7 @@ const Arena = (() => {
     }
     g.closePath();
     g.setLineDash([tam * 0.035, tam * 0.027]);
-    g.strokeStyle = "rgba(225, 200, 150, 0.75)";
+    g.strokeStyle = P().costura;
     g.lineWidth = tam * 0.01;
     g.stroke();
     g.setLineDash([]);
@@ -769,7 +791,7 @@ const Arena = (() => {
       const tex = textura(g => {
         g.clearRect(0, 0, 256, 256);
         if (num === "12") return pintarMedalhao(g, 128, 128, 100);
-        g.fillStyle = "#1a1109";
+        g.fillStyle = P().numero;
         g.font = "bold 150px Rye, Georgia, serif";
         g.textAlign = "center"; g.textBaseline = "middle";
         g.fillText(num, 128, 140);
@@ -791,6 +813,7 @@ const Arena = (() => {
     if (!dados[lados]) dados[lados] = lados === 12 ? montarD12() : montarD6();
     const d = dados[lados];
     if (atual !== d) {
+      limparExtras();
       if (atual) cena.remove(atual.malha);
       cena.add(d.malha);
       atual = d;
@@ -798,12 +821,21 @@ const Arena = (() => {
     return d;
   }
 
-  // Rola o dado até parar mostrando "valor". Devolve uma Promise.
-  function rolarAte(lados, valor) {
-    if (!ok) return Promise.resolve();
-    const d = pegarDado(lados);
-    const id = ++animacao;
+  function limparExtras() {
+    extras.forEach(m => cena.remove(m));
+    extras = [];
+  }
 
+  // Põe o dado parado no centro da mesa, com a face 6 pra cima
+  function postoInicial() {
+    const d = pegarDado(6);
+    d.malha.position.set(0, d.altura, 0);
+    d.malha.quaternion.setFromUnitVectors(d.faces[6].clone(), CIMA())
+      .premultiply(new THREE.Quaternion().setFromAxisAngle(CIMA(), 0.6));
+  }
+
+  // Anima uma cópia do dado até parar mostrando "valor". Devolve uma Promise.
+  function animarDado(d, malha, valor, deslocamento, vivo) {
     // rotação final: face "valor" virada pra cima, girada num ângulo qualquer
     const qBase = new THREE.Quaternion().setFromUnitVectors(d.faces[valor].clone(), CIMA());
     const qGiro = new THREE.Quaternion().setFromAxisAngle(CIMA(), Math.random() * Math.PI * 2);
@@ -812,22 +844,22 @@ const Arena = (() => {
     const eixo = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
     const voltas = Math.PI * (6 + Math.random() * 3);
     const lado = Math.random() < 0.5 ? -1 : 1;
-    const inicio = new THREE.Vector3(lado * 3.6, 0, (Math.random() - 0.5) * 2);
-    const fim = new THREE.Vector3((Math.random() - 0.5) * 1.2, 0, (Math.random() - 0.5) * 0.8);
+    const inicio = new THREE.Vector3(lado * 3.6, 0, deslocamento + (Math.random() - 0.5) * 1.2);
+    const fim = new THREE.Vector3((Math.random() - 0.5) * 1.2, 0, deslocamento + (Math.random() - 0.5) * 0.8);
     const duracao = semMovimento ? 0 : 1500;
     const t0 = performance.now();
 
     return new Promise(resolve => {
       function quadro(agora) {
-        if (id !== animacao) return resolve();
+        if (!vivo()) return resolve(); // outra rolagem começou no meio
         const t = duracao ? Math.min(1, (agora - t0) / duracao) : 1;
         const desliza = 1 - Math.pow(1 - t, 3);
         const gira = 1 - Math.pow(1 - t, 4);
-        d.malha.position.lerpVectors(inicio, fim, desliza);
+        malha.position.lerpVectors(inicio, fim, desliza);
         // quiques que vão diminuindo
-        d.malha.position.y = d.altura + Math.abs(Math.sin(t * Math.PI * 3.2)) * 1.6 * Math.pow(1 - t, 2);
+        malha.position.y = d.altura + Math.abs(Math.sin(t * Math.PI * 3.2)) * 1.6 * Math.pow(1 - t, 2);
         const qVoltas = new THREE.Quaternion().setFromAxisAngle(eixo, voltas * (1 - gira));
-        d.malha.quaternion.copy(qVoltas.multiply(qFinal));
+        malha.quaternion.copy(qVoltas.multiply(qFinal));
         desenhar();
         if (t < 1) requestAnimationFrame(quadro); else resolve();
       }
@@ -835,23 +867,89 @@ const Arena = (() => {
     });
   }
 
+  // Rola um ou mais dados juntos. "valores" é a face que cada dado deve mostrar.
+  function rolarVarios(lados, valores) {
+    if (!ok) return Promise.resolve();
+    const d = pegarDado(lados);
+    limparExtras();
+    const id = ++animacao;
+    const n = valores.length;
+    return Promise.all(valores.map((valor, i) => {
+      const malha = i === 0 ? d.malha : d.malha.clone();
+      if (i > 0) { cena.add(malha); extras.push(malha); }
+      const deslocamento = (i - (n - 1) / 2) * 1.2; // dados lado a lado
+      return animarDado(d, malha, valor, deslocamento, () => id === animacao);
+    }));
+  }
+
+  // Troca o acabamento dos dados (Clássico / Azul Arcano) e repõe o dado na mesa
+  function trocarTema(novo) {
+    tema = novo;
+    texturas.length = 0;
+    Object.keys(dados).forEach(k => delete dados[k]);
+    limparExtras();
+    if (atual) { cena.remove(atual.malha); atual = null; }
+    if (ok) { postoInicial(); desenhar(); }
+  }
+
+  // Ícone 2D de um dado, pros botões da mesa (mesmo acabamento da mesa 3D)
+  function icone(lados, valor) {
+    const tam = 160;
+    const c = document.createElement("canvas");
+    c.width = c.height = tam;
+    const g = c.getContext("2d");
+    pintarMaterial(g, tam, 41, lados === 6);
+    if (lados === 6 && PIPS6[valor]) {
+      PIPS6[valor].forEach(([x, y]) => {
+        g.beginPath(); g.arc(x * tam, y * tam, valor === 1 ? 14 : 11, 0, Math.PI * 2);
+        g.fillStyle = P().pips; g.fill();
+      });
+    } else {
+      g.fillStyle = P().numero;
+      g.font = `bold ${tam * 0.5}px Rye, Georgia, serif`;
+      g.textAlign = "center"; g.textBaseline = "middle";
+      g.fillText(String(valor), tam / 2, tam / 2 + 6);
+    }
+    return c;
+  }
+
   ok = iniciar();
-  if (ok) {
-    // dado parado na mesa ao abrir a ficha
-    const d = pegarDado(6);
-    d.malha.position.set(0, d.altura, 0);
-    d.malha.quaternion.setFromUnitVectors(d.faces[6].clone(), CIMA())
-      .premultiply(new THREE.Quaternion().setFromAxisAngle(CIMA(), 0.6));
-    desenhar();
-  } else {
+  if (ok) { postoInicial(); desenhar(); }
+  else {
     caixa.innerHTML = '<div class="reserva"><div class="dado" id="dado-reserva">6</div></div>';
   }
   return {
-    rolarAte,
+    rolarVarios,
+    trocarTema,
+    icone,
     get ok() { return ok; },
     reserva(valor) { const r = $("dado-reserva"); if (r) r.textContent = valor; },
   };
 })();
+
+// ---------- Tema dos dados (Clássico ou Azul Arcano) ----------
+const TEMA_KEY = "ficha-tema-dado";
+function desenharIconesDados() {
+  document.querySelectorAll("[data-dado]").forEach(img => {
+    const q = img.dataset.dado;
+    const c = q === "sorte" ? Arena.icone(6, "?") : Arena.icone(Number(q), Number(q));
+    img.src = c.toDataURL("image/png");
+  });
+}
+function aplicarTema(novo) {
+  document.body.dataset.temaDado = novo;
+  $("chave-tema").setAttribute("aria-checked", String(novo === "azul"));
+  Arena.trocarTema(novo);
+  desenharIconesDados();
+}
+$("chave-tema").addEventListener("click", () => {
+  const novo = document.body.dataset.temaDado === "azul" ? "classico" : "azul";
+  try { localStorage.setItem(TEMA_KEY, novo); } catch (e) { /* sem armazenamento: vale só nesta visita */ }
+  aplicarTema(novo);
+});
+let temaInicial = "classico";
+try { if (localStorage.getItem(TEMA_KEY) === "azul") temaInicial = "azul"; } catch (e) { /* ignora */ }
+aplicarTema(temaInicial);
 
 let ultimaRolagem = null; // pra "Rolar de novo"
 
@@ -861,7 +959,11 @@ let ultimaRolagem = null; // pra "Rolar de novo"
 */
 async function fazerRolagem(r) {
   ultimaRolagem = r;
-  const valor = rolar(r.lados);
+  // Vantagem: rola 2 dados e fica com o maior. Desvantagem: fica com o menor.
+  const dadosRolados = r.vd ? [rolar(r.lados), rolar(r.lados)] : [rolar(r.lados)];
+  const valor = r.vd === "vant" ? Math.max(...dadosRolados)
+              : r.vd === "desv" ? Math.min(...dadosRolados)
+              : dadosRolados[0];
   const total = valor + r.bonus;
 
   // Críticos não são resolvidos pela ficha: o mestre narra e decide o efeito.
@@ -872,7 +974,9 @@ async function fazerRolagem(r) {
   let conta;
   if (r.sorte) conta = `Saiu ${valor} (${valor % 2 === 0 ? "par" : "ímpar"})`;
   else {
-    conta = `1d${r.lados}: ${valor}`;
+    conta = r.vd
+      ? `2d${r.lados}: ${dadosRolados.join(" e ")} → ${r.vd === "vant" ? "maior" : "menor"} ${valor}`
+      : `1d${r.lados}: ${valor}`;
     if (r.bonus) conta += ` ${r.bonus > 0 ? "+" : "−"} ${Math.abs(r.bonus)}`;
     if (r.partes) conta += ` (${r.partes})`;
   }
@@ -892,7 +996,7 @@ async function fazerRolagem(r) {
   $("rolar-de-novo").hidden = true;
 
   const minhaVez = ++vezDoPlacar;
-  await Arena.rolarAte(r.lados, valor);
+  await Arena.rolarVarios(r.lados, dadosRolados);
   if (minhaVez !== vezDoPlacar) return; // outra rolagem começou no meio
   Arena.reserva(valor);
 
@@ -1015,10 +1119,19 @@ document.addEventListener("click", e => {
   }
 
   // Rolagens da ficha
+  // Vantagem / desvantagem do atributo: clicar de novo desmarca
+  if (d.vdAtributo) {
+    vantagens[d.vdAtributo] = vantagens[d.vdAtributo] === d.vd ? null : d.vd;
+    return desenharAtributos();
+  }
+
   if (d.rolarAtributo) {
     const a = ATRIBUTOS.find(x => x.id === d.rolarAtributo);
     const v = ficha.atributos[a.id];
-    return fazerRolagem({ rotulo: `Resistência · ${a.nome}`, lados: 6, bonus: v, partes: `${a.nome} ${v}` });
+    const vd = vantagens[a.id] || null;
+    vantagens[a.id] = null; // a marcação vale só pra esta rolagem
+    desenharAtributos();
+    return fazerRolagem({ rotulo: `Resistência · ${a.nome}${rotuloVD(vd)}`, lados: 6, bonus: v, partes: `${a.nome} ${v}`, vd });
   }
   if (d.rolarAntecedente) {
     const a = ANTECEDENTES.find(x => x.id === d.rolarAntecedente);
