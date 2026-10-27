@@ -400,8 +400,8 @@ const Arena = (() => {
   // Temas do dado: "classico" (couro) e "azul" (azul arcano)
   let tema = "classico";
   const PALETA = {
-    classico: { base: ["#9a6436", "#5c3618"], escuro: "rgba(40, 20, 8,", pips: "#160f08", numero: "#1a1109", costura: "rgba(225, 200, 150, 0.75)" },
-    azul:     { base: ["#4f8fd6", "#17386e"], escuro: "rgba(4, 14, 36,",  pips: "#eaf3ff", numero: "#eaf3ff", costura: "rgba(190, 220, 255, 0.8)" },
+    classico: { base: ["#9a6436", "#5c3618"], escuro: "rgba(40, 20, 8,", pips: "#160f08", numero: "#1a1109", costura: "rgba(225, 200, 150, 0.75)", rugosidade: 0.75 },
+    azul:     { base: ["#4f8fd6", "#17386e"], escuro: "rgba(4, 14, 36,",  pips: "#eaf3ff", numero: "#eaf3ff", costura: "rgba(190, 220, 255, 0.8)", rugosidade: 0.3 },
   };
   const P = () => PALETA[tema];
   let animacao = 0;         // id pra cancelar animação antiga
@@ -479,6 +479,8 @@ const Arena = (() => {
     desenhar();
   };
   IMG_CAVEIRA.src = "caveira.png?v=20261017e";
+  const aposCaveira = [];
+  IMG_CAVEIRA.addEventListener("load", () => aposCaveira.forEach(f => f()));
 
   // Pinta um pedaço de madeira clara com veios (cada face fica um pouco diferente)
   function pintarMadeira(g, tam, semente = Math.random() * 1000) {
@@ -581,9 +583,65 @@ const Arena = (() => {
     g.fillRect(0, 0, tam, tam);
   }
 
+  // Pedra azul arcana (pedra filosofal): azul profundo, nuvens de cor, veios de luz e brilhos
+  function pintarPedra(g, tam, semente = 7) {
+    const aleatorio = sorteador(semente);
+    const base = g.createRadialGradient(tam * 0.38, tam * 0.32, tam * 0.03, tam / 2, tam / 2, tam * 0.8);
+    base.addColorStop(0, "#4a92f0");
+    base.addColorStop(0.5, "#1e4fb0");
+    base.addColorStop(1, "#06163d");
+    g.fillStyle = base;
+    g.fillRect(0, 0, tam, tam);
+    // nuvens de cor, como poeira de estrelas dentro da pedra
+    for (let i = 0; i < 12; i++) {
+      const x = aleatorio() * tam, y = aleatorio() * tam, r = tam * (0.12 + aleatorio() * 0.2);
+      const cor = aleatorio() < 0.5 ? "140, 90, 255" : "70, 210, 255";
+      const m = g.createRadialGradient(x, y, 0, x, y, r);
+      m.addColorStop(0, `rgba(${cor}, 0.22)`);
+      m.addColorStop(1, `rgba(${cor}, 0)`);
+      g.fillStyle = m;
+      g.fillRect(0, 0, tam, tam);
+    }
+    // veios de luz sinuosos
+    for (let i = 0; i < 6; i++) {
+      let x = aleatorio() * tam, y = aleatorio() * tam;
+      g.beginPath();
+      g.moveTo(x, y);
+      for (let k = 0; k < 3; k++) {
+        const cx = x + (aleatorio() - 0.5) * tam * 0.5, cy = y + (aleatorio() - 0.5) * tam * 0.5;
+        x += (aleatorio() - 0.5) * tam * 0.35;
+        y += (aleatorio() - 0.5) * tam * 0.35;
+        g.quadraticCurveTo(cx, cy, x, y);
+      }
+      g.strokeStyle = "rgba(150, 230, 255, 0.4)";
+      g.lineWidth = 0.8 + aleatorio() * 1.2;
+      g.shadowColor = "rgba(120, 220, 255, 0.9)";
+      g.shadowBlur = 6;
+      g.stroke();
+      g.shadowBlur = 0;
+    }
+    // brilhos
+    for (let i = 0; i < 22; i++) {
+      const x = aleatorio() * tam, y = aleatorio() * tam, r = 0.8 + aleatorio() * 2;
+      const b = g.createRadialGradient(x, y, 0, x, y, r * 3);
+      b.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+      b.addColorStop(0.3, "rgba(180, 230, 255, 0.5)");
+      b.addColorStop(1, "rgba(120, 200, 255, 0)");
+      g.fillStyle = b;
+      g.beginPath(); g.arc(x, y, r * 3, 0, Math.PI * 2); g.fill();
+    }
+    // borda mais escura, como pedra polida
+    const borda = g.createRadialGradient(tam / 2, tam / 2, tam * 0.3, tam / 2, tam / 2, tam * 0.75);
+    borda.addColorStop(0, "rgba(2, 8, 30, 0)");
+    borda.addColorStop(1, "rgba(2, 8, 30, 0.6)");
+    g.fillStyle = borda;
+    g.fillRect(0, 0, tam, tam);
+  }
+
   // Qual material usar nos dados: "couro" ou "madeira"
   const MATERIAL_DADO = "couro";
   function pintarMaterial(g, tam, semente, ehFace) {
+    if (tema === "azul") return pintarPedra(g, tam, semente);
     if (MATERIAL_DADO === "couro") return pintarCouro(g, tam, semente, ehFace);
     pintarMadeira(g, tam, semente);
     if (ehFace) pintarChanfro(g, tam);
@@ -688,7 +746,7 @@ const Arena = (() => {
     const valores = [3, 4, 5, 2, 1, 6];
     const normais = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
     const materiais = valores.map((v, i) => new THREE.MeshStandardMaterial({
-      roughness: 0.75,
+      roughness: P().rugosidade,
       metalness: 0,
       map: textura(g => {
         pintarMaterial(g, 256, 17 + i * 31, true);
@@ -712,7 +770,7 @@ const Arena = (() => {
   // Uma face do d12: o material inteiro dentro de um pentágono (com costura, se for couro)
   function pintarFaceD12(g, tam) {
     pintarMaterial(g, tam, 91, false);
-    if (MATERIAL_DADO !== "couro") return;
+    if (tema !== "classico") return; // pedra não tem costura
     const raio = tam * 0.4;
     g.beginPath();
     for (let k = 0; k < 5; k++) {
@@ -734,7 +792,7 @@ const Arena = (() => {
     const geo = new THREE.DodecahedronGeometry(raio, 0);
     const malha = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
       map: textura(g => pintarFaceD12(g, 512), 512),
-      roughness: 0.75, metalness: 0, flatShading: true,
+      roughness: P().rugosidade, metalness: 0, flatShading: true,
     }));
     malha.castShadow = true;
 
@@ -809,9 +867,13 @@ const Arena = (() => {
     return { malha, faces, altura: normais[0].d };
   }
 
-  function pegarDado(lados) {
+  function obterDado(lados) {
     if (!dados[lados]) dados[lados] = lados === 12 ? montarD12() : montarD6();
-    const d = dados[lados];
+    return dados[lados];
+  }
+
+  function pegarDado(lados) {
+    const d = obterDado(lados);
     if (atual !== d) {
       limparExtras();
       if (atual) cena.remove(atual.malha);
@@ -913,6 +975,36 @@ const Arena = (() => {
     return c;
   }
 
+  // Foto 3D do dado com a face "valor" pra cima (usada nos botões da mesa)
+  function miniatura(lados, valor, tam = 128) {
+    if (!ok) return null;
+    let r;
+    try { r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); }
+    catch (e) { return null; }
+    r.setPixelRatio(1);
+    r.setSize(tam, tam, false);
+    const cenaMini = new THREE.Scene();
+    cenaMini.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const luz = new THREE.DirectionalLight(0xfff0d0, 0.9);
+    luz.position.set(-2, 4, 3);
+    cenaMini.add(luz);
+    const camMini = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+    camMini.position.set(0, 2.6, 2.4);
+    camMini.lookAt(0, 0, 0);
+    const d = obterDado(lados);
+    const malha = d.malha.clone();
+    malha.position.set(0, 0, 0);
+    malha.quaternion.setFromUnitVectors(d.faces[valor].clone(), CIMA());
+    malha.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0.3));
+    malha.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(CIMA(), 0.55));
+    cenaMini.add(malha);
+    r.render(cenaMini, camMini);
+    const url = r.domElement.toDataURL("image/png");
+    r.dispose();
+    r.forceContextLoss();
+    return url;
+  }
+
   ok = iniciar();
   if (ok) { postoInicial(); desenhar(); }
   else {
@@ -922,6 +1014,8 @@ const Arena = (() => {
     rolarVarios,
     trocarTema,
     icone,
+    miniatura,
+    aoCarregarCaveira(f) { if (IMG_CAVEIRA.complete && IMG_CAVEIRA.naturalWidth) f(); else aposCaveira.push(f); },
     get ok() { return ok; },
     reserva(valor) { const r = $("dado-reserva"); if (r) r.textContent = valor; },
   };
@@ -931,11 +1025,12 @@ const Arena = (() => {
 const TEMA_KEY = "ficha-tema-dado";
 function desenharIconesDados() {
   document.querySelectorAll("[data-dado]").forEach(img => {
-    const q = img.dataset.dado;
-    const c = q === "sorte" ? Arena.icone(6, "?") : Arena.icone(Number(q), Number(q));
-    img.src = c.toDataURL("image/png");
+    const lados = Number(img.dataset.dado);
+    // foto 3D do dado; se o 3D não carregar, usa o ícone 2D
+    img.src = Arena.miniatura(lados, lados) || Arena.icone(lados, lados).toDataURL("image/png");
   });
 }
+Arena.aoCarregarCaveira(desenharIconesDados);
 function aplicarTema(novo) {
   document.body.dataset.temaDado = novo;
   $("chave-tema").setAttribute("aria-checked", String(novo === "azul"));
@@ -1142,7 +1237,6 @@ document.addEventListener("click", e => {
   // Os três botões da mesa
   if (d.atalho === "1d6") return fazerRolagem({ rotulo: "1d6", lados: 6, bonus: 0 });
   if (d.atalho === "1d12") return fazerRolagem({ rotulo: "1d12", lados: 12, bonus: 0 });
-  if (d.atalho === "sorte") return fazerRolagem({ rotulo: "Teste de Sorte", lados: 6, bonus: 0, sorte: true });
 });
 
 // Clique direto na barra: marca até o círculo clicado
