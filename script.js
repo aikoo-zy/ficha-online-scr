@@ -202,18 +202,10 @@ const rotuloVD = vd => vd === "vant" ? " (vantagem)" : vd === "desv" ? " (desvan
 
 function desenharAtributos() {
   const lista = $("lista-atributos");
-  lista.innerHTML = ATRIBUTOS.map(a => {
-    const vd = vantagens[a.id] || null;
-    return `
+  lista.innerHTML = ATRIBUTOS.map(a => `
     <div>
       <div class="atributo-linha">
-        <div class="atributo-nome">
-          <button class="nome-rolavel" data-rolar-atributo="${a.id}">${a.nome}</button>
-          <span class="vd" role="group" aria-label="Vantagem ou desvantagem em ${a.nome}">
-            <button class="vd-btn ${vd === "vant" ? "ativo" : ""}" data-vd-atributo="${a.id}" data-vd="vant" aria-pressed="${vd === "vant"}" title="Rola 2d6 e fica com o maior">Vant.</button>
-            <button class="vd-btn ${vd === "desv" ? "ativo" : ""}" data-vd-atributo="${a.id}" data-vd="desv" aria-pressed="${vd === "desv"}" title="Rola 2d6 e fica com o menor">Desv.</button>
-          </span>
-        </div>
+        <button class="nome-rolavel" data-rolar-atributo="${a.id}">${a.nome}</button>
         <div class="ajuste">
           <button class="mini" data-ajuste="atributos.${a.id}" data-passo="-1" aria-label="Diminuir ${a.nome}">−</button>
           <span class="valor-grande">${ficha.atributos[a.id]}</span>
@@ -221,8 +213,16 @@ function desenharAtributos() {
         </div>
       </div>
       <div class="atributo-efeito">${a.efeito}</div>
-    </div>`;
-  }).join("");
+    </div>`).join("");
+}
+
+// Botões Vant. / Desv. de um antecedente
+function botoesVD(id, rotulo) {
+  const vd = vantagens[id] || null;
+  return `<span class="vd" role="group" aria-label="Vantagem ou desvantagem em ${rotulo}">
+            <button class="vd-btn ${vd === "vant" ? "ativo" : ""}" data-vd-antecedente="${id}" data-vd="vant" aria-pressed="${vd === "vant"}" title="Rola 2d6 e fica com o maior">Vant.</button>
+            <button class="vd-btn ${vd === "desv" ? "ativo" : ""}" data-vd-antecedente="${id}" data-vd="desv" aria-pressed="${vd === "desv"}" title="Rola 2d6 e fica com o menor">Desv.</button>
+          </span>`;
 }
 
 function desenharAntecedentes() {
@@ -235,7 +235,10 @@ function desenharAntecedentes() {
     }
     return `
       <div class="antecedente">
-        <button class="nome-rolavel" data-rolar-antecedente="${a.id}">${a.nome}</button>
+        <div class="atributo-nome">
+          <button class="nome-rolavel" data-rolar-antecedente="${a.id}">${a.nome}</button>
+          ${botoesVD(a.id, a.nome)}
+        </div>
         <span class="antecedente-base">1d6 + ${valor}</span>
         <div class="pontos">${pontos}</div>
       </div>`;
@@ -1214,24 +1217,25 @@ document.addEventListener("click", e => {
   }
 
   // Rolagens da ficha
-  // Vantagem / desvantagem do atributo: clicar de novo desmarca
-  if (d.vdAtributo) {
-    vantagens[d.vdAtributo] = vantagens[d.vdAtributo] === d.vd ? null : d.vd;
-    return desenharAtributos();
+  // Vantagem / desvantagem do antecedente: clicar de novo desmarca
+  if (d.vdAntecedente) {
+    vantagens[d.vdAntecedente] = vantagens[d.vdAntecedente] === d.vd ? null : d.vd;
+    return desenharAntecedentes();
   }
 
   if (d.rolarAtributo) {
     const a = ATRIBUTOS.find(x => x.id === d.rolarAtributo);
     const v = ficha.atributos[a.id];
-    const vd = vantagens[a.id] || null;
-    vantagens[a.id] = null; // a marcação vale só pra esta rolagem
-    desenharAtributos();
-    return fazerRolagem({ rotulo: `Resistência · ${a.nome}${rotuloVD(vd)}`, lados: 6, bonus: v, partes: `${a.nome} ${v}`, vd });
+    return fazerRolagem({ rotulo: `Resistência · ${a.nome}`, lados: 6, bonus: v, partes: `${a.nome} ${v}` });
   }
+
   if (d.rolarAntecedente) {
     const a = ANTECEDENTES.find(x => x.id === d.rolarAntecedente);
     const v = ficha.antecedentes[a.id];
-    return fazerRolagem({ rotulo: a.nome, lados: 6, bonus: v, partes: `${a.nome} ${v}`, violencia: a.id === "violencia" });
+    const vd = vantagens[a.id] || null;
+    vantagens[a.id] = null; // a marcação vale só pra esta rolagem
+    desenharAntecedentes();
+    return fazerRolagem({ rotulo: `${a.nome}${rotuloVD(vd)}`, lados: 6, bonus: v, partes: `${a.nome} ${v}`, violencia: a.id === "violencia", vd });
   }
 
   // Os três botões da mesa
