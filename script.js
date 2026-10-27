@@ -102,7 +102,7 @@ function normalizar(dados) {
   f.coldres = f.coldres.slice(0, TOTAL_COLDRES).map(c => Object.assign(coldreVazio(), c));
   if (!Array.isArray(f.itens)) f.itens = [];
   if (!Array.isArray(f.habilidadesLista)) f.habilidadesLista = [];
-  f.nivel = Math.max(1, Number(f.nivel) || 1);
+  f.nivel = Math.min(NIVEL_MAXIMO, Math.max(1, Number(f.nivel) || 1));
   if (!Array.isArray(f.historico)) f.historico = [];
   return f;
 }
@@ -194,6 +194,8 @@ function calcular() {
 // ---------- 4. Desenho da ficha ----------
 
 const $ = id => document.getElementById(id);
+
+const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos)
 
 // Vantagem / desvantagem marcadas em cada atributo (vale só pra próxima rolagem)
 let vantagens = {};
@@ -372,7 +374,8 @@ function desenharTudo() {
   document.querySelectorAll("[data-campo]").forEach(el => { el.value = lerCaminho(el.dataset.campo); });
   desenharFoto();
   desenharHabilidades();
-  $("val-nivel").textContent = ficha.nivel;
+  // Símbolo do nível (imagens niveis/nivel-1 a 8)
+  $("val-nivel").innerHTML = `<img class="nivel-img" src="niveis/nivel-${ficha.nivel}.png" alt="Nível ${ficha.nivel}">`;
   desenharAtributos();
   desenharAntecedentes();
   desenharTabelaDor();
@@ -1164,7 +1167,7 @@ document.addEventListener("click", e => {
 
   // Botões + e −
   if (d.ajuste) {
-    const novo = Math.max(d.ajuste === "nivel" ? 1 : 0, lerCaminho(d.ajuste) + Number(d.passo));
+    const novo = Math.min(d.ajuste === "nivel" ? NIVEL_MAXIMO : Infinity, Math.max(d.ajuste === "nivel" ? 1 : 0, lerCaminho(d.ajuste) + Number(d.passo)));
     gravarCaminho(d.ajuste, d.ajuste === "defesaBonus" ? lerCaminho(d.ajuste) + Number(d.passo) : novo);
     salvar();
     return desenharTudo();
