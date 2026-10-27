@@ -149,10 +149,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .bloco {
   border: 2px solid var(--borda);
   border-radius: var(--raio);
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   min-width: 0;
 }
 .bloco-escuro { background: var(--bloco); color: var(--bloco-texto); border-color: var(--borda); }
@@ -207,9 +207,12 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .nome-fixo { font-family: var(--fonte-letreiro); font-size: 1.2rem; }
 
 /* ---------- Atributos ---------- */
-.lista-atributos { display: flex; flex-direction: column; gap: 12px; }
+.lista-atributos { display: flex; flex-direction: column; gap: 0; }
+.lista-atributos > div { padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--bloco-texto) 14%, transparent); }
+.lista-atributos > div:first-child { padding-top: 2px; }
+.lista-atributos > div:last-child { border-bottom: 0; padding-bottom: 2px; }
 .atributo-linha { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.atributo-efeito { font-size: 0.85rem; opacity: 0.75; }
+.atributo-efeito { font-size: 0.85rem; opacity: 0.75; margin-top: 4px; }
 .ajuste { display: inline-flex; align-items: center; gap: 8px; }
 .valor-grande { font-family: var(--fonte-letreiro); font-size: 1.5rem; min-width: 1.4ch; text-align: center; font-variant-numeric: tabular-nums; }
 
@@ -361,7 +364,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
   font-family: var(--fonte-letreiro); font-weight: 400; text-align: left;
   border-bottom: 2px solid var(--tinta); padding: 4px 6px;
 }
-.tabela td { padding: 4px 3px; }
+.tabela td { padding: 7px 3px; }
+.tabela tbody tr { border-bottom: 1px solid var(--linha); }
+.tabela tbody tr:last-child { border-bottom: 0; }
 .tabela input {
   width: 100%;
   background: var(--papel-2);
@@ -379,6 +384,22 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .remover:hover { color: var(--sangue); }
 .campo-curto { width: 4.5em; background: var(--papel-2); border: 0; border-radius: var(--raio); padding: 2px 6px; font-weight: 700; }
 
+/* ---------- Resumo de espaço na bolsa ---------- */
+.espacos {
+  background: var(--bloco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.espacos-titulo { font-family: var(--fonte-letreiro); font-size: 0.95rem; }
+.espacos-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.espacos-lista li { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 10px; font-size: 0.86rem; line-height: 1.45; padding: 3px 0; border-bottom: 1px solid var(--linha); }
+.espacos-lista li:last-child { border-bottom: 0; }
+.espacos-lista b { font-variant-numeric: tabular-nums; }
+.espacos-lista span { color: color-mix(in srgb, var(--tinta) 85%, transparent); }
+.espacos-nota { font-size: 0.8rem; color: var(--poeira); font-style: italic; }
+
 /* ---------- Coldres (cards de arma) ---------- */
 .coldres { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .coldre {
@@ -387,7 +408,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border-top: 3px solid var(--poeira);
   border-radius: var(--raio);
   padding: 12px 14px 14px;
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; flex-direction: column; gap: 12px;
   min-width: 0;
 }
 .coldre.vazio { border-top-color: var(--borda); }
@@ -432,7 +453,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
   flex: 1; min-width: 0; background: transparent; border: 0;
   border-bottom: 2px dashed var(--linha); padding: 4px; font-weight: 700; font-size: 1.15rem;
 }
-.sub-bloco { border-top: 2px solid var(--borda); padding-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.sub-bloco { border-top: 2px solid var(--borda); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
 
 .fidelidade { display: flex; flex-direction: column; gap: 6px; }
 .nivel {
@@ -858,3 +879,36 @@ a.botao-ficha { color: var(--tinta); }
 @media (max-width: 400px) {
   .lista-antecedentes { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+/* ---------- Separação visual dos blocos ---------- */
+.bloco > .bloco-cabeca { padding-bottom: 8px; border-bottom: 1px solid var(--linha); }
+
+/* ---------- Tema dos dados ---------- */
+.tema-dado { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.85rem; }
+.tema-rotulo { color: var(--poeira); transition: color 0.2s; }
+body[data-tema-dado="classico"] .tema-rotulo[data-tema="classico"],
+body[data-tema-dado="azul"] .tema-rotulo[data-tema="azul"] { color: var(--tinta); font-weight: 700; }
+.tema-chave {
+  position: relative; width: 52px; height: 28px; padding: 0;
+  border-radius: 999px; border: 2px solid var(--borda); background: var(--papel-2); cursor: pointer;
+}
+.tema-bolinha {
+  position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%;
+  background: #c99c60; transition: transform 0.2s, background 0.2s;
+}
+body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); background: #6fa8ff; }
+.botao-dado-img { width: 52px; height: 52px; border-radius: 10px; box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5); }
+
+/* ---------- Vantagem / desvantagem nos atributos ---------- */
+.atributo-nome { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.vd { display: inline-flex; gap: 4px; }
+.vd-btn {
+  background: transparent; border: 1px solid var(--linha); color: var(--poeira);
+  border-radius: 999px; padding: 1px 8px; font-size: 0.72rem; cursor: pointer;
+}
+.vd-btn[data-vd="vant"] { color: #9cc98a; border-color: rgba(120, 180, 100, 0.4); }
+.vd-btn[data-vd="desv"] { color: #d9958b; border-color: rgba(200, 90, 80, 0.4); }
+.vd-btn:hover { filter: brightness(1.25); }
+.vd-btn[data-vd="vant"].ativo { background: rgba(90, 160, 80, 0.28); color: #d6f0cb; border-color: #7fb36f; }
+.vd-btn[data-vd="desv"].ativo { background: rgba(200, 70, 60, 0.28); color: #f6d4cf; border-color: #d4766b; }
