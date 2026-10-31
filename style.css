@@ -841,19 +841,9 @@ a.botao-ficha { color: var(--tinta); }
 
 /* Tela média: o perfil vira uma faixa em cima da ficha */
 @media (max-width: 1180px) {
-  .layout { grid-template-columns: minmax(0, 1fr) 56px; }
-  .perfil {
-    grid-column: 1 / -1; position: static;
-    display: grid; grid-template-columns: 120px minmax(0, 1fr); grid-template-rows: auto auto auto 1fr;
-    column-gap: 20px; align-items: start;
-  }
-  .retrato { grid-row: 1 / -1; }
-  .perfil-rotulo, .perfil-nome { text-align: left; }
-  .perfil-nome { font-size: 1.6rem; }
-  .foto-acoes { justify-content: flex-start; grid-column: 2; grid-row: 3; }
-  .perfil-rotulo { grid-column: 2; grid-row: 1; }
-  .perfil-nome { grid-column: 2; grid-row: 2; }
-  .aviso-foto { grid-column: 2; text-align: left; }
+  .layout { grid-template-columns: 270px minmax(0, 1fr) 56px; }
+  .perfil { position: sticky; }
+
 
 }
 
@@ -1198,3 +1188,6 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 #tela-ficha .menu-lateral .aba .icone-menu { width: 30px; height: 30px; object-fit: contain; filter: brightness(0); }
 #tela-ficha .menu-lateral .aba.ativa .icone-menu { filter: brightness(0) invert(1); }
 #tela-ficha .menu-lateral .aba:hover:not(.ativa) .icone-menu { filter: brightness(0); }
+
+/* guia com filtros */
+.guia-indice a.ativa { color: var(--tinta); text-decoration: underline; text-underline-offset: 4px; }
