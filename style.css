@@ -1195,3 +1195,16 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 .carta li::marker { color: var(--cor-carta); }
 .carta, .carta p, .carta li, .carta td, .carta th { text-shadow: none; }
 .carta-remover { color: #d8ccb0; }
+
+/* ícones de imagem do menu (mochila e cavalo) */
+#tela-ficha .menu-lateral .aba .icone-menu { width: 30px; height: 30px; object-fit: contain; filter: brightness(0); }
+#tela-ficha .menu-lateral .aba.ativa .icone-menu { filter: brightness(0) invert(1); }
+#tela-ficha .menu-lateral .aba:hover:not(.ativa) .icone-menu { filter: brightness(0); }
+
+/* ícones de imagem do menu: pintados com a mesma cor dos outros ícones (currentColor) */
+#tela-ficha .menu-lateral .aba .icone-menu {
+  display: block; width: 28px; height: 28px;
+  background-color: currentColor;
+  -webkit-mask: var(--m) center / contain no-repeat;
+          mask: var(--m) center / contain no-repeat;
+}
