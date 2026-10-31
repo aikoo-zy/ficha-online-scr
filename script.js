@@ -773,6 +773,15 @@ const Arena = (() => {
     4: [[.27,.27],[.73,.27],[.27,.73],[.73,.73]], 5: [[.27,.27],[.73,.27],[.5,.5],[.27,.73],[.73,.73]],
     6: [[.27,.25],[.73,.25],[.27,.5],[.73,.5],[.27,.75],[.73,.75]] };
 
+  // Números romanos nas faces do d6 (no lugar das bolinhas e do crânio do 6)
+  const ROMANOS = { 1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI" };
+  function desenharRomano(g, tam, valor, cor) {
+    g.fillStyle = cor;
+    g.font = `bold ${Math.round(tam * 0.5)}px Rye, Georgia, serif`;
+    g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(ROMANOS[valor], tam / 2, tam / 2 + tam * 0.03);
+  }
+
   function montarD6() {
     // ordem das faces no three.js: +x, -x, +y, -y, +z, -z (opostos somam 7)
     const valores = [3, 4, 5, 2, 1, 6];
@@ -782,14 +791,7 @@ const Arena = (() => {
       metalness: 0,
       map: textura(g => {
         pintarMaterial(g, 256, 17 + i * 31, true);
-        if (v === 6) return pintarMedalhao(g, 128, 128, 100);
-        PIPS6[v].forEach(([x, y]) => {
-          const px = x * 256, py = y * 256, r = v === 1 ? 26 : 21;
-          g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2);
-          g.fillStyle = P().pips; g.fill();
-          g.beginPath(); g.arc(px - r * 0.25, py - r * 0.25, r * 0.3, 0, Math.PI * 2);
-          g.fillStyle = "rgba(255, 240, 220, 0.08)"; g.fill(); // brilho leve na marca
-        });
+        desenharRomano(g, 256, v, P().numero);
       }),
     }));
     const malha = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materiais);
@@ -983,7 +985,7 @@ const Arena = (() => {
     Object.keys(dados).forEach(k => delete dados[k]);
     limparExtras();
     if (atual) { cena.remove(atual.malha); atual = null; }
-    if (ok) { postoInicial(); desenhar(); }
+    if (ok) { try { postoInicial(); desenhar(); } catch (e) { console.error(e); } }
   }
 
   // Ícone 2D de um dado, pros botões da mesa (mesmo acabamento da mesa 3D)
@@ -993,11 +995,8 @@ const Arena = (() => {
     c.width = c.height = tam;
     const g = c.getContext("2d");
     pintarMaterial(g, tam, 41, lados === 6);
-    if (lados === 6 && PIPS6[valor]) {
-      PIPS6[valor].forEach(([x, y]) => {
-        g.beginPath(); g.arc(x * tam, y * tam, valor === 1 ? 14 : 11, 0, Math.PI * 2);
-        g.fillStyle = P().pips; g.fill();
-      });
+    if (lados === 6 && ROMANOS[valor]) {
+      desenharRomano(g, tam, valor, P().numero);
     } else {
       g.fillStyle = P().numero;
       g.font = `bold ${tam * 0.5}px Rye, Georgia, serif`;
@@ -1037,8 +1036,8 @@ const Arena = (() => {
     return url;
   }
 
-  ok = iniciar();
-  if (ok) { postoInicial(); desenhar(); }
+  try { ok = iniciar(); } catch (e) { console.error('3D indisponível:', e); ok = false; }
+  if (ok) { try { postoInicial(); desenhar(); } catch (e) { console.error(e); } }
   else {
     caixa.innerHTML = '<div class="reserva"><div class="dado" id="dado-reserva">6</div></div>';
   }
@@ -1059,7 +1058,12 @@ function desenharIconesDados() {
   document.querySelectorAll("[data-dado]").forEach(img => {
     const lados = Number(img.dataset.dado);
     // foto 3D do dado; se o 3D não carregar, usa o ícone 2D
-    img.src = Arena.miniatura(lados, lados) || Arena.icone(lados, lados).toDataURL("image/png");
+    try {
+      img.src = Arena.miniatura(lados, lados) || Arena.icone(lados, lados).toDataURL("image/png");
+    } catch (e) {
+      console.error(e);
+      img.src = Arena.icone(lados, lados).toDataURL("image/png");
+    }
   });
 }
 Arena.aoCarregarCaveira(desenharIconesDados);
@@ -1076,7 +1080,7 @@ $("chave-tema").addEventListener("click", () => {
 });
 let temaInicial = "classico";
 try { if (localStorage.getItem(TEMA_KEY) === "azul") temaInicial = "azul"; } catch (e) { /* ignora */ }
-aplicarTema(temaInicial);
+try { aplicarTema(temaInicial); } catch (e) { console.error('Tema dos dados:', e); }
 
 let ultimaRolagem = null; // pra "Rolar de novo"
 
@@ -1800,7 +1804,7 @@ function formatar(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1).rep
 function horaAgora() { return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); }
 
 // ---------- Começa ----------
-desenharTudo();
+try { desenharTudo(); } catch (e) { console.error('Ficha:', e); }
 if (naInicio) desenharInicio(listaLocal());
 statusNuvem("local");
 
