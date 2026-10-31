@@ -202,16 +202,13 @@ const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos)
 function desenharAtributos() {
   const lista = $("lista-atributos");
   lista.innerHTML = ATRIBUTOS.map(a => `
-    <div>
-      <div class="atributo-linha">
-        <button class="nome-rolavel" data-rolar-atributo="${a.id}">${a.nome}</button>
-        <div class="ajuste">
-          <button class="mini" data-ajuste="atributos.${a.id}" data-passo="-1" aria-label="Diminuir ${a.nome}">−</button>
-          <span class="valor-grande">${ficha.atributos[a.id]}</span>
-          <button class="mini" data-ajuste="atributos.${a.id}" data-passo="1" aria-label="Aumentar ${a.nome}">+</button>
-        </div>
+    <div class="atributo-tile">
+      <button class="nome-rolavel" data-rolar-atributo="${a.id}">${a.nome}</button>
+      <div class="ajuste">
+        <button class="mini" data-ajuste="atributos.${a.id}" data-passo="-1" aria-label="Diminuir ${a.nome}">−</button>
+        <span class="valor-grande">${ficha.atributos[a.id]}</span>
+        <button class="mini" data-ajuste="atributos.${a.id}" data-passo="1" aria-label="Aumentar ${a.nome}">+</button>
       </div>
-      <div class="atributo-efeito">${a.efeito}</div>
     </div>`).join("");
 }
 
@@ -364,7 +361,6 @@ function desenharTudo() {
   desenharFoto();
   desenharHabilidades();
   // Símbolo do nível (imagens niveis/nivel-1 a 8)
-  $("val-nivel").innerHTML = `<img class="nivel-img" src="niveis/nivel-${ficha.nivel}.png" alt="Nível ${ficha.nivel}">`;
   desenharAtributos();
   desenharAntecedentes();
   desenharItens();
@@ -1263,6 +1259,9 @@ document.addEventListener("click", e => {
   if (d.atalho === "1d12") return fazerRolagem({ rotulo: "1d12", lados: 12, bonus: 0 });
 });
 
+// Clicar na arena rola 1d6
+$("arena").addEventListener("click", () => fazerRolagem({ rotulo: "1d6", lados: 6, bonus: 0 }));
+
 // Clique direto na barra: marca até o círculo clicado
 document.querySelectorAll("[data-barra-clique]").forEach(barra => {
   barra.addEventListener("click", e => {
@@ -1345,6 +1344,13 @@ function rolarPenalidadeDor() {
     atualizarResumo();
   }, 3200);
 }
+
+// Nível: a pessoa digita no círculo do banner (1 a 8)
+$("val-nivel").addEventListener("change", e => {
+  ficha.nivel = Math.min(NIVEL_MAXIMO, Math.max(1, Number(e.target.value) || 1));
+  salvar();
+  desenharTudo();
+});
 
 $("add-item").addEventListener("click", () => { ficha.itens.push({ nome: "", espaco: "" }); salvar(); desenharItens(); });
 
