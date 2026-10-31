@@ -1,1810 +1,1214 @@
 /* ============================================================
-   FICHA DE SACRAMENTO — lógica
-   Tudo que o jogador preenche fica no objeto "ficha" e é salvo
-   no navegador (localStorage) a cada mudança.
+   FICHA DE SACRAMENTO — estilos
+   Conceito: a ficha impressa do livro (papel velho + blocos de
+   tinta preta + letreiro de faroeste), com mancha de sangue seco
+   como única cor forte. Ficha à esquerda, mesa de dados à direita.
    ============================================================ */
 
-// ---------- 1. Regras do livro ----------
+:root {
+  /* Tema único: preto. A ficha é a versão "noite de saloon". */
+  --papel: #0b0a09;            /* fundo da página */
+  --papel-2: #1b1815;          /* campos e linhas alternadas */
+  --tinta: #ece3cf;            /* texto principal */
+  --poeira: #9a8d77;           /* texto secundário */
+  --sangue: #c8473b;           /* destaque */
+  --bloco: #15120f;            /* blocos em destaque */
+  --bloco-texto: #ece3cf;
+  --linha: #3a322a;
+  --borda: #4a4036;            /* contorno dos blocos */
 
-const ATRIBUTOS = [
-  { id: "fisico",     nome: "Físico",     efeito: "+1 Ponto de Vida para cada ponto" },
-  { id: "velocidade", nome: "Velocidade", efeito: "+1 Movimento por ponto" },
-  { id: "intelecto",  nome: "Intelecto",  efeito: "+1 ponto de Antecedente por ponto" },
-  { id: "coragem",    nome: "Coragem",    efeito: "+1 Ação de Combate por ponto" },
-];
+  /* Arena de dados */
+  --mesa-luz: #24201b;
+  --mesa: #131110;
+  --mesa-borda: #060505;
 
-const ANTECEDENTES = [
-  { id: "atencao",   nome: "Atenção" },
-  { id: "roubo",     nome: "Roubo" },
-  { id: "medicina",  nome: "Medicina" },
-  { id: "suor",      nome: "Suor" },
-  { id: "montaria",  nome: "Montaria" },
-  { id: "tradicao",  nome: "Tradição" },
-  { id: "negocios",  nome: "Negócios" },
-  { id: "violencia", nome: "Violência" },
-];
+  /* Tipografia */
+  --fonte-letreiro: "Rye", "Rockwell", Georgia, serif;
+  --fonte-texto: "Zilla Slab", "Rockwell", Georgia, serif;
 
-const TABELA_DOR = [
-  ["Atordoamento",  "−1 Ação de Combate na próxima rodada."],
-  ["Queda",         "Gaste um Movimento para se levantar."],
-  ["Distração",     "Não pode atacar esse mesmo alvo no próximo ataque."],
-  ["Sangramento",   "+1 dano na Vida por turno até o fim do combate."],
-  ["Intimidação",   "Precisa se afastar do atacante na próxima rodada."],
-  ["Desorientação", "−1 em Testes de Violência no próximo turno."],
-];
-
-const FIDELIDADE = [
-  "Montaria estranha: sem bônus.",
-  "Atende quando chamada pelo nome.",
-  "Ganha +1 ponto em um dos dois Atributos à sua escolha.",
-  "Quando chamada, vai até você se estiver a até 500 m.",
-  "Sem penalidades para saltar obstáculos perigosos.",
-  "Ganha +1 ponto em um dos dois Atributos à sua escolha.",
-];
-
-// Condições iniciais (iguais para todo PJ)
-const BASE = { vida: 6, dor: 6, acoes: 1, movimentos: 1, antecedentes: 4, atributos: 4, defesa: 5 };
-const MAX_ANTECEDENTE = 5; // bolinhas na ficha
-
-// ---------- 2. A ficha (estado) ----------
-
-const CHAVE = "ficha-sacramento-v2";
-
-const TOTAL_COLDRES = 4;
-function coldreVazio() {
-  return { nome: "", dano: "", espaco: "", municao: 0, reserva: 0 };
+  --raio: 4px;
+  color-scheme: dark;
 }
 
-function fichaNova() {
-  return {
-    nome: "",
-    foto: "",          // retrato salvo como imagem (texto base64)
-    atributos: { fisico: 0, velocidade: 0, intelecto: 0, coragem: 0 },
-    antecedentes: Object.fromEntries(ANTECEDENTES.map(a => [a.id, 0])),
-    iniciativa: "",
-    defesaBonus: 0,
-    dor: 0,            // quantos Pontos de Dor riscados
-    vidaRiscada: 0,    // quantos Pontos de Vida riscados
-    vidaBonus: 0,      // vida extra vinda de habilidades
-    habilidades: "",   // anotações livres
-    habilidadesLista: [], // ids das habilidades do livro (ver habilidades.js)
-    nivel: 1,
-    capacidade: 10,
-    itens: [{ nome: "", espaco: "" }],
-    coldres: Array.from({ length: 4 }, coldreVazio),
-    montaria: { nome: "", potencia: 0, resistencia: 0, dor: 0, vidaRiscada: 0, fidelidade: 0 },
-    historico: [],
-  };
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { margin: 0; }
+
+body {
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: var(--fonte-texto);
+  font-size: 16px;
+  line-height: 1.45;
+  padding-inline: 16px;
+  padding-block: 0 48px;
 }
 
-/*
-  Várias fichas no mesmo aparelho. Tudo fica num "banco" assim:
-  { atual: "id-da-ficha-aberta", fichas: { "id1": {...ficha...}, "id2": {...} } }
-*/
-const CHAVE_ANTIGA = "ficha-sacramento-v1"; // versão que guardava uma ficha só
+h2, h3 {
+  font-family: var(--fonte-letreiro);
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: 0.02em;
+  text-wrap: balance;
+}
+h2 { font-size: 1.35rem; }
+h3 { font-size: 1.05rem; margin-bottom: 8px; }
 
-function novoId() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+button, input, select, textarea { font: inherit; color: inherit; }
+
+:focus-visible { outline: 2px solid var(--sangue); outline-offset: 2px; }
+
+/* ---------- Cabeçalho ---------- */
+.topo {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding-block: 20px 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 3px solid var(--borda);
+}
+.marca { font-family: var(--fonte-letreiro); font-size: 2rem; line-height: 1.2; color: var(--tinta); }
+
+/* ---------- Perfil: retrato + nome ---------- */
+.perfil {
+  display: flex; flex-direction: column; gap: 10px;
+  align-self: start;
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+}
+.retrato {
+  aspect-ratio: 3 / 4;          /* padrão da ficha: retrato 3:4 (600 × 800 px) */
+  max-width: 100%;
+  border: 2px solid var(--borda);
+  outline: 1px solid var(--borda);
+  outline-offset: 4px;
+  border-radius: var(--raio);
+  overflow: hidden;
+  background: var(--bloco);
+  margin: 5px;
+}
+.retrato-foto { width: 100%; height: 100%; object-fit: cover; display: block; }
+.retrato-vazio {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; text-align: center; padding: 12px;
+  color: var(--poeira);
+}
+.retrato-vazio:hover { color: var(--tinta); }
+.retrato-vazio svg { width: 72px; height: 72px; fill: currentColor; opacity: 0.6; }
+.retrato-texto { font-family: var(--fonte-letreiro); font-size: 1.1rem; color: var(--tinta); }
+.retrato-dica { font-size: 0.8rem; }
+.foto-acoes { display: flex; justify-content: center; gap: 16px; }
+.foto-acoes .link-botao { font-size: 0.85rem; }
+.aviso-foto { margin: 0; font-size: 0.85rem; color: var(--sangue); text-align: center; }
+.perfil-rotulo { font-family: var(--fonte-letreiro); font-size: 0.95rem; color: var(--poeira); text-align: center; margin-top: 4px; }
+.perfil-nome {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px dashed var(--linha);
+  font-family: var(--fonte-letreiro);
+  font-size: 1.35rem;
+  text-align: center;
+  padding: 4px;
+}
+.perfil-nome:focus { outline: none; border-bottom-color: var(--sangue); }
+
+.abas { display: flex; gap: 4px; flex-wrap: wrap; margin-left: auto; }
+.aba {
+  background: transparent;
+  border: 2px solid var(--tinta);
+  border-bottom: 0;
+  border-radius: var(--raio) var(--raio) 0 0;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.aba.ativa { background: var(--tinta); color: var(--papel); }
+.so-celular { display: none; }
+
+/* ---------- Layout ---------- */
+.layout {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 56px;
+  gap: 24px;
+  padding-top: 20px;
+}
+.conteudo { min-width: 0; }
+.painel { display: none; flex-direction: column; gap: 20px; }
+.painel.ativo { display: flex; }
+
+.grade-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+
+.bloco {
+  border: 2px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.bloco-escuro { background: var(--bloco); color: var(--bloco-texto); border-color: var(--borda); }
+.bloco-escuro .dica { color: color-mix(in srgb, var(--bloco-texto) 70%, transparent); }
+
+.bloco-cabeca { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.contador { font-size: 0.9rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.contador.estourou { color: var(--sangue); }
+.bloco-escuro .contador.estourou { color: #ff8a7d; }
+
+.dica { margin: 0; font-size: 0.88rem; color: var(--poeira); }
+
+/* ---------- Botões ---------- */
+.botao {
+  background: var(--sangue);
+  color: #fff6ea;
+  border: 0;
+  border-radius: var(--raio);
+  padding: 8px 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.botao:hover { filter: brightness(1.1); }
+.botao-claro { background: transparent; color: var(--tinta); border: 2px solid var(--borda); }
+.botao-largo { width: 100%; }
+.mini {
+  width: 28px; height: 28px;
+  border: 2px solid currentColor;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  line-height: 1;
+  font-weight: 700;
+  display: inline-grid; place-items: center;
+}
+.link-botao { background: none; border: 0; color: var(--poeira); text-decoration: underline; cursor: pointer; font-size: 0.85rem; }
+
+/* Nome que rola dado ao clicar */
+.nome-rolavel {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--fonte-letreiro);
+  font-size: 1.2rem;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline dotted 2px;
+  text-underline-offset: 4px;
+}
+.nome-rolavel:hover { color: var(--sangue); }
+.bloco-escuro .nome-rolavel:hover { color: #ff8a7d; }
+.nome-fixo { font-family: var(--fonte-letreiro); font-size: 1.2rem; }
+
+/* ---------- Atributos ---------- */
+.lista-atributos { display: flex; flex-direction: column; gap: 0; }
+.lista-atributos > div { padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--bloco-texto) 14%, transparent); }
+.lista-atributos > div:first-child { padding-top: 2px; }
+.lista-atributos > div:last-child { border-bottom: 0; padding-bottom: 2px; }
+.atributo-linha { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.atributo-efeito { font-size: 0.85rem; opacity: 0.75; margin-top: 4px; }
+.ajuste { display: inline-flex; align-items: center; gap: 8px; }
+.valor-grande { font-family: var(--fonte-letreiro); font-size: 1.5rem; min-width: 1.4ch; text-align: center; font-variant-numeric: tabular-nums; }
+
+/* ---------- Antecedentes ---------- */
+.lista-antecedentes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.antecedente { display: flex; flex-direction: column; gap: 4px; }
+.antecedente-base { font-size: 0.8rem; color: var(--poeira); }
+.pontos { display: flex; gap: 4px; }
+.ponto {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--tinta);
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.ponto.cheio { background: var(--tinta); }
+
+/* ---------- Condições ---------- */
+.condicoes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.condicao {
+  border: 2px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 10px 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center;
+}
+.condicao-rotulo { font-family: var(--fonte-letreiro); font-size: 0.95rem; }
+.condicao-valor { font-family: var(--fonte-letreiro); font-size: 1.9rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.defesa-linha { display: flex; align-items: baseline; justify-content: center; gap: 6px; }
+.defesa-bonus {
+  font-family: var(--fonte-letreiro);
+  font-size: 1.15rem;
+  color: var(--poeira);
+  font-variant-numeric: tabular-nums;
+}
+.defesa-bonus.positivo { color: #b9c48a; }
+.defesa-bonus.negativo { color: #d0786c; }
+.defesa-controle { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; color: var(--poeira); }
+.defesa-controle .mini { width: 24px; height: 24px; font-size: 0.85rem; color: var(--tinta); }
+.defesa-total {
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--tinta);
+  border-top: 1px solid var(--linha);
+  padding-top: 4px;
+  min-width: 60%;
+}
+.defesa-total:empty { display: none; }
+
+.condicao-campo {
+  width: 100%; text-align: center;
+  background: var(--papel-2); border: 0; border-radius: var(--raio);
+  padding: 6px; font-weight: 700; font-size: 1.1rem;
 }
 
-// Completa campos que faltam (fichas antigas ou importadas)
-function normalizar(dados) {
-  const f = Object.assign(fichaNova(), dados);
-  f.montaria = Object.assign(fichaNova().montaria, f.montaria);
-  f.atributos = Object.assign(fichaNova().atributos, f.atributos);
-  f.antecedentes = Object.assign(fichaNova().antecedentes, f.antecedentes);
-  // fichas antigas tinham uma lista "armas": passa as 4 primeiras pros coldres
-  if (f.armas) {
-    f.armas.slice(0, TOTAL_COLDRES).forEach((a, i) => Object.assign(f.coldres[i], { nome: a.nome, dano: a.dano, espaco: a.espaco }));
-    delete f.armas;
+/* Barras de Dor e Vida
+   Animação inspirada no "Condition: Fine" dos Resident Evil antigos:
+   uma linha de batimento cardíaco que aparece num rastro e some. Bem sutil. */
+.barra-linha { display: flex; align-items: center; gap: 10px; }
+.barra {
+  --pct: 100%;
+  --segmentos: 6;
+  --vel: 2.6s;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  background: #171411;
+  border: 2px solid var(--borda);
+  border-radius: var(--raio);
+  overflow: hidden;
+  cursor: pointer;
+}
+.barra-dor { --cor: #a96a33; --cor-clara: #c08a57; --cor-escura: #6a4221; }
+.barra-vida { --cor: #9a3a32; --cor-clara: #b65a50; --cor-escura: #5a201b; }
+.barra-cheia {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--pct);
+  background: linear-gradient(180deg, var(--cor-clara) 0%, var(--cor) 50%, var(--cor-escura) 100%);
+  overflow: hidden;
+  transition: width 0.4s ease;
+}
+/* a linha do batimento, revelada por uma "janela" que corre da esquerda pra direita */
+.barra-pulso {
+  position: absolute;
+  inset: 3px 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 20' preserveAspectRatio='none'%3E%3Cpath d='M0 12H18L21 9L24 12H28L30 15L33 2L36 18L38 12H44L47 10L50 12H60' fill='none' stroke='white' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") 0 0 / 60px 100% repeat-x;
+  opacity: 0.45;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, transparent 36%, rgba(0,0,0,0.35) 46%, #000 50%, transparent 50.6%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, transparent 36%, rgba(0,0,0,0.35) 46%, #000 50%, transparent 50.6%, transparent 100%);
+  -webkit-mask-size: 300% 100%;
+  mask-size: 300% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  animation: batimento var(--vel) linear infinite;
+}
+@keyframes batimento {
+  from { -webkit-mask-position: 100% 0; mask-position: 100% 0; }
+  to { -webkit-mask-position: 0% 0; mask-position: 0% 0; }
+}
+/* divisões dos círculos por cima de tudo */
+.barra::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(90deg,
+    transparent 0 calc(100% / var(--segmentos) - 2px),
+    var(--papel) calc(100% / var(--segmentos) - 2px) calc(100% / var(--segmentos)));
+  pointer-events: none;
+}
+.barra.perigo .barra-cheia { animation: alerta 1.4s ease-in-out infinite; }
+@keyframes alerta { 50% { filter: brightness(1.25); } }
+.vida-extra { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-weight: 600; }
+.vida-extra small { color: var(--poeira); font-weight: 400; }
+
+@media (prefers-reduced-motion: reduce) {
+  .barra-pulso, .barra.perigo .barra-cheia { animation: none; }
+  .barra-pulso { opacity: 0.25; -webkit-mask-image: none; mask-image: none; }
+}
+
+.tabela-dor { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; font-size: 0.85rem; }
+.tabela-dor li { display: grid; grid-template-columns: 1.4em 7.5em 1fr; gap: 6px; padding: 3px 6px; border-radius: var(--raio); }
+.tabela-dor li:nth-child(odd) { background: var(--papel-2); }
+.tabela-dor li.sorteado { background: var(--sangue); color: #fff6ea; font-weight: 700; }
+
+.alerta-dor {
+  border: 2px dashed var(--sangue);
+  border-radius: var(--raio);
+  padding: 10px;
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-start;
+  font-size: 0.9rem;
+}
+
+/* ---------- Texto livre ---------- */
+.texto-livre {
+  width: 100%;
+  background: var(--papel-2);
+  border: 0;
+  border-radius: var(--raio);
+  padding: 10px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* ---------- Tabelas de itens/armas ---------- */
+.tabela-rolagem { overflow-x: auto; }
+.tabela { width: 100%; border-collapse: collapse; }
+.tabela th {
+  font-family: var(--fonte-letreiro); font-weight: 400; text-align: left;
+  border-bottom: 2px solid var(--tinta); padding: 4px 6px;
+}
+.tabela td { padding: 7px 3px; }
+.tabela tbody tr { border-bottom: 1px solid var(--linha); }
+.tabela tbody tr:last-child { border-bottom: 0; }
+.tabela input {
+  width: 100%;
+  background: var(--papel-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 7px 9px;
+}
+.tabela input::placeholder { color: var(--poeira); opacity: 0.7; }
+.tabela input:hover { border-color: var(--borda); }
+.tabela input:focus { outline: none; border-color: var(--poeira); }
+.col-num { width: 90px; }
+.col-dano { width: 120px; }
+.col-acao { width: 40px; }
+.remover { background: none; border: 0; color: var(--poeira); cursor: pointer; font-size: 1.2rem; padding: 4px 8px; }
+.remover:hover { color: var(--sangue); }
+.campo-curto { width: 4.5em; background: var(--papel-2); border: 0; border-radius: var(--raio); padding: 2px 6px; font-weight: 700; }
+
+/* ---------- Resumo de espaço na bolsa ---------- */
+.espacos {
+  background: var(--bloco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 10px 12px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.espacos-titulo { font-family: var(--fonte-letreiro); font-size: 0.95rem; }
+.espacos-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.espacos-lista li { display: grid; grid-template-columns: 6.5em minmax(0, 1fr); gap: 10px; font-size: 0.86rem; line-height: 1.45; padding: 3px 0; border-bottom: 1px solid var(--linha); }
+.espacos-lista li:last-child { border-bottom: 0; }
+.espacos-lista b { font-variant-numeric: tabular-nums; }
+.espacos-lista span { color: color-mix(in srgb, var(--tinta) 85%, transparent); }
+.espacos-nota { font-size: 0.8rem; color: var(--poeira); font-style: italic; }
+
+/* ---------- Coldres (cards de arma) ---------- */
+.coldres { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.coldre {
+  background: var(--bloco);
+  border: 1px solid var(--borda);
+  border-top: 3px solid var(--poeira);
+  border-radius: var(--raio);
+  padding: 12px 14px 14px;
+  display: flex; flex-direction: column; gap: 12px;
+  min-width: 0;
+}
+.coldre.vazio { border-top-color: var(--borda); }
+.coldre.vazio .coldre-num { opacity: 0.6; }
+.coldre-topo { display: flex; justify-content: space-between; align-items: baseline; min-height: 1.5em; }
+.coldre-num { font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--poeira); font-weight: 700; }
+.coldre-nome {
+  width: 100%;
+  background: transparent; border: 0;
+  border-bottom: 2px dashed var(--linha);
+  font-family: var(--fonte-letreiro); font-size: 1.25rem;
+  padding: 2px 0 4px;
+}
+.coldre-nome:focus { outline: none; border-bottom-color: var(--sangue); }
+.coldre-dados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.coldre-campo { display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem; color: var(--poeira); }
+.coldre-campo input {
+  background: var(--papel-2); border: 0; border-radius: var(--raio);
+  padding: 6px 8px; font-weight: 700; color: var(--tinta); width: 100%;
+}
+.coldre-municao {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;
+  border-top: 1px solid var(--linha); padding-top: 10px;
+}
+.municao { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.municao-rotulo { font-size: 0.8rem; color: var(--poeira); }
+.municao-valor {
+  width: 2.6em; text-align: center;
+  background: transparent; border: 0;
+  font-family: var(--fonte-letreiro); font-size: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.municao-valor::-webkit-inner-spin-button, .municao-valor::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
+.municao-valor:focus { outline: none; background: var(--papel-2); border-radius: var(--raio); }
+
+/* ---------- Montaria ---------- */
+.linha-campo { display: flex; align-items: baseline; gap: 10px; }
+.linha-campo label { font-family: var(--fonte-letreiro); }
+.linha-campo input {
+  flex: 1; min-width: 0; background: transparent; border: 0;
+  border-bottom: 2px dashed var(--linha); padding: 4px; font-weight: 700; font-size: 1.15rem;
+}
+.sub-bloco { border-top: 2px solid var(--borda); padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+
+.fidelidade { display: flex; flex-direction: column; gap: 6px; }
+.nivel {
+  display: grid; grid-template-columns: 36px 1fr; align-items: center; gap: 12px;
+  background: transparent; border: 0; padding: 4px; text-align: left; cursor: pointer;
+  border-radius: var(--raio);
+}
+.nivel-num {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--bloco-texto);
+  display: grid; place-items: center;
+  font-family: var(--fonte-letreiro);
+}
+.nivel.alcancado .nivel-num { background: var(--bloco-texto); color: var(--bloco); }
+.nivel.atual { background: color-mix(in srgb, var(--bloco-texto) 12%, transparent); }
+
+/* ---------- Mesa de dados ---------- */
+.mesa {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  align-self: start;
+  display: flex; flex-direction: column; gap: 16px;
+}
+/* Arena: mesma cara dos blocos da ficha, com uma mesa escura no meio */
+.arena {
+  background: var(--bloco);
+  border: 2px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 12px;
+}
+.arena-feltro {
+  position: relative;
+  height: 230px;
+  border-radius: var(--raio);
+  background:
+    radial-gradient(ellipse at 50% 45%, var(--mesa-luz) 0%, var(--mesa) 55%, var(--mesa-borda) 100%);
+  box-shadow: inset 0 0 0 1px var(--borda), inset 0 10px 30px rgba(0,0,0,0.8);
+  overflow: hidden;
+}
+.arena-feltro canvas { display: block; width: 100%; height: 100%; }
+.arena-feltro .reserva {
+  position: absolute; inset: 0; display: grid; place-items: center;
+}
+.placar {
+  margin-top: 12px;
+  background: var(--papel);
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center;
+  color: var(--tinta);
+}
+.resultado-rotulo { font-family: var(--fonte-letreiro); font-size: 1.1rem; color: var(--poeira); }
+.resultado-total { font-family: var(--fonte-letreiro); font-size: 3rem; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.resultado-total.rolando { opacity: 0.35; }
+.resultado-conta { font-size: 0.9rem; opacity: 0.85; }
+.resultado-extra {
+  margin-top: 6px;
+  border: 2px solid #ff8a7d; border-radius: var(--raio);
+  padding: 8px 10px; font-size: 0.9rem; width: 100%;
+}
+.resultado-extra.bom { border-color: var(--tinta); }
+
+/* Três botões de dado */
+.botoes-dados { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.botao-dado {
+  background: var(--bloco);
+  border: 2px solid var(--borda);
+  border-radius: 10px;
+  padding: 14px 6px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  transition: transform 0.1s, border-color 0.15s;
+}
+.botao-dado:hover { border-color: var(--tinta); }
+.botao-dado:active { transform: translateY(2px); }
+.botao-dado-nome { font-family: var(--fonte-letreiro); font-size: 1.35rem; }
+.botao-dado-sub { font-size: 0.7rem; color: var(--poeira); }
+
+/* Dado 2D (usado só se o 3D não carregar) */
+.dado {
+  width: 64px; height: 64px;
+  background: var(--tinta); color: #15120f;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  font-family: var(--fonte-letreiro); font-size: 1.6rem;
+}
+
+.mesa-historico {
+  border: 2px solid var(--borda); border-radius: var(--raio);
+  padding: 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.historico { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.88rem; }
+.historico li {
+  display: grid; grid-template-columns: 1fr auto; gap: 8px;
+  padding: 4px 0; border-bottom: 1px solid var(--linha);
+}
+.historico .h-total { font-family: var(--fonte-letreiro); font-variant-numeric: tabular-nums; }
+.historico .h-detalhe { color: var(--poeira); font-size: 0.8rem; grid-column: 1 / -1; }
+.historico-vazio { color: var(--poeira); font-style: italic; }
+
+/* Aviso flutuante (celular) */
+.aviso-rolagem {
+  position: fixed;
+  left: 16px; right: 16px;
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  background: var(--bloco); color: var(--bloco-texto);
+  border-radius: var(--raio);
+  padding: 12px 16px;
+  display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  border: 0; text-align: left; cursor: pointer;
+  z-index: 10;
+}
+.aviso-rolagem strong { font-family: var(--fonte-letreiro); font-size: 1.6rem; font-weight: 400; }
+
+/* ---------- Fichas salvas ---------- */
+.gerenciar { display: flex; flex-direction: column; gap: 6px; }
+
+.seletor-ficha {
+  width: 100%;
+  background: var(--papel-2);
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 7px 8px;
+  font-weight: 600;
+}
+.seletor-ficha:focus { outline: none; border-color: var(--poeira); }
+.contagem-fichas { font-size: 0.75rem; color: var(--poeira); text-align: center; }
+.gerenciar-botoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.botao-ficha {
+  background: var(--bloco);
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 7px 6px;
+  font-size: 0.85rem; font-weight: 700;
+  text-align: center;
+  cursor: pointer;
+}
+.botao-ficha:hover { border-color: var(--tinta); }
+.botao-excluir { color: #d0786c; }
+.botao-excluir.confirmar { background: var(--sangue); color: #fff6ea; border-color: var(--sangue); }
+.status-nuvem { font-size: 0.75rem; text-align: center; color: var(--poeira); display: flex; align-items: center; justify-content: center; gap: 6px; }
+.status-nuvem::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--poeira); flex: none; }
+.status-nuvem[data-estado="salvo"]::before { background: #8fa86a; }
+.status-nuvem[data-estado="salvando"]::before, .status-nuvem[data-estado="conectando"]::before { background: #c9a35a; }
+.status-nuvem[data-estado="erro"]::before { background: #d0786c; }
+.botao-link { width: 100%; }
+.aviso-ficha { margin: 0; overflow-wrap: anywhere; font-size: 0.8rem; color: #d0786c; text-align: center; }
+.aviso-ficha.bom { color: var(--poeira); }
+
+/* ---------- Habilidades em cartas ---------- */
+.carta-combate { --cor-carta: #9a4a3e; }
+.carta-profissao { --cor-carta: #a07a42; }
+.cartas { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.cartas-vazio { margin: 0; color: var(--poeira); font-style: italic; font-size: 0.9rem; }
+.carta {
+  position: relative;
+  background: linear-gradient(180deg, #1e1a16, #13100d);
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  padding: 12px 14px 14px;
+  display: flex; flex-direction: column; gap: 8px;
+  box-shadow: inset 0 0 0 4px #13100d, inset 0 0 0 5px color-mix(in srgb, var(--cor-carta) 45%, transparent), 0 6px 14px rgba(0,0,0,0.45);
+  min-width: 0;
+}
+.carta-topo { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.carta-tipo {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--cor-carta);
+}
+.carta-remover {
+  background: none; border: 0; color: var(--poeira); cursor: pointer;
+  font-size: 1.1rem; line-height: 1; padding: 2px 4px; border-radius: var(--raio);
+}
+.carta-remover:hover { color: #e3a396; }
+.carta-nome {
+  font-family: var(--fonte-letreiro); font-size: 1.2rem; line-height: 1.15; margin: 0;
+  padding-bottom: 6px; border-bottom: 1px solid var(--linha);
+}
+
+.carta-niveis { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: auto; }
+.carta-niveis th { text-align: left; font-weight: 600; color: var(--poeira); padding: 2px 6px; border-bottom: 1px solid var(--linha); }
+.carta-niveis td { padding: 3px 6px; }
+.carta-niveis td:first-child { width: 3.5em; font-variant-numeric: tabular-nums; }
+.carta-niveis tr.atual td { background: color-mix(in srgb, var(--cor-carta) 30%, transparent); font-weight: 700; }
+.anotacoes-rotulo { text-align: left; margin-top: 6px; }
+
+/* Nível no perfil */
+.perfil-nivel { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 4px; }
+.perfil-nivel .perfil-rotulo { margin: 0; }
+
+/* ---------- Janela de escolher habilidade ---------- */
+body.sem-rolagem { overflow: hidden; }
+.janela-fundo {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0, 0, 0, 0.72);
+  display: grid; place-items: center;
+  padding: 16px;
+}
+.janela {
+  width: min(900px, 100%);
+  max-height: min(86vh, 900px);
+  background: var(--papel);
+  border: 2px solid var(--borda);
+  border-radius: 10px;
+  display: flex; flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+.janela-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 16px 18px 10px; }
+.janela-guia { margin: 0 18px 10px; font-size: 0.85rem; color: var(--poeira); display: flex; flex-direction: column; gap: 4px; }
+.janela-guia b { color: var(--tinta); font-weight: 600; }
+.janela-busca {
+  margin: 0 18px 10px;
+  background: var(--papel-2); border: 1px solid var(--linha); border-radius: var(--raio);
+  padding: 9px 12px;
+}
+.janela-busca:focus { outline: none; border-color: var(--poeira); }
+.janela-corpo { overflow-y: auto; padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 10px; }
+.janela-secao { margin: 8px 0 0; font-size: 1.05rem; color: var(--poeira); }
+.opcoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.opcao-hab {
+  background: var(--bloco);
+  border: 1px solid var(--borda);
+  border-left: 4px solid var(--cor-carta);
+  border-radius: var(--raio);
+  padding: 10px 12px;
+  text-align: left; cursor: pointer;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.opcao-hab:hover:not([aria-disabled="true"]), .opcao-hab:focus-visible { border-color: var(--tinta); border-left-color: var(--cor-carta); }
+.opcao-hab[aria-disabled="true"] { opacity: 0.45; cursor: default; }
+.opcao-nome { font-family: var(--fonte-letreiro); font-size: 1.05rem; }
+.opcao-nome small { font-family: var(--fonte-texto); font-size: 0.75rem; color: var(--poeira); }
+
+/* regras das habilidades em lista */
+.regras { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.regras li { position: relative; padding-left: 14px; font-size: 0.9rem; line-height: 1.5; color: color-mix(in srgb, var(--tinta) 88%, transparent); }
+.regras li::before { content: ""; position: absolute; left: 2px; top: 0.62em; width: 5px; height: 5px; border-radius: 50%; background: var(--cor-carta, var(--poeira)); }
+.regras b { color: var(--tinta); font-weight: 700; }
+.regras .dano-letal { color: #e08a7c; font-weight: 700; }
+.regras .dano-dor { color: #d6a46a; font-weight: 700; }
+.opcao-hab { gap: 8px; padding: 12px 14px; }
+.opcao-nome { padding-bottom: 6px; border-bottom: 1px solid var(--linha); }
+.opcao-niveis { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 0.82rem; border-top: 1px solid var(--linha); padding-top: 7px; margin-top: auto; }
+.opcao-niveis .nv { font-weight: 700; color: var(--poeira); font-variant-numeric: tabular-nums; }
+.opcao-tem { font-size: 0.75rem; font-weight: 700; }
+
+/* Mesa do mestre: nomes das habilidades */
+.mestre-habs { margin: 0; font-size: 0.8rem; color: var(--poeira); }
+
+/* ---------- Guia Rápido do Jogador ---------- */
+.titulo-linha { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.botao-guia {
+  background: var(--bloco);
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 0.85rem; font-weight: 700;
+  cursor: pointer;
+}
+.botao-guia:hover { border-color: var(--tinta); }
+.guia-indice { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0 18px 10px; border-bottom: 1px solid var(--linha); }
+.guia-indice a { color: var(--poeira); font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+.guia-indice a:hover { color: var(--tinta); }
+.guia { gap: 28px; padding-top: 16px; }
+.guia section { scroll-margin-top: 8px; display: flex; flex-direction: column; gap: 10px; }
+.guia h3 {
+  font-size: 1.35rem; margin: 0; color: var(--tinta);
+  display: flex; align-items: center; gap: 12px;
+}
+.guia h3::after { content: ""; flex: 1; height: 1px; background: var(--linha); }
+.guia-intro { margin: -4px 0 4px; font-size: 0.9rem; color: var(--poeira); font-style: italic; }
+.guia dl { margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.guia-item {
+  background: var(--bloco);
+  border: 1px solid var(--borda);
+  border-left: 3px solid var(--poeira);
+  border-radius: var(--raio);
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.guia dt { font-family: var(--fonte-letreiro); font-size: 1.05rem; line-height: 1.2; }
+.guia dd { margin: 0; font-size: 0.95rem; line-height: 1.6; color: color-mix(in srgb, var(--tinta) 88%, transparent); }
+.guia dd b { color: var(--tinta); }
+@media (max-width: 620px) {
+  .guia dl { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Topo da ficha: voltar + título ---------- */
+.topo-titulo { display: flex; flex-direction: column; gap: 2px; }
+.voltar { color: var(--poeira); font-size: 0.9rem; text-decoration: none; font-weight: 600; }
+.voltar:hover { color: var(--tinta); }
+.perfil-exportar { align-self: center; font-size: 0.8rem; }
+#status-nuvem { margin-top: 4px; }
+
+/* Aviso que aparece embaixo da tela */
+.aviso-global {
+  position: fixed; left: 50%; transform: translateX(-50%);
+  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  max-width: calc(100vw - 32px);
+  margin: 0;
+  background: var(--bloco); color: #e3a396;
+  border: 1px solid var(--borda); border-radius: var(--raio);
+  padding: 10px 16px; font-size: 0.9rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 40;
+}
+.aviso-global.bom { color: var(--tinta); }
+
+/* ---------- Tela inicial ---------- */
+.inicio { max-width: 1100px; margin: 0 auto; padding-block: 48px 32px; display: flex; flex-direction: column; gap: 28px; }
+.inicio-topo { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; border-bottom: 3px solid var(--borda); padding-bottom: 20px; }
+.inicio-topo .marca { margin: 0; font-size: clamp(1.8rem, 5vw, 2.8rem); font-weight: 400; }
+.inicio-topo .dica { font-size: 1rem; }
+.inicio-status { justify-content: center; }
+.inicio-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 18px; }
+.card-inicio {
+  background: var(--bloco);
+  border: 2px solid var(--borda);
+  border-radius: var(--raio);
+  padding: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  cursor: pointer; text-align: center;
+  transition: border-color 0.15s, transform 0.15s;
+  min-width: 0;
+}
+.card-inicio:hover { border-color: var(--tinta); transform: translateY(-2px); }
+.card-inicio-foto {
+  width: 100%; aspect-ratio: 3 / 4;
+  border: 1px solid var(--borda); border-radius: var(--raio);
+  background: var(--papel-2) center / 46% no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath fill='%235a5045' d='M8 38c6 4 14 6 24 6s18-2 24-6c-1 6-9 10-24 10S9 44 8 38zm12-4c0-10 3-22 12-22s12 12 12 22c-4 1-8 2-12 2s-8-1-12-2z'/%3E%3C/svg%3E");
+  overflow: hidden; display: block;
+}
+.card-inicio-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-inicio-nome { font-family: var(--fonte-letreiro); font-size: 1.1rem; overflow-wrap: anywhere; }
+.card-inicio-info { font-size: 0.8rem; color: var(--poeira); }
+.card-nova { border-style: dashed; justify-content: center; }
+.card-nova-mais {
+  width: 100%; aspect-ratio: 3 / 4;
+  display: grid; place-items: center;
+  font-family: var(--fonte-letreiro); font-size: 3.5rem; color: var(--poeira);
+  border: 1px dashed var(--borda); border-radius: var(--raio);
+}
+.card-nova:hover .card-nova-mais { color: var(--tinta); }
+.inicio-rodape { display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; }
+.inicio-rodape .botao-ficha { padding-inline: 14px; }
+
+/* ---------- Mesa do Mestre (mestre.html) ---------- */
+a.botao-ficha { color: var(--tinta); }
+.link-topo { text-decoration: none; margin-bottom: 8px; padding-inline: 14px; }
+.mesa-mestre { max-width: 1480px; margin: 0 auto; padding-top: 20px; display: flex; flex-direction: column; gap: 16px; }
+.mestre-status { justify-content: flex-start; font-size: 0.85rem; margin: 0; }
+.grade-mestre { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+.card-mestre {
+  border: 2px solid var(--borda); border-radius: var(--raio);
+  background: var(--bloco);
+  padding: 14px;
+  display: flex; flex-direction: column; gap: 10px;
+  min-width: 0;
+}
+.card-mestre .botao-ficha { text-decoration: none; margin-top: auto; }
+.card-mestre-topo { display: flex; gap: 12px; align-items: center; }
+.card-mestre-foto {
+  width: 60px; aspect-ratio: 3 / 4; flex: none;
+  border: 1px solid var(--borda); border-radius: var(--raio);
+  background: var(--papel-2); overflow: hidden;
+}
+.card-mestre-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.card-mestre-id { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.card-mestre-id h2 { font-size: 1.2rem; overflow-wrap: anywhere; }
+.mestre-linha { display: grid; grid-template-columns: 4.5em minmax(0, 1fr) 3em; align-items: center; gap: 8px; }
+.mestre-linha .barra { height: 18px; }
+.mestre-rotulo { font-size: 0.8rem; color: var(--poeira); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mestre-numero { font-size: 0.8rem; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+.mestre-numeros { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.mestre-numeros div { background: var(--papel); border-radius: var(--raio); padding: 6px 4px; text-align: center; }
+.mestre-numeros dt { font-size: 0.7rem; color: var(--poeira); }
+.mestre-numeros dd { margin: 0; font-family: var(--fonte-letreiro); font-size: 1.15rem; }
+.mestre-armas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 0.85rem; }
+.mestre-armas li { display: flex; justify-content: space-between; gap: 8px; border-bottom: 1px solid var(--linha); padding: 3px 0; }
+.mestre-armas li span:last-child { font-variant-numeric: tabular-nums; color: var(--poeira); }
+
+/* Tela média: o perfil vira uma faixa em cima da ficha */
+@media (max-width: 1180px) {
+  .layout { grid-template-columns: minmax(0, 1fr) 56px; }
+  .perfil {
+    grid-column: 1 / -1; position: static;
+    display: grid; grid-template-columns: 120px minmax(0, 1fr); grid-template-rows: auto auto auto 1fr;
+    column-gap: 20px; align-items: start;
   }
-  while (f.coldres.length < TOTAL_COLDRES) f.coldres.push(coldreVazio());
-  f.coldres = f.coldres.slice(0, TOTAL_COLDRES).map(c => Object.assign(coldreVazio(), c));
-  if (!Array.isArray(f.itens)) f.itens = [];
-  if (!Array.isArray(f.habilidadesLista)) f.habilidadesLista = [];
-  f.nivel = Math.min(NIVEL_MAXIMO, Math.max(1, Number(f.nivel) || 1));
-  if (!Array.isArray(f.historico)) f.historico = [];
-  return f;
-}
-
-function carregarBanco() {
-  try {
-    const salvo = localStorage.getItem(CHAVE);
-    if (salvo) {
-      const b = JSON.parse(salvo);
-      const ids = Object.keys(b.fichas || {});
-      if (ids.length) {
-        ids.forEach(id => { b.fichas[id] = normalizar(b.fichas[id]); });
-        if (!b.fichas[b.atual]) b.atual = ids[0];
-        return b;
-      }
-    }
-    const antiga = localStorage.getItem(CHAVE_ANTIGA);
-    if (antiga) {
-      const id = novoId();
-      return { atual: id, fichas: { [id]: normalizar(JSON.parse(antiga)) } };
-    }
-  } catch (e) { /* sem acesso ao armazenamento: começa do zero */ }
-  const id = novoId();
-  return { atual: id, fichas: { [id]: fichaNova() } };
-}
-
-let banco = carregarBanco();
-
-// Se a página abriu com um link de ficha (?ficha=ID), essa é a ficha da vez
-const idDoLink = (() => {
-  try { return new URLSearchParams(location.search).get("ficha"); } catch (e) { return null; }
-})();
-if (idDoLink && /^[\w-]{4,40}$/.test(idDoLink)) {
-  if (!banco.fichas[idDoLink]) banco.fichas[idDoLink] = fichaNova(); // será preenchida pela nuvem
-  banco.atual = idDoLink;
-}
-let ficha = banco.fichas[banco.atual];
-
-// Salva no aparelho (sempre) e, se a nuvem estiver ligada, manda pra lá também
-function salvarLocal() {
-  try {
-    localStorage.setItem(CHAVE, JSON.stringify(banco));
-  } catch (e) {
-    avisoFicha("Não deu pra salvar: o navegador está sem espaço. Exporte suas fichas pra não perder nada.");
-  }
-}
-function salvar() {
-  salvarLocal();
-  agendarNuvem();
-}
-
-// Lê/escreve campos com caminho tipo "montaria.nome"
-function lerCaminho(caminho) {
-  return caminho.split(".").reduce((obj, k) => obj[k], ficha);
-}
-function gravarCaminho(caminho, valor) {
-  const partes = caminho.split(".");
-  const ultima = partes.pop();
-  const alvo = partes.reduce((obj, k) => obj[k], ficha);
-  alvo[ultima] = valor;
-}
-
-// ---------- 3. Contas automáticas ----------
-
-
-// Vida que vem de habilidades (ex.: Parrudeza = +2 cada vez que foi escolhida)
-function vidaDasHabilidades(f) {
-  if (typeof HABILIDADES === "undefined") return 0;
-  return (f.habilidadesLista || []).reduce((soma, id) => {
-    const h = HABILIDADES.find(x => x.id === id);
-    return soma + (h && h.vida ? h.vida : 0);
-  }, 0);
-}
-
-function calcular() {
-  const at = ficha.atributos;
-  const fid = ficha.montaria.fidelidade;
-  return {
-    vidaMax: BASE.vida + at.fisico + ficha.vidaBonus + vidaDasHabilidades(ficha),
-    movimentos: BASE.movimentos + at.velocidade,
-    acoes: BASE.acoes + at.coragem,
-    pontosAntecedente: BASE.antecedentes + at.intelecto,
-    defesa: BASE.defesa + (Number(ficha.defesaBonus) || 0),
-    pontosMontaria: 3 + (fid >= 2 ? 1 : 0) + (fid >= 5 ? 1 : 0),
-    montariaVidaMax: BASE.vida + ficha.montaria.resistencia,
-  };
-}
-
-// ---------- 4. Desenho da ficha ----------
-
-const $ = id => document.getElementById(id);
-
-const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos)
-
-
-
-function desenharAtributos() {
-  const lista = $("lista-atributos");
-  lista.innerHTML = ATRIBUTOS.map(a => `
-    <div class="atributo-tile">
-      <button class="nome-rolavel" data-rolar-atributo="${a.id}">${a.nome}</button>
-      <div class="ajuste">
-        <button class="mini" data-ajuste="atributos.${a.id}" data-passo="-1" aria-label="Diminuir ${a.nome}">−</button>
-        <span class="valor-grande">${ficha.atributos[a.id]}</span>
-        <button class="mini" data-ajuste="atributos.${a.id}" data-passo="1" aria-label="Aumentar ${a.nome}">+</button>
-      </div>
-    </div>`).join("");
-}
-
-function desenharAntecedentes() {
-  const lista = $("lista-antecedentes");
-  lista.innerHTML = ANTECEDENTES.map(a => {
-    const valor = ficha.antecedentes[a.id];
-    let pontos = "";
-    for (let i = 1; i <= MAX_ANTECEDENTE; i++) {
-      pontos += `<button class="ponto ${i <= valor ? "cheio" : ""}" data-antecedente="${a.id}" data-valor="${i}" aria-label="${a.nome} ${i}"></button>`;
-    }
-    return `
-      <div class="antecedente">
-        <button class="nome-rolavel" data-rolar-antecedente="${a.id}">${a.nome}</button>
-        <span class="antecedente-base">1d6 + ${valor}</span>
-        <div class="pontos">${pontos}</div>
-      </div>`;
-  }).join("");
-}
-
-
-
-function desenharItens() {
-  $("corpo-itens").innerHTML = ficha.itens.map((item, i) => `
-    <tr>
-      <td><input type="text" value="${esc(item.nome)}" placeholder="Nome do item" data-lista="itens" data-i="${i}" data-k="nome" aria-label="Item"></td>
-      <td><input type="number" min="0" step="0.5" value="${esc(item.espaco)}" placeholder="0" data-lista="itens" data-i="${i}" data-k="espaco" aria-label="Espaço"></td>
-      <td><button class="remover" data-remover="itens" data-i="${i}" aria-label="Remover item">×</button></td>
-    </tr>`).join("");
-}
-
-function desenharColdres() {
-  $("coldres").innerHTML = ficha.coldres.map((c, i) => {
-    const vazio = !c.nome && !c.dano && !c.espaco && !Number(c.municao) && !Number(c.reserva);
-    return `
-    <article class="coldre ${vazio ? "vazio" : ""}">
-      <header class="coldre-topo">
-        <span class="coldre-num">Coldre ${i + 1}</span>
-        <button class="link-botao" data-limpar-coldre="${i}" ${vazio ? "hidden" : ""}>Esvaziar</button>
-      </header>
-      <input class="coldre-nome" type="text" placeholder="Nome da arma" value="${esc(c.nome)}"
-        data-lista="coldres" data-i="${i}" data-k="nome" aria-label="Nome da arma do coldre ${i + 1}">
-      <div class="coldre-dados">
-        <label class="coldre-campo"><span>Dano</span>
-          <input type="text" placeholder="ex.: 2" value="${esc(c.dano)}" data-lista="coldres" data-i="${i}" data-k="dano">
-        </label>
-        <label class="coldre-campo"><span>Espaço</span>
-          <input type="number" min="0" step="0.5" placeholder="0" value="${esc(c.espaco)}" data-lista="coldres" data-i="${i}" data-k="espaco">
-        </label>
-      </div>
-      <div class="coldre-municao">
-        ${contadorMunicao(i, "municao", "Munição atual", c.municao)}
-        ${contadorMunicao(i, "reserva", "Reserva", c.reserva)}
-      </div>
-    </article>`;
-  }).join("");
-}
-
-function contadorMunicao(i, k, rotulo, valor) {
-  return `
-    <div class="municao">
-      <span class="municao-rotulo">${rotulo}</span>
-      <div class="ajuste">
-        <button class="mini" data-municao="${i}" data-k="${k}" data-passo="-1" aria-label="Menos ${rotulo.toLowerCase()}">−</button>
-        <input class="municao-valor" type="number" min="0" value="${Number(valor) || 0}"
-          data-lista="coldres" data-i="${i}" data-k="${k}" aria-label="${rotulo} do coldre ${i + 1}">
-        <button class="mini" data-municao="${i}" data-k="${k}" data-passo="1" aria-label="Mais ${rotulo.toLowerCase()}">+</button>
-      </div>
-    </div>`;
-}
-
-function desenharFidelidade() {
-  const atual = ficha.montaria.fidelidade;
-  $("fidelidade").innerHTML = FIDELIDADE.map((texto, n) => `
-    <button class="nivel ${n <= atual ? "alcancado" : ""} ${n === atual ? "atual" : ""}" role="radio" aria-checked="${n === atual}" data-fidelidade="${n}">
-      <span class="nivel-num">${n}</span><span>${texto}</span>
-    </button>`).join("");
-}
-
-// Atualiza números e contadores (sem redesenhar listas)
-function atualizarResumo() {
-  const c = calcular();
-
-  $("val-movimentos").textContent = c.movimentos;
-  $("val-acoes").textContent = c.acoes;
-  // Defesa: 5 fixo + bônus/penalidade digitado (mostra o total só quando muda)
-  const bonus = Number(ficha.defesaBonus) || 0;
-  $("defesa-bonus-valor").textContent = bonus > 0 ? `+${bonus}` : bonus < 0 ? `−${-bonus}` : "±0";
-  $("defesa-bonus-valor").className = "defesa-bonus" + (bonus > 0 ? " positivo" : bonus < 0 ? " negativo" : "");
-  $("val-defesa").textContent = bonus ? `Total ${c.defesa}` : "";
-
-  const m = ficha.montaria;
-
-  ficha.vidaRiscada = Math.min(ficha.vidaRiscada, c.vidaMax);
-  ficha.dor = Math.min(ficha.dor, BASE.dor);
-  desenharBarra("barra-dor", BASE.dor, ficha.dor);
-  desenharBarra("barra-vida", c.vidaMax, ficha.vidaRiscada);
-  m.dor = Math.min(m.dor, BASE.dor);
-  m.vidaRiscada = Math.min(m.vidaRiscada, c.montariaVidaMax);
-  desenharBarra("barra-montaria-dor", BASE.dor, m.dor);
-  desenharBarra("barra-montaria-vida", c.montariaVidaMax, m.vidaRiscada);
-  $("val-vida-bonus").textContent = ficha.vidaBonus;
-
-  const usado = [...ficha.itens, ...ficha.coldres].reduce((s, x) => s + (parseFloat(x.espaco) || 0), 0);
-  const cap = Number(ficha.capacidade) || 0;
-  $("resumo-espaco").textContent = `${formatar(usado)} / ${cap} espaços`;
-  $("resumo-espaco").classList.toggle("estourou", usado > cap);
-
-  $("val-potencia").textContent = m.potencia;
-  $("val-resistencia").textContent = m.resistencia;
+  .retrato { grid-row: 1 / -1; }
+  .perfil-rotulo, .perfil-nome { text-align: left; }
+  .perfil-nome { font-size: 1.6rem; }
+  .foto-acoes { justify-content: flex-start; grid-column: 2; grid-row: 3; }
+  .perfil-rotulo { grid-column: 2; grid-row: 1; }
+  .perfil-nome { grid-column: 2; grid-row: 2; }
+  .aviso-foto { grid-column: 2; text-align: left; }
 
 }
 
-// Qual valor cada barra controla e qual o máximo dela
-const BARRAS = {
-  "dor":           { caminho: "dor",                  max: () => BASE.dor },
-  "vida":          { caminho: "vidaRiscada",          max: () => calcular().vidaMax },
-  "montaria-dor":  { caminho: "montaria.dor",         max: () => BASE.dor },
-  "montaria-vida": { caminho: "montaria.vidaRiscada", max: () => calcular().montariaVidaMax },
-};
-
-// Barra de Dor/Vida: mostra quantos círculos ainda restam.
-// O pulso fica mais rápido conforme a barra esvazia.
-function desenharBarra(id, max, riscados) {
-  const el = $(id);
-  const resta = Math.max(0, max - riscados);
-  const razao = max ? resta / max : 0;
-  el.style.setProperty("--pct", `${razao * 100}%`);
-  el.style.setProperty("--segmentos", Math.max(1, max));
-  el.style.setProperty("--vel", razao > 0.6 ? "2.6s" : razao > 0.3 ? "1.6s" : "0.9s");
-  // Vida em 1 ponto: a barra pisca em vermelho
-  const critica = id.endsWith("vida") && resta === 1;
-  el.classList.toggle("critica", critica);
-  el.classList.toggle("perigo", resta > 0 && razao <= 0.3 && !critica);
-  el.setAttribute("aria-valuemax", max);
-  el.setAttribute("aria-valuenow", resta);
-  // Dor zerada: a barra vira um botão pra rolar a penalidade
-  if (id === "barra-dor") {
-    const pronta = resta === 0 && !el.classList.contains("penalizada");
-    el.classList.toggle("pronta", pronta);
-    el.setAttribute("role", pronta ? "button" : "meter");
-    if (pronta) $("faixa-penalidade").textContent = "Rolar penalidade";
-  }
+/* Tela baixa: a mesa deixa de acompanhar a rolagem pra nada ficar escondido */
+@media (max-height: 760px) {
+  .mesa { position: static; }
 }
 
-function desenharTudo() {
-  const c = calcular();
-  // campos de texto simples
-  document.querySelectorAll("[data-campo]").forEach(el => { el.value = lerCaminho(el.dataset.campo); });
-  desenharFoto();
-  desenharHabilidades();
-  // Símbolo do nível (imagens niveis/nivel-1 a 8)
-  desenharAtributos();
-  desenharAntecedentes();
-  desenharItens();
-  desenharColdres();
-  desenharFidelidade();
-  desenharHistorico();
-  atualizarResumo();
+/* ---------- Celular ---------- */
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .so-celular { display: inline-block; }
+  .mesa { display: none; position: static; max-height: none; overflow: visible; }
+  body.ver-dados .mesa { display: flex; }
+  body.ver-dados .conteudo, body.ver-dados .perfil { display: none; }
+  .condicoes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .grade-2, .coldres { grid-template-columns: minmax(0, 1fr); }
+  .abas { width: 100%; margin-left: 0; }
+      .aba { padding: 6px 10px; font-size: 0.9rem; }
+}
+@media (max-width: 400px) {
+  .lista-antecedentes { grid-template-columns: minmax(0, 1fr); }
 }
 
-// ---------- 5. Dados ----------
 
-const rolar = lados => Math.floor(Math.random() * lados) + 1;
+/* ---------- Separação visual dos blocos ---------- */
+.bloco > .bloco-cabeca { padding-bottom: 8px; border-bottom: 1px solid var(--linha); }
 
-/* ------------------------------------------------------------
-   5a. ARENA 3D
-   Usa a biblioteca three.js (carregada no index.html).
-   Ideia: sorteamos o número ANTES, e a animação faz o dado
-   rolar pela mesa e parar com aquela face virada pra cima.
-   ------------------------------------------------------------ */
-const Arena = (() => {
-  const caixa = $("arena");
-  let renderer, cena, camera, ok = false;
-  const dados = {};         // dados já montados: { 6: {...}, 12: {...} }
-  let atual = null;         // dado que está na mesa
-  let extras = [];          // dados extras da mesma rolagem (ex.: o 2º dado da vantagem)
-
-  // Temas do dado: "classico" (couro) e "azul" (azul arcano)
-  let tema = "classico";
-  const PALETA = {
-    classico: { base: ["#9a6436", "#5c3618"], escuro: "rgba(40, 20, 8,", pips: "#160f08", numero: "#1a1109", costura: "rgba(225, 200, 150, 0.75)", rugosidade: 0.75 },
-    azul:     { base: ["#4f8fd6", "#17386e"], escuro: "rgba(4, 14, 36,",  pips: "#0f1f1c", numero: "#0f1f1c", costura: "rgba(190, 220, 255, 0.8)", rugosidade: 0.45 },
-  };
-  const P = () => PALETA[tema];
-  let animacao = 0;         // id pra cancelar animação antiga
-  const CIMA = () => new THREE.Vector3(0, 1, 0);
-  const semMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-  function iniciar() {
-    if (!window.THREE) return false;
-    try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    } catch (e) { return false; }
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    caixa.appendChild(renderer.domElement);
-
-    cena = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
-    camera.position.set(0, 6.6, 3.3);
-    camera.lookAt(0, 0, 0.2);
-
-    cena.add(new THREE.AmbientLight(0xffffff, 0.5));
-    const luz = new THREE.DirectionalLight(0xfff0d0, 0.85);
-    luz.position.set(-3, 9, 3);
-    luz.castShadow = true;
-    luz.shadow.mapSize.set(1024, 1024);
-    Object.assign(luz.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 });
-    cena.add(luz);
-    const luzQuente = new THREE.PointLight(0xffb36b, 0.35, 20);
-    luzQuente.position.set(3, 4, -2);
-    cena.add(luzQuente);
-
-    // chão invisível que só recebe a sombra (o feltro é desenhado no CSS)
-    const chao = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.5 }));
-    chao.rotation.x = -Math.PI / 2;
-    chao.receiveShadow = true;
-    cena.add(chao);
-
-    ajustarTamanho();
-    if (window.ResizeObserver) new ResizeObserver(() => { ajustarTamanho(); desenhar(); }).observe(caixa);
-    return true;
-  }
-
-  function ajustarTamanho() {
-    const w = caixa.clientWidth || 300, h = caixa.clientHeight || 230;
-    renderer.setSize(w, h, false);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
-  }
-
-  const desenhar = () => { if (ok) renderer.render(cena, camera); };
-
-  // Desenha uma face num canvas e vira textura.
-  // Guarda a receita de cada face pra repintar quando a imagem do crânio terminar de carregar.
-  const texturas = [];
-  function textura(pintar, tam = 256) {
-    const c = document.createElement("canvas");
-    c.width = c.height = tam;
-    pintar(c.getContext("2d"));
-    const t = new THREE.CanvasTexture(c);
-    t.anisotropy = 4;
-    texturas.push({ c, pintar, t });
-    return t;
-  }
-
-  // Imagem do crânio (caveira.png) usada no 6 do d6 e no 12 do d12
-  const IMG_CAVEIRA = new Image();
-  IMG_CAVEIRA.onload = () => {
-    texturas.forEach(({ c, pintar, t }) => {
-      const g = c.getContext("2d");
-      g.clearRect(0, 0, c.width, c.height);
-      pintar(g);
-      t.needsUpdate = true;
-    });
-    desenhar();
-  };
-  IMG_CAVEIRA.src = "caveira.png?v=20261017e";
-  const aposCaveira = [];
-  IMG_CAVEIRA.addEventListener("load", () => aposCaveira.forEach(f => f()));
-
-  // Pinta um pedaço de madeira clara com veios (cada face fica um pouco diferente)
-  function pintarMadeira(g, tam, semente = Math.random() * 1000) {
-    let s = semente;
-    const aleatorio = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-    const fundo = g.createLinearGradient(0, 0, tam, tam);
-    fundo.addColorStop(0, "#d9b27a");
-    fundo.addColorStop(0.5, "#c99c60");
-    fundo.addColorStop(1, "#b98a50");
-    g.fillStyle = fundo;
-    g.fillRect(0, 0, tam, tam);
-    // veios
-    for (let i = 0; i < Math.round(tam / 6); i++) {
-      const y0 = aleatorio() * tam;
-      const amp = 1 + aleatorio() * (tam / 90);
-      const freq = (0.5 + aleatorio()) * (Math.PI * 2 / tam) * 1.5;
-      const fase = aleatorio() * Math.PI * 2;
-      g.beginPath();
-      for (let x = 0; x <= tam; x += 4) {
-        const y = y0 + Math.sin(x * freq + fase) * amp + Math.sin(x * freq * 3.1 + fase) * amp * 0.3;
-        x === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
-      }
-      g.strokeStyle = `rgba(${90 + aleatorio() * 30 | 0}, ${55 + aleatorio() * 20 | 0}, 25, ${0.08 + aleatorio() * 0.22})`;
-      g.lineWidth = 0.6 + aleatorio() * (tam / 120);
-      g.stroke();
-    }
-    // um nó na madeira, às vezes
-    if (aleatorio() < 0.5) {
-      const x = aleatorio() * tam, y = aleatorio() * tam, r = tam * (0.04 + aleatorio() * 0.05);
-      const no = g.createRadialGradient(x, y, 0, x, y, r * 2.2);
-      no.addColorStop(0, "rgba(80,45,18,0.55)");
-      no.addColorStop(0.4, "rgba(110,65,28,0.25)");
-      no.addColorStop(1, "rgba(110,65,28,0)");
-      g.fillStyle = no;
-      g.beginPath(); g.ellipse(x, y, r * 2.2, r * 1.2, aleatorio() * 0.6, 0, Math.PI * 2); g.fill();
-    }
-    // bordas mais escuras, como madeira gasta
-    const borda = g.createRadialGradient(tam / 2, tam / 2, tam * 0.3, tam / 2, tam / 2, tam * 0.75);
-    borda.addColorStop(0, "rgba(60,35,15,0)");
-    borda.addColorStop(1, "rgba(60,35,15,0.45)");
-    g.fillStyle = borda;
-    g.fillRect(0, 0, tam, tam);
-    // tom mais escuro e menos amarelo
-    g.fillStyle = "rgba(70, 40, 15, 0.22)";
-    g.fillRect(0, 0, tam, tam);
-  }
-
-  // ---- Couro curtido ----
-  // Gerador de números "aleatórios" repetíveis: a mesma semente sempre dá o mesmo desenho
-  function sorteador(semente) {
-    let s = semente;
-    return () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
-  }
-  function pintarCouro(g, tam, semente = 7, costura = true) {
-    const aleatorio = sorteador(semente);
-    // cor de base, mais clara num canto como couro gasto pelo uso
-    const base = g.createRadialGradient(tam * 0.4, tam * 0.35, tam * 0.04, tam / 2, tam / 2, tam * 0.75);
-    base.addColorStop(0, P().base[0]);
-    base.addColorStop(1, P().base[1]);
-    g.fillStyle = base;
-    g.fillRect(0, 0, tam, tam);
-    // poros do couro
-    for (let i = 0; i < tam * 16; i++) {
-      g.fillStyle = `${P().escuro} ${aleatorio() * 0.3})`;
-      const p = 1 + aleatorio() * 2;
-      g.fillRect(aleatorio() * tam, aleatorio() * tam, p, p);
-    }
-    // manchas escuras
-    for (let i = 0; i < 8; i++) {
-      const x = aleatorio() * tam, y = aleatorio() * tam, r = tam * (0.06 + aleatorio() * 0.14);
-      const m = g.createRadialGradient(x, y, 0, x, y, r);
-      m.addColorStop(0, `${P().escuro} 0.35)`);
-      m.addColorStop(1, `${P().escuro} 0)`);
-      g.fillStyle = m;
-      g.beginPath(); g.ellipse(x, y, r, r * (0.6 + aleatorio() * 0.6), aleatorio() * 3, 0, Math.PI * 2); g.fill();
-    }
-    // vincos finos
-    for (let i = 0; i < 10; i++) {
-      let x = aleatorio() * tam, y = aleatorio() * tam;
-      g.beginPath(); g.moveTo(x, y);
-      for (let k = 0; k < 5; k++) { x += (aleatorio() - 0.5) * tam * 0.16; y += (aleatorio() - 0.5) * tam * 0.16; g.lineTo(x, y); }
-      g.strokeStyle = "rgba(30, 15, 5, 0.35)";
-      g.lineWidth = 0.6 + aleatorio();
-      g.stroke();
-    }
-    // costura em volta da face
-    if (costura) {
-      const m = tam * 0.0625;
-      g.setLineDash([tam * 0.035, tam * 0.027]);
-      g.strokeStyle = P().costura;
-      g.lineWidth = tam * 0.01;
-      g.strokeRect(m, m, tam - m * 2, tam - m * 2);
-      g.setLineDash([]);
-    }
-    // bordas mais escuras
-    const borda = g.createRadialGradient(tam / 2, tam / 2, tam * 0.3, tam / 2, tam / 2, tam * 0.75);
-    borda.addColorStop(0, "rgba(25, 12, 4, 0)");
-    borda.addColorStop(1, "rgba(25, 12, 4, 0.5)");
-    g.fillStyle = borda;
-    g.fillRect(0, 0, tam, tam);
-  }
-
-  // Cobre oxidado: patina verde-azulada, manchas de cobre aparente e arranhões
-  function pintarCobre(g, tam, semente = 7) {
-    const aleatorio = sorteador(semente);
-    const k = tam / 256; // escala: a textura foi desenhada pensando em 256 px
-    const f = g.createLinearGradient(0, 0, tam, tam);
-    f.addColorStop(0, "#7fa89a");
-    f.addColorStop(0.5, "#4f7f74");
-    f.addColorStop(1, "#2c5a54");
-    g.fillStyle = f;
-    g.fillRect(0, 0, tam, tam);
-    // grãos de patina
-    for (let i = 0; i < 2500 * k * k; i++) {
-      g.fillStyle = `rgba(${aleatorio() < 0.5 ? "180, 220, 200" : "20, 50, 46"}, ${aleatorio() * 0.35})`;
-      const p = (1 + aleatorio() * 2) * k;
-      g.fillRect(aleatorio() * tam, aleatorio() * tam, p, p);
-    }
-    // manchas de cobre aparente, onde a patina saiu
-    for (let i = 0; i < 9; i++) {
-      const x = aleatorio() * tam, y = aleatorio() * tam, r = (20 + aleatorio() * 40) * k;
-      const m = g.createRadialGradient(x, y, 0, x, y, r);
-      m.addColorStop(0, "rgba(190, 110, 70, 0.45)");
-      m.addColorStop(1, "rgba(190, 110, 70, 0)");
-      g.fillStyle = m;
-      g.fillRect(0, 0, tam, tam);
-    }
-    // arranhões finos
-    g.strokeStyle = "rgba(20, 40, 38, 0.4)";
-    g.lineWidth = Math.max(1, k);
-    for (let i = 0; i < 10; i++) {
-      g.beginPath();
-      g.moveTo(aleatorio() * tam, aleatorio() * tam);
-      g.lineTo(aleatorio() * tam, aleatorio() * tam);
-      g.stroke();
-    }
-    // borda mais escura, como metal gasto pelo tempo
-    const borda = g.createRadialGradient(tam / 2, tam / 2, tam * 0.3, tam / 2, tam / 2, tam * 0.75);
-    borda.addColorStop(0, "rgba(10, 30, 28, 0)");
-    borda.addColorStop(1, "rgba(10, 30, 28, 0.5)");
-    g.fillStyle = borda;
-    g.fillRect(0, 0, tam, tam);
-  }
-
-  // Pedra azul arcana (pedra filosofal): azul profundo, nuvens de cor, veios de luz e brilhos
-  function pintarPedra(g, tam, semente = 7) {
-    const aleatorio = sorteador(semente);
-    const base = g.createRadialGradient(tam * 0.38, tam * 0.32, tam * 0.03, tam / 2, tam / 2, tam * 0.8);
-    base.addColorStop(0, "#4a92f0");
-    base.addColorStop(0.5, "#1e4fb0");
-    base.addColorStop(1, "#06163d");
-    g.fillStyle = base;
-    g.fillRect(0, 0, tam, tam);
-    // nuvens de cor, como poeira de estrelas dentro da pedra
-    for (let i = 0; i < 12; i++) {
-      const x = aleatorio() * tam, y = aleatorio() * tam, r = tam * (0.12 + aleatorio() * 0.2);
-      const cor = aleatorio() < 0.5 ? "140, 90, 255" : "70, 210, 255";
-      const m = g.createRadialGradient(x, y, 0, x, y, r);
-      m.addColorStop(0, `rgba(${cor}, 0.22)`);
-      m.addColorStop(1, `rgba(${cor}, 0)`);
-      g.fillStyle = m;
-      g.fillRect(0, 0, tam, tam);
-    }
-    // veios de luz sinuosos
-    for (let i = 0; i < 6; i++) {
-      let x = aleatorio() * tam, y = aleatorio() * tam;
-      g.beginPath();
-      g.moveTo(x, y);
-      for (let k = 0; k < 3; k++) {
-        const cx = x + (aleatorio() - 0.5) * tam * 0.5, cy = y + (aleatorio() - 0.5) * tam * 0.5;
-        x += (aleatorio() - 0.5) * tam * 0.35;
-        y += (aleatorio() - 0.5) * tam * 0.35;
-        g.quadraticCurveTo(cx, cy, x, y);
-      }
-      g.strokeStyle = "rgba(150, 230, 255, 0.4)";
-      g.lineWidth = 0.8 + aleatorio() * 1.2;
-      g.shadowColor = "rgba(120, 220, 255, 0.9)";
-      g.shadowBlur = 6;
-      g.stroke();
-      g.shadowBlur = 0;
-    }
-    // brilhos
-    for (let i = 0; i < 22; i++) {
-      const x = aleatorio() * tam, y = aleatorio() * tam, r = 0.8 + aleatorio() * 2;
-      const b = g.createRadialGradient(x, y, 0, x, y, r * 3);
-      b.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-      b.addColorStop(0.3, "rgba(180, 230, 255, 0.5)");
-      b.addColorStop(1, "rgba(120, 200, 255, 0)");
-      g.fillStyle = b;
-      g.beginPath(); g.arc(x, y, r * 3, 0, Math.PI * 2); g.fill();
-    }
-    // borda mais escura, como pedra polida
-    const borda = g.createRadialGradient(tam / 2, tam / 2, tam * 0.3, tam / 2, tam / 2, tam * 0.75);
-    borda.addColorStop(0, "rgba(2, 8, 30, 0)");
-    borda.addColorStop(1, "rgba(2, 8, 30, 0.6)");
-    g.fillStyle = borda;
-    g.fillRect(0, 0, tam, tam);
-  }
-
-  // Qual material usar nos dados: "couro" ou "madeira"
-  const MATERIAL_DADO = "couro";
-  function pintarMaterial(g, tam, semente, ehFace) {
-    if (tema === "azul") return pintarCobre(g, tam, semente);
-    if (MATERIAL_DADO === "couro") return pintarCouro(g, tam, semente, ehFace);
-    pintarMadeira(g, tam, semente);
-    if (ehFace) pintarChanfro(g, tam);
-  }
-
-  // Quinas escurecidas, como um dado gasto de cantos arredondados (só nas faces do d6)
-  function pintarChanfro(g, tam) {
-    const b = tam * 0.06;
-    const sombra = (x0, y0, x1, y1) => {
-      const l = g.createLinearGradient(x0, y0, x1, y1);
-      l.addColorStop(0, "rgba(40,22,8,0.55)");
-      l.addColorStop(1, "rgba(40,22,8,0)");
-      return l;
-    };
-    g.fillStyle = sombra(0, 0, b, 0); g.fillRect(0, 0, b, tam);
-    g.fillStyle = sombra(tam, 0, tam - b, 0); g.fillRect(tam - b, 0, b, tam);
-    g.fillStyle = sombra(0, 0, 0, b); g.fillRect(0, 0, tam, b);
-    g.fillStyle = sombra(0, tam, 0, tam - b); g.fillRect(0, tam - b, tam, b);
-  }
-
-  // Medalhão: círculo preto com o crânio vazado, mostrando a madeira por baixo.
-  // A imagem caveira.png é só o formato do crânio (silhueta); ela "fura" o círculo.
-  function pintarMedalhao(g, cx, cy, raio) {
-    const tela = document.createElement("canvas");
-    tela.width = tela.height = g.canvas.width;
-    const m = tela.getContext("2d");
-    m.beginPath(); m.arc(cx, cy, raio, 0, Math.PI * 2);
-    m.fillStyle = "#160f08"; m.fill();
-    m.globalCompositeOperation = "destination-out"; // tudo que for desenhado agora vira buraco
-    const tamanho = raio * 1.5;
-    if (IMG_CAVEIRA.complete && IMG_CAVEIRA.naturalWidth) {
-      const r = IMG_CAVEIRA.naturalWidth / IMG_CAVEIRA.naturalHeight;
-      const w = r > 1 ? tamanho : tamanho * r, h = r > 1 ? tamanho / r : tamanho;
-      m.drawImage(IMG_CAVEIRA, cx - w / 2, cy - h / 2, w, h);
-    } else {
-      caveiraDesenhada(m, cx, cy, tamanho); // reserva, se a imagem não carregar
-    }
-    g.drawImage(tela, 0, 0);
-  }
-
-  // Desenho simples do crânio (reserva, caso a imagem não carregue).
-  // Desenhado em uma grade de 256 × 256 e redimensionado pro tamanho pedido.
-  function caveiraDesenhada(g, cx, cy, tamanho) {
-    const esc = tamanho / 230;
-    g.save();
-    g.translate(cx, cy);
-    g.scale(esc, esc);
-    g.translate(-128, -122);
-    g.lineCap = "round"; g.lineJoin = "round";
-    g.strokeStyle = "#2a180b"; g.fillStyle = "#2a180b";
-
-    // chifres: desenha um lado e espelha pro outro
-    for (const lado of [1, -1]) {
-      g.save();
-      if (lado === -1) { g.translate(256, 0); g.scale(-1, 1); }
-      const galho = (pts, larg) => {
-        g.lineWidth = larg; g.beginPath(); g.moveTo(pts[0], pts[1]);
-        g.bezierCurveTo(pts[2], pts[3], pts[4], pts[5], pts[6], pts[7]); g.stroke();
-      };
-      galho([108, 96, 86, 78, 46, 72, 34, 18], 11);   // haste principal
-      galho([66, 76, 54, 62, 50, 50, 56, 30], 7);     // ponta do meio
-      galho([46, 62, 30, 58, 20, 52, 14, 40], 6);     // ponta de fora
-      galho([88, 84, 82, 72, 84, 60, 92, 48], 6);     // ponta de dentro
-      galho([104, 92, 96, 86, 86, 90, 76, 96], 5);    // ponta baixa
-      g.restore();
-    }
-
-    // crânio
-    g.beginPath();
-    g.moveTo(100, 98);
-    g.quadraticCurveTo(128, 82, 156, 98);
-    g.quadraticCurveTo(176, 112, 170, 134);
-    g.quadraticCurveTo(162, 150, 152, 160);
-    g.quadraticCurveTo(146, 196, 140, 222);
-    g.quadraticCurveTo(128, 236, 116, 222);
-    g.quadraticCurveTo(110, 196, 104, 160);
-    g.quadraticCurveTo(94, 150, 86, 134);
-    g.quadraticCurveTo(80, 112, 100, 98);
-    g.fill();
-
-    // detalhes escuros (órbitas, furos, nariz e a linha do meio)
-    g.fillStyle = "#c99c60"; g.strokeStyle = "#c99c60";
-    const elipse = (x, y, rx, ry, rot) => { g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fill(); };
-    elipse(103, 128, 8, 12, -0.5);
-    elipse(153, 128, 8, 12, 0.5);
-    elipse(116, 110, 3.5, 6, 0.3);
-    elipse(140, 110, 3.5, 6, -0.3);
-    elipse(122, 214, 3.5, 8, 0.1);
-    elipse(134, 214, 3.5, 8, -0.1);
-    g.lineWidth = 2.5;
-    g.beginPath(); g.moveTo(128, 92); g.lineTo(128, 204); g.stroke();
-    g.restore();
-  }
-
-  // ---- d6: cubo (couro ou madeira) com bolinhas pretas ----
-  const PIPS6 = { 1: [[.5,.5]], 2: [[.27,.27],[.73,.73]], 3: [[.27,.27],[.5,.5],[.73,.73]],
-    4: [[.27,.27],[.73,.27],[.27,.73],[.73,.73]], 5: [[.27,.27],[.73,.27],[.5,.5],[.27,.73],[.73,.73]],
-    6: [[.27,.25],[.73,.25],[.27,.5],[.73,.5],[.27,.75],[.73,.75]] };
-
-  function montarD6() {
-    // ordem das faces no three.js: +x, -x, +y, -y, +z, -z (opostos somam 7)
-    const valores = [3, 4, 5, 2, 1, 6];
-    const normais = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
-    const materiais = valores.map((v, i) => new THREE.MeshStandardMaterial({
-      roughness: P().rugosidade,
-      metalness: 0,
-      map: textura(g => {
-        pintarMaterial(g, 256, 17 + i * 31, true);
-        if (v === 6) return pintarMedalhao(g, 128, 128, 100);
-        PIPS6[v].forEach(([x, y]) => {
-          const px = x * 256, py = y * 256, r = v === 1 ? 26 : 21;
-          g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2);
-          g.fillStyle = P().pips; g.fill();
-          g.beginPath(); g.arc(px - r * 0.25, py - r * 0.25, r * 0.3, 0, Math.PI * 2);
-          g.fillStyle = "rgba(255, 240, 220, 0.08)"; g.fill(); // brilho leve na marca
-        });
-      }),
-    }));
-    const malha = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), materiais);
-    malha.castShadow = true;
-    const faces = {};
-    valores.forEach((v, i) => { faces[v] = new THREE.Vector3(...normais[i]); });
-    return { malha, faces, altura: 0.5 };
-  }
-
-  // Uma face do d12: o material inteiro dentro de um pentágono (com costura, se for couro)
-  function pintarFaceD12(g, tam) {
-    pintarMaterial(g, tam, 91, false);
-    if (tema !== "classico") return; // pedra não tem costura
-    const raio = tam * 0.4;
-    g.beginPath();
-    for (let k = 0; k < 5; k++) {
-      const ang = -Math.PI / 2 + k * (Math.PI * 2 / 5); // primeira ponta pra cima
-      const x = tam / 2 + Math.cos(ang) * raio, y = tam / 2 + Math.sin(ang) * raio;
-      k === 0 ? g.moveTo(x, y) : g.lineTo(x, y);
-    }
-    g.closePath();
-    g.setLineDash([tam * 0.035, tam * 0.027]);
-    g.strokeStyle = P().costura;
-    g.lineWidth = tam * 0.01;
-    g.stroke();
-    g.setLineDash([]);
-  }
-
-  // ---- d12: dodecaedro (couro ou madeira) com números pretos ----
-  function montarD12() {
-    const raio = 0.78;
-    const geo = new THREE.DodecahedronGeometry(raio, 0);
-    const malha = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      map: textura(g => pintarFaceD12(g, 512), 512),
-      roughness: P().rugosidade, metalness: 0, flatShading: true,
-    }));
-    malha.castShadow = true;
-
-    // descobre as 12 faces juntando triângulos com a mesma normal
-    const pos = geo.attributes.position;
-    const normais = [];
-    for (let i = 0; i < pos.count; i += 3) {
-      const a = new THREE.Vector3().fromBufferAttribute(pos, i);
-      const b = new THREE.Vector3().fromBufferAttribute(pos, i + 1);
-      const c = new THREE.Vector3().fromBufferAttribute(pos, i + 2);
-      const n = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
-      if (n.dot(a) < 0) n.negate(); // garante que a normal aponta pra fora
-      if (!normais.some(m => m.n.distanceTo(n) < 0.01)) normais.push({ n, d: n.dot(a) });
-    }
-    // UV por face: cada pentágono recebe a textura inteira, sem esticar.
-    // A "ponta de cima" da textura fica apontando pra um dos cantos da face.
-    const uv = new Float32Array(pos.count * 2);
-    const grupos = normais.map(() => []);
-    for (let i = 0; i < pos.count; i += 3) {
-      const a = new THREE.Vector3().fromBufferAttribute(pos, i);
-      const b = new THREE.Vector3().fromBufferAttribute(pos, i + 1);
-      const c = new THREE.Vector3().fromBufferAttribute(pos, i + 2);
-      const n = b.clone().sub(a).cross(c.clone().sub(a)).normalize();
-      if (n.dot(a) < 0) n.negate();
-      grupos[normais.findIndex(m => m.n.distanceTo(n) < 0.01)].push(i, i + 1, i + 2);
-    }
-    grupos.forEach((indices, k) => {
-      const pontos = indices.map(i => new THREE.Vector3().fromBufferAttribute(pos, i));
-      const cantos = [];
-      pontos.forEach(p => { if (!cantos.some(q => q.distanceTo(p) < 1e-4)) cantos.push(p); });
-      const centro = cantos.reduce((soma, p) => soma.add(p), new THREE.Vector3()).divideScalar(cantos.length);
-      const raioFace = cantos[0].distanceTo(centro);
-      const eixoV = cantos[0].clone().sub(centro).normalize();
-      const eixoU = new THREE.Vector3().crossVectors(eixoV, normais[k].n).normalize();
-      indices.forEach((i, j) => {
-        const d = pontos[j].clone().sub(centro);
-        uv[i * 2] = 0.5 + (d.dot(eixoU) / (2 * raioFace)) * 0.98;
-        uv[i * 2 + 1] = 0.5 + (d.dot(eixoV) / (2 * raioFace)) * 0.98;
-      });
-    });
-    geo.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-
-    // números em faces opostas somam 13
-    const faces = {};
-    let prox = 1;
-    normais.forEach(f => {
-      if (Object.values(faces).some(x => x.distanceTo(f.n) < 0.01)) return;
-      const oposta = normais.find(o => o.n.distanceTo(f.n.clone().negate()) < 0.01);
-      faces[prox] = f.n; faces[13 - prox] = oposta.n; prox++;
-    });
-
-    // um "adesivo" com o número em cada face
-    Object.entries(faces).forEach(([num, n]) => {
-      const tex = textura(g => {
-        g.clearRect(0, 0, 256, 256);
-        if (num === "12") return pintarMedalhao(g, 128, 128, 100);
-        g.fillStyle = P().numero;
-        g.font = "bold 150px Rye, Georgia, serif";
-        g.textAlign = "center"; g.textBaseline = "middle";
-        g.fillText(num, 128, 140);
-        if (num === "6" || num === "9") { g.fillRect(88, 210, 80, 10); }
-      });
-      const adesivo = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.62, 0.62),
-        new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.8, metalness: 0 })
-      );
-      const d = normais.find(x => x.n === n).d;
-      adesivo.position.copy(n.clone().multiplyScalar(d + 0.003));
-      adesivo.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n);
-      malha.add(adesivo);
-    });
-    return { malha, faces, altura: normais[0].d };
-  }
-
-  function obterDado(lados) {
-    if (!dados[lados]) dados[lados] = lados === 12 ? montarD12() : montarD6();
-    return dados[lados];
-  }
-
-  function pegarDado(lados) {
-    const d = obterDado(lados);
-    if (atual !== d) {
-      limparExtras();
-      if (atual) cena.remove(atual.malha);
-      cena.add(d.malha);
-      atual = d;
-    }
-    return d;
-  }
-
-  function limparExtras() {
-    extras.forEach(m => cena.remove(m));
-    extras = [];
-  }
-
-  // Põe o dado parado no centro da mesa, com a face 6 pra cima
-  function postoInicial() {
-    const d = pegarDado(6);
-    d.malha.position.set(0, d.altura, 0);
-    d.malha.quaternion.setFromUnitVectors(d.faces[6].clone(), CIMA())
-      .premultiply(new THREE.Quaternion().setFromAxisAngle(CIMA(), 0.6));
-  }
-
-  // Anima uma cópia do dado até parar mostrando "valor". Devolve uma Promise.
-  function animarDado(d, malha, valor, deslocamento, vivo) {
-    // rotação final: face "valor" virada pra cima, girada num ângulo qualquer
-    const qBase = new THREE.Quaternion().setFromUnitVectors(d.faces[valor].clone(), CIMA());
-    const qGiro = new THREE.Quaternion().setFromAxisAngle(CIMA(), Math.random() * Math.PI * 2);
-    const qFinal = qGiro.multiply(qBase);
-
-    const eixo = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
-    const voltas = Math.PI * (6 + Math.random() * 3);
-    const lado = Math.random() < 0.5 ? -1 : 1;
-    const inicio = new THREE.Vector3(lado * 3.6, 0, deslocamento + (Math.random() - 0.5) * 1.2);
-    const fim = new THREE.Vector3((Math.random() - 0.5) * 1.2, 0, deslocamento + (Math.random() - 0.5) * 0.8);
-    const duracao = semMovimento ? 0 : 1500;
-    const t0 = performance.now();
-
-    return new Promise(resolve => {
-      function quadro(agora) {
-        if (!vivo()) return resolve(); // outra rolagem começou no meio
-        const t = duracao ? Math.min(1, (agora - t0) / duracao) : 1;
-        const desliza = 1 - Math.pow(1 - t, 3);
-        const gira = 1 - Math.pow(1 - t, 4);
-        malha.position.lerpVectors(inicio, fim, desliza);
-        // quiques que vão diminuindo
-        malha.position.y = d.altura + Math.abs(Math.sin(t * Math.PI * 3.2)) * 1.6 * Math.pow(1 - t, 2);
-        const qVoltas = new THREE.Quaternion().setFromAxisAngle(eixo, voltas * (1 - gira));
-        malha.quaternion.copy(qVoltas.multiply(qFinal));
-        desenhar();
-        if (t < 1) requestAnimationFrame(quadro); else resolve();
-      }
-      requestAnimationFrame(quadro);
-    });
-  }
-
-  // Rola um ou mais dados juntos. "valores" é a face que cada dado deve mostrar.
-  function rolarVarios(lados, valores) {
-    if (!ok) return Promise.resolve();
-    const d = pegarDado(lados);
-    limparExtras();
-    const id = ++animacao;
-    const n = valores.length;
-    return Promise.all(valores.map((valor, i) => {
-      const malha = i === 0 ? d.malha : d.malha.clone();
-      if (i > 0) { cena.add(malha); extras.push(malha); }
-      const deslocamento = (i - (n - 1) / 2) * 1.2; // dados lado a lado
-      return animarDado(d, malha, valor, deslocamento, () => id === animacao);
-    }));
-  }
-
-  // Troca o acabamento dos dados (Clássico / Azul Arcano) e repõe o dado na mesa
-  function trocarTema(novo) {
-    tema = novo;
-    texturas.length = 0;
-    Object.keys(dados).forEach(k => delete dados[k]);
-    limparExtras();
-    if (atual) { cena.remove(atual.malha); atual = null; }
-    if (ok) { postoInicial(); desenhar(); }
-  }
-
-  // Ícone 2D de um dado, pros botões da mesa (mesmo acabamento da mesa 3D)
-  function icone(lados, valor) {
-    const tam = 160;
-    const c = document.createElement("canvas");
-    c.width = c.height = tam;
-    const g = c.getContext("2d");
-    pintarMaterial(g, tam, 41, lados === 6);
-    if (lados === 6 && PIPS6[valor]) {
-      PIPS6[valor].forEach(([x, y]) => {
-        g.beginPath(); g.arc(x * tam, y * tam, valor === 1 ? 14 : 11, 0, Math.PI * 2);
-        g.fillStyle = P().pips; g.fill();
-      });
-    } else {
-      g.fillStyle = P().numero;
-      g.font = `bold ${tam * 0.5}px Rye, Georgia, serif`;
-      g.textAlign = "center"; g.textBaseline = "middle";
-      g.fillText(String(valor), tam / 2, tam / 2 + 6);
-    }
-    return c;
-  }
-
-  // Foto 3D do dado com a face "valor" pra cima (usada nos botões da mesa)
-  function miniatura(lados, valor, tam = 128) {
-    if (!ok) return null;
-    let r;
-    try { r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); }
-    catch (e) { return null; }
-    r.setPixelRatio(1);
-    r.setSize(tam, tam, false);
-    const cenaMini = new THREE.Scene();
-    cenaMini.add(new THREE.AmbientLight(0xffffff, 0.75));
-    const luz = new THREE.DirectionalLight(0xfff0d0, 0.9);
-    luz.position.set(-2, 4, 3);
-    cenaMini.add(luz);
-    const camMini = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
-    camMini.position.set(0, 2.6, 2.4);
-    camMini.lookAt(0, 0, 0);
-    const d = obterDado(lados);
-    const malha = d.malha.clone();
-    malha.position.set(0, 0, 0);
-    malha.quaternion.setFromUnitVectors(d.faces[valor].clone(), CIMA());
-    malha.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0.3));
-    malha.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(CIMA(), 0.55));
-    cenaMini.add(malha);
-    r.render(cenaMini, camMini);
-    const url = r.domElement.toDataURL("image/png");
-    r.dispose();
-    r.forceContextLoss();
-    return url;
-  }
-
-  ok = iniciar();
-  if (ok) { postoInicial(); desenhar(); }
-  else {
-    caixa.innerHTML = '<div class="reserva"><div class="dado" id="dado-reserva">6</div></div>';
-  }
-  return {
-    rolarVarios,
-    trocarTema,
-    icone,
-    miniatura,
-    aoCarregarCaveira(f) { if (IMG_CAVEIRA.complete && IMG_CAVEIRA.naturalWidth) f(); else aposCaveira.push(f); },
-    get ok() { return ok; },
-    reserva(valor) { const r = $("dado-reserva"); if (r) r.textContent = valor; },
-  };
-})();
-
-// ---------- Tema dos dados (Clássico ou Azul Arcano) ----------
-const TEMA_KEY = "ficha-tema-dado";
-function desenharIconesDados() {
-  document.querySelectorAll("[data-dado]").forEach(img => {
-    const lados = Number(img.dataset.dado);
-    // foto 3D do dado; se o 3D não carregar, usa o ícone 2D
-    img.src = Arena.miniatura(lados, lados) || Arena.icone(lados, lados).toDataURL("image/png");
-  });
+/* ---------- Tema dos dados ---------- */
+.tema-dado { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 0.85rem; }
+.tema-rotulo { color: var(--poeira); transition: color 0.2s; }
+body[data-tema-dado="classico"] .tema-rotulo[data-tema="classico"],
+body[data-tema-dado="azul"] .tema-rotulo[data-tema="azul"] { color: var(--tinta); font-weight: 700; }
+.tema-chave {
+  position: relative; width: 52px; height: 28px; padding: 0;
+  border-radius: 999px; border: 2px solid var(--borda); background: var(--papel-2); cursor: pointer;
 }
-Arena.aoCarregarCaveira(desenharIconesDados);
-function aplicarTema(novo) {
-  document.body.dataset.temaDado = novo;
-  $("chave-tema").setAttribute("aria-checked", String(novo === "azul"));
-  Arena.trocarTema(novo);
-  desenharIconesDados();
+.tema-bolinha {
+  position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; border-radius: 50%;
+  background: #c99c60; transition: transform 0.2s, background 0.2s;
 }
-$("chave-tema").addEventListener("click", () => {
-  const novo = document.body.dataset.temaDado === "azul" ? "classico" : "azul";
-  try { localStorage.setItem(TEMA_KEY, novo); } catch (e) { /* sem armazenamento: vale só nesta visita */ }
-  aplicarTema(novo);
-});
-let temaInicial = "classico";
-try { if (localStorage.getItem(TEMA_KEY) === "azul") temaInicial = "azul"; } catch (e) { /* ignora */ }
-aplicarTema(temaInicial);
+body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); background: #7fb9a3; }
+.botao-dado-img { width: 96px; height: 96px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55)); }
 
-let ultimaRolagem = null; // pra "Rolar de novo"
+/* ---------- Símbolo do nível do personagem ---------- */
+#val-nivel { display: inline-flex; align-items: center; justify-content: center; min-width: 88px; }
+.nivel-img { width: 84px; height: 84px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55)); }
 
-/*
-  Uma rolagem é descrita assim:
-  { rotulo: "Suor", lados: 6, bonus: 2, partes: "Suor 2", violencia: false, sorte: false }
-*/
-async function fazerRolagem(r) {
-  ultimaRolagem = r;
-  // Vantagem: rola 2 dados e fica com o maior. Desvantagem: fica com o menor.
-  const dadosRolados = [rolar(r.lados)];
-  const valor = dadosRolados[0];
-  const total = valor + r.bonus;
-
-  // Críticos não são resolvidos pela ficha: o mestre narra e decide o efeito.
-  const extra = null;
-
-  // Teste de Sorte: par = SIM, ímpar = NÃO
-  const textoTotal = r.sorte ? (valor % 2 === 0 ? "SIM" : "NÃO") : String(total);
-  let conta;
-  if (r.sorte) conta = `Saiu ${valor} (${valor % 2 === 0 ? "par" : "ímpar"})`;
-  else {
-    conta = `1d${r.lados}: ${valor}`;
-    if (r.bonus) conta += ` ${r.bonus > 0 ? "+" : "−"} ${Math.abs(r.bonus)}`;
-    if (r.partes) conta += ` (${r.partes})`;
-  }
-
-  // Guarda no histórico na hora (últimas 30)
-  ficha.historico.unshift({ rotulo: r.rotulo, total: textoTotal, conta, extra: extra ? extra.texto : "", hora: horaAgora() });
-  ficha.historico = ficha.historico.slice(0, 30);
-  salvar();
-  avisarNoCelular(r.rotulo, textoTotal);
-
-  // Enquanto o dado rola, o placar fica em suspense
-  $("resultado-rotulo").textContent = r.rotulo;
-  $("resultado-total").textContent = "…";
-  $("resultado-total").classList.add("rolando");
-  $("resultado-conta").textContent = "Rolando…";
-  $("resultado-extra").hidden = true;
-  $("rolar-de-novo").hidden = true;
-
-  const minhaVez = ++vezDoPlacar;
-  await Arena.rolarVarios(r.lados, dadosRolados);
-  if (minhaVez !== vezDoPlacar) return; // outra rolagem começou no meio
-  Arena.reserva(valor);
-
-  $("resultado-total").textContent = textoTotal;
-  $("resultado-total").classList.remove("rolando");
-  $("resultado-conta").textContent = conta;
-  $("resultado-extra").hidden = !extra;
-  if (extra) {
-    $("resultado-extra").textContent = extra.texto;
-    $("resultado-extra").classList.toggle("bom", extra.bom);
-  }
-  $("rolar-de-novo").hidden = false;
-  desenharHistorico();
-}
-let vezDoPlacar = 0;
-
-function desenharHistorico() {
-  const h = ficha.historico;
-  // mostra só as 5 últimas pra mesa caber na tela sem barra de rolagem própria
-  $("historico").innerHTML = h.length
-    ? h.slice(0, 5).map(x => `
-        <li>
-          <span>${esc(x.rotulo)} <small>· ${x.hora}</small></span>
-          <span class="h-total">${esc(x.total)}</span>
-          <span class="h-detalhe">${esc(x.conta)}${x.extra ? " · " + esc(x.extra) : ""}</span>
-        </li>`).join("")
-    : '<li class="historico-vazio">Nenhuma rolagem ainda.</li>';
+/* ---------- Coluna do perfil: vida, dor e combate ---------- */
+.perfil .bloco { padding: 14px; gap: 10px; }
+.perfil .condicoes { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.perfil .condicao { padding: 8px 6px; }
+.perfil .condicao-valor { font-size: 1.6rem; }
+.perfil .barra-linha { gap: 6px; }
+.perfil .vida-extra { font-size: 0.9rem; }
+.perfil .tabela-dor { font-size: 0.85rem; }
+@media (max-width: 1180px) {
+  .perfil > .combate-grade, .perfil > .barra-bloco { grid-column: 1 / -1; }
 }
 
-// No celular a mesa fica em outra aba, então mostra um aviso rápido
-let timerAviso;
-function avisarNoCelular(rotulo, total) {
-  if (!window.matchMedia("(max-width: 860px)").matches) return;
-  if (document.body.classList.contains("ver-dados")) return;
-  let aviso = document.querySelector(".aviso-rolagem");
-  if (!aviso) {
-    aviso = document.createElement("button");
-    aviso.className = "aviso-rolagem";
-    aviso.addEventListener("click", () => { trocarAba("dados"); aviso.hidden = true; });
-    document.body.appendChild(aviso);
-  }
-  aviso.innerHTML = `<span>${esc(rotulo)}<br><small>Toque pra ver os detalhes</small></span><strong>${esc(total)}</strong>`;
-  aviso.hidden = false;
-  clearTimeout(timerAviso);
-  timerAviso = setTimeout(() => { aviso.hidden = true; }, 4000);
+.perfil .defesa-controle { gap: 4px; }
+.perfil .defesa-controle .mini { width: 22px; height: 22px; }
+
+/* ---------- Ficha em coluna: 2x2 de combate, depois as barras ---------- */
+.combate-grade { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.combate-grade .condicao { padding: 10px 6px; justify-content: center; min-height: 92px; }
+.barra-bloco { display: flex; flex-direction: column; gap: 8px; }
+.barra-titulo {
+  margin: 0; font-family: var(--fonte-letreiro); font-size: 1.05rem; font-weight: 400;
+  text-align: center; border-bottom: 1px solid var(--linha); padding-bottom: 4px;
+}
+.barra-vida { --cor: #3f8f4e; --cor-clara: #6fbf7b; --cor-escura: #1f5a2c; }
+
+/* Vida em 1 ponto: fica verde e vermelho aparece e some em fade */
+.barra.critica .barra-cheia::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, #ff6a5c 0%, #e0231a 50%, #7a0c07 100%);
+  animation: fade-vida 1s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes fade-vida { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .barra.critica .barra-cheia::after { animation: none; opacity: 1; } }
+
+/* Dor: a barra vira botão quando zera */
+.faixa-penalidade {
+  position: absolute; inset: 0; z-index: 2;
+  display: none; align-items: center; justify-content: center; text-align: center;
+  padding: 0 8px; font-family: var(--fonte-letreiro); font-size: 0.95rem; color: #fff;
+  pointer-events: none;
+}
+.barra.pronta { cursor: pointer; border-color: var(--sangue); animation: alerta 1.4s ease-in-out infinite; }
+.barra.pronta .faixa-penalidade {
+  display: flex; color: var(--tinta);
+  background: rgba(200, 71, 59, 0.18);
+  outline: 1px dashed var(--sangue); outline-offset: -4px;
+}
+.barra.penalizada .faixa-penalidade { display: flex; background: #b3261e; color: #fff; animation: revelar-penalidade 0.4s ease-out both; }
+@keyframes revelar-penalidade { from { opacity: 0; } to { opacity: 1; } }
+.barra.saindo .faixa-penalidade { animation: deslizar-penalidade 0.5s ease-in forwards; }
+@keyframes deslizar-penalidade { to { transform: translateX(100%); } }
+@media (prefers-reduced-motion: reduce) { .barra.saindo .faixa-penalidade, .barra.penalizada .faixa-penalidade { animation: none; } .barra.saindo .faixa-penalidade { display: none; } .barra.pronta { animation: none; } }
+
+/* Nome do personagem no cabeçalho */
+.marca-nome {
+  font-family: var(--fonte-letreiro); font-size: 2rem; line-height: 1.2; color: var(--tinta);
+  background: transparent; border: 0; border-bottom: 2px dashed var(--linha);
+  width: min(100%, 460px); padding: 0 4px;
+}
+.marca-nome::placeholder { color: var(--poeira); }
+.marca-nome:focus { outline: none; border-bottom-color: var(--sangue); }
+
+/* Retrato um pouco menor, centralizado */
+.retrato { max-width: 210px; margin: 5px auto; }
+
+/* Nível: faixa larga, símbolo maior */
+.perfil-nivel {
+  width: 100%; box-sizing: border-box;
+  border: 2px solid var(--borda); border-radius: var(--raio);
+  padding: 8px 12px; margin-top: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.perfil-nivel .perfil-rotulo { font-size: 1.15rem; margin: 0; }
+#val-nivel { min-width: 104px; }
+.nivel-img { width: 100px; height: 100px; }
+
+/* Combate: 2x2 dentro de uma caixa só */
+.combate-caixa {
+  border: 2px solid var(--borda); border-radius: var(--raio);
+  padding: 10px; box-sizing: border-box;
+}
+.combate-caixa .condicao { border-color: var(--linha); }
+
+/* ---------- Banner vermelho (estilo D&D Beyond) ---------- */
+.banner {
+  max-width: 1480px; margin: 16px auto 0;
+  padding: 16px 22px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px;
+  background: radial-gradient(ellipse at 15% 0%, #8c2730 0%, #6b1a22 45%, #4a1117 100%);
+  border: 2px solid #2a0b0e; border-radius: 6px;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.45), 0 4px 14px rgba(0, 0, 0, 0.5);
+  color: #f3ead4;
+}
+.banner-esq { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.banner .voltar { color: #e6c7b5; font-size: 0.85rem; }
+.banner .marca-nome {
+  font-family: var(--fonte-letreiro); font-size: 2.2rem; line-height: 1.2; color: #f8efdc;
+  background: transparent; border: 0; border-bottom: 2px dashed rgba(248, 239, 220, 0.45);
+  width: min(100%, 440px); padding: 0 4px;
+}
+.banner .marca-nome::placeholder { color: rgba(248, 239, 220, 0.5); }
+.banner .marca-nome:focus { outline: none; border-bottom-color: #f8efdc; }
+.banner-dir { display: flex; align-items: center; gap: 18px; }
+.banner .botao-guia { border-color: rgba(248, 239, 220, 0.6); color: #f8efdc; background: rgba(0, 0, 0, 0.25); }
+
+.nivel-circulo {
+  position: relative; width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: radial-gradient(circle at 50% 35%, #2e2622, #0d0b09 72%);
+  border: 4px solid #d8c59a; box-shadow: 0 0 0 3px #0d0b09, 0 4px 10px rgba(0, 0, 0, 0.55);
+  cursor: text;
+}
+.nivel-rotulo { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: #d8c59a; }
+.nivel-input {
+  width: 70px; background: transparent; border: 0; padding: 0; text-align: center;
+  font-family: var(--fonte-letreiro); font-size: 2rem; line-height: 1.1; color: #f8efdc;
+  -moz-appearance: textfield; appearance: textfield;
+}
+.nivel-input::-webkit-inner-spin-button, .nivel-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.nivel-input:focus { outline: none; }
+
+/* ---------- Papel creme sobre fundo preto (estilo D&D Beyond) ---------- */
+.folha {
+  --tinta: #2b1f14;
+  --bloco-texto: #2b1f14;
+  --poeira: #7a6a52;
+  --bloco: #efe8d2;
+  --borda: #a48f66;
+  --linha: #d6cab0;
+  --papel-2: #e3d9bd;
+}
+.folha .bloco { background: var(--bloco); color: var(--tinta); border-color: var(--borda); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+.folha.combate-caixa, .folha.barra-bloco { background: var(--bloco); color: var(--tinta); }
+.folha.barra-bloco { padding: 12px; border: 2px solid var(--borda); border-radius: var(--raio); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+.folha.combate-caixa { border-color: var(--borda); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); }
+.folha .condicao { border-color: var(--borda); background: transparent; }
+.folha .barra { background: #1a1612; }
+
+/* ---------- Menu lateral (pessoa, bolsa, sela) ---------- */
+.menu-lateral { display: flex; flex-direction: column; gap: 8px; align-self: start; position: sticky; top: 16px; }
+.menu-lateral .aba {
+  width: 52px; height: 52px; padding: 0; display: grid; place-items: center; cursor: pointer;
+  background: #14110e; color: #d8c59a; border: 2px solid #3a2f25; border-radius: 6px 0 0 6px;
+}
+.menu-lateral .aba svg { width: 26px; height: 26px; fill: currentColor; }
+.menu-lateral .aba:hover:not(.ativa) { color: #f8efdc; border-color: #6b5a44; }
+.menu-lateral .aba.ativa { background: #efe8d2; color: #2b1f14; border-color: #efe8d2; }
+.menu-lateral .aba.so-celular { display: none; }
+
+@media (max-width: 860px) {
+  .menu-lateral { flex-direction: row; position: static; order: -1; justify-content: center; }
+  .menu-lateral .aba { border-radius: 6px; }
+  .menu-lateral .aba.so-celular { display: grid; }
+  .banner-dir { width: 100%; justify-content: space-between; }
 }
 
-// ---------- 6. Abas ----------
+/* =====================================================================
+   REFORMA ESTILO D&D BEYOND
+   Folha creme sobre fundo preto, banner vermelho, atributos sobre o banner,
+   cartão cinza à esquerda, quadros com linha preta e filete dourado,
+   menu de marcadores à direita.
+   ===================================================================== */
+#tela-ficha {
+  max-width: 1480px; margin: 16px auto 24px;
+  background: #efe9d6;
+  border-radius: 8px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6);
+  color: #2b1f14;
+  --tinta: #2b1f14; --poeira: #6f5f48;
+  overflow: visible;
+}
+#tela-ficha .banner { max-width: none; margin: 0; border-radius: 8px 8px 0 0; }
 
-function trocarAba(nome) {
-  document.querySelectorAll(".aba").forEach(b => b.classList.toggle("ativa", b.dataset.aba === nome));
-  document.querySelectorAll(".aba").forEach(b => b.setAttribute("aria-selected", b.dataset.aba === nome));
-  document.body.classList.toggle("ver-dados", nome === "dados");
-  if (nome !== "dados") {
-    document.querySelectorAll(".painel").forEach(p => p.classList.toggle("ativo", p.dataset.painel === nome));
-  }
+/* Atributos principais sobre o banner */
+.faixa-atributos {
+  position: relative; z-index: 2;
+  margin-top: -44px; padding: 0 24px;
+  display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;
+}
+.faixa-atributos .lista-atributos { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.atributo-tile {
+  width: 168px; padding: 8px 10px 10px;
+  background: #f8f3e3; border: 1px solid #000; border-radius: 4px;
+  outline: 1px solid #c9a24a; outline-offset: 3px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  text-align: center;
+}
+.atributo-tile .nome-rolavel { font-family: var(--fonte-letreiro); font-size: 1rem; color: #2b1f14; }
+.atributo-tile .ajuste { display: flex; align-items: center; gap: 8px; }
+.atributo-tile .valor-grande { font-size: 1.8rem; min-width: 2ch; }
+
+/* Layout dentro da folha */
+#tela-ficha .layout { max-width: none; margin: 0; padding: 26px 24px 24px; }
+
+/* Cartão cinza à esquerda */
+.cartao-cinza {
+  background: #36342f;
+  border-radius: 6px;
+  padding: 14px;
+  box-shadow: inset 0 0 0 1px #242220, 0 4px 12px rgba(0, 0, 0, 0.35);
+  display: flex; flex-direction: column; gap: 12px;
+  --tinta: #efe7d2; --poeira: #b8ae98; --borda: #5a554c; --linha: #55504a;
+  color: var(--tinta);
+}
+.cartao-cinza .retrato { background: #2a2826; border-color: #6b655b; outline-color: #4a4640; margin: 0 auto; }
+.cartao-cinza .combate-grade .condicao {
+  background: #f5efdc; color: #2b1f14; border-color: #8a7d62;
+}
+.cartao-cinza .combate-grade .condicao-campo { background: #e6dcc1; color: #2b1f14; }
+.cartao-cinza .defesa-controle { color: #5a4d3a; }
+.cartao-cinza .barra-titulo { color: #efe7d2; border-bottom-color: #6b655b; }
+.cartao-cinza .barra { background: #1d1b19; border-color: #6b655b; }
+.cartao-cinza .vida-extra small { color: #b8ae98; }
+.cartao-cinza .dica { color: #b8ae98; }
+.cartao-cinza .status-nuvem, .cartao-cinza .perfil-nome { color: #b8ae98; }
+
+/* Quadros: linha preta e filete dourado (antecedentes, habilidades e mesa de dados) */
+#tela-ficha .folha .bloco,
+#tela-ficha .mesa.folha {
+  background: #f8f3e3;
+  color: #2b1f14;
+  border: 1px solid #000;
+  border-radius: 4px;
+  outline: 1px solid #c9a24a;
+  outline-offset: 3px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+#tela-ficha .folha .bloco { padding: 18px; }
+#tela-ficha .mesa.folha { padding: 14px; gap: 14px; }
+#tela-ficha .mesa.folha .arena { background: #efe9d6; border-color: #6b5d46; }
+#tela-ficha .mesa.folha .arena-feltro { cursor: pointer; }
+#tela-ficha .mesa.folha .arena-feltro:hover { filter: brightness(1.08); }
+#tela-ficha .folha .bloco > .bloco-cabeca { border-bottom: 1px solid #c9b98f; }
+
+/* Menu de marcadores, saindo pela borda direita da folha */
+#tela-ficha .menu-lateral { margin: 0 0 0 -25px; gap: 10px; }
+#tela-ficha .menu-lateral .aba {
+  width: 60px; height: 58px;
+  background: #e4dbc2; color: #5a4a36;
+  border: 1px solid #6b5d46; border-left: 0;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.35);
+}
+#tela-ficha .menu-lateral .aba svg { width: 24px; height: 24px; }
+#tela-ficha .menu-lateral .aba:hover:not(.ativa) { color: #2b1f14; background: #efe8d2; }
+#tela-ficha .menu-lateral .aba.ativa { background: #7a1c22; color: #f8efdc; border-color: #4a1117; }
+
+@media (max-width: 1180px) {
+  #tela-ficha .menu-lateral { margin: 0; }
+}
+@media (max-width: 860px) {
+  #tela-ficha .menu-lateral { margin: 0; }
+  .faixa-atributos { margin-top: -26px; }
+  .atributo-tile { width: 46%; }
 }
 
-// ---------- 7. Cliques e digitação ----------
+/* ajustes da reforma */
+.faixa-atributos { display: block; }
+.faixa-atributos .lista-atributos { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+.faixa-atributos .lista-atributos > div { padding: 0; border: 0; }
+.cartao-cinza .combate-grade .condicao .mini { color: #2b1f14; border-color: #2b1f14; }
+.cartao-cinza .combate-grade .condicao .mini:hover { background: #2b1f14; color: #f5efdc; }
+#tela-ficha .mesa.folha .resultado { color: #efe7d2; }
+#tela-ficha .mesa.folha .resultado-rotulo, #tela-ficha .mesa.folha .resultado-conta, #tela-ficha .mesa.folha .resultado-extra { color: #d8ccb0; }
+#tela-ficha .mesa.folha .resultado-total { color: #f8efdc; }
 
-document.addEventListener("click", e => {
-  const el = e.target.closest("button");
-  if (!el) return;
-  const d = el.dataset;
+#faixa-atributos #lista-atributos { display: flex !important; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 14px; width: 100%; }
+#faixa-atributos #lista-atributos > div { padding: 0; border: 0; width: auto; }
 
-  if (d.aba) return trocarAba(d.aba);
+/* mesa de dados dentro da linha de Antecedentes */
+.grade-2 > .mesa.folha { position: static; align-self: start; }
+.mesa-historico[hidden] { display: none !important; }
 
-  // Botões + e −
-  if (d.ajuste) {
-    const novo = Math.min(d.ajuste === "nivel" ? NIVEL_MAXIMO : Infinity, Math.max(d.ajuste === "nivel" ? 1 : 0, lerCaminho(d.ajuste) + Number(d.passo)));
-    gravarCaminho(d.ajuste, d.ajuste === "defesaBonus" ? lerCaminho(d.ajuste) + Number(d.passo) : novo);
-    salvar();
-    return desenharTudo();
-  }
+/* Cards de habilidade: texto claro sobre o fundo escuro do card */
+.carta {
+  --tinta: #ece3cf;
+  --poeira: #c4b89c;
+  --bloco-texto: #ece3cf;
+  color: #ece3cf;
+}
+.carta .carta-nome { color: #f6eee0; }
+.carta-combate .carta-nome, .carta-combate .carta-tipo { color: #f0a494; }
+.carta-profissao .carta-nome, .carta-profissao .carta-tipo { color: #ebcc93; }
+.carta-niveis th { color: #d8ccb0; border-bottom-color: #5a4f42; }
+.carta-niveis td { color: #f1e9d8; }
+.carta-niveis tr.atual td { color: #fff8ea; background: color-mix(in srgb, var(--cor-carta) 45%, transparent); }
+.carta li::marker { color: var(--cor-carta); }
+.carta, .carta p, .carta li, .carta td, .carta th { text-shadow: none; }
+.carta-remover { color: #d8ccb0; }
 
-  // Bolinhas dos Antecedentes (clicar na última cheia esvazia ela)
-  if (d.antecedente) {
-    const v = Number(d.valor);
-    ficha.antecedentes[d.antecedente] = ficha.antecedentes[d.antecedente] === v ? v - 1 : v;
-    salvar();
-    desenharAntecedentes();
-    return atualizarResumo();
-  }
+/* ícones de imagem do menu (mochila e cavalo) */
+#tela-ficha .menu-lateral .aba .icone-menu { width: 30px; height: 30px; object-fit: contain; filter: brightness(0); }
+#tela-ficha .menu-lateral .aba.ativa .icone-menu { filter: brightness(0) invert(1); }
+#tela-ficha .menu-lateral .aba:hover:not(.ativa) .icone-menu { filter: brightness(0); }
 
-  // Botões − e + das barras (− risca um círculo, + recupera)
-  if (d.barra) {
-    const { caminho } = BARRAS[d.barra];
-    const max = BARRAS[d.barra].max();
-    gravarCaminho(caminho, Math.min(max, Math.max(0, lerCaminho(caminho) - Number(d.passo))));
-    salvar();
-    atualizarResumo();
-    return verificarDorMontaria();
-  }
-
-  if (d.fidelidade) {
-    ficha.montaria.fidelidade = Number(d.fidelidade);
-    salvar();
-    return desenharTudo();
-  }
-
-  // Munição: − e +
-  if (d.municao) {
-    const c = ficha.coldres[Number(d.municao)];
-    c[d.k] = Math.max(0, (Number(c[d.k]) || 0) + Number(d.passo));
-    salvar();
-    return desenharColdres();
-  }
-  if (d.limparColdre) {
-    ficha.coldres[Number(d.limparColdre)] = coldreVazio();
-    salvar();
-    desenharColdres();
-    return atualizarResumo();
-  }
-
-  if (d.remover) {
-    ficha[d.remover].splice(Number(d.i), 1);
-    salvar();
-    desenharItens();
-    return atualizarResumo();
-  }
-
-  // Rolagens da ficha
-  if (d.rolarAtributo) {
-    const a = ATRIBUTOS.find(x => x.id === d.rolarAtributo);
-    const v = ficha.atributos[a.id];
-    return fazerRolagem({ rotulo: `Resistência · ${a.nome}`, lados: 6, bonus: v, partes: `${a.nome} ${v}` });
-  }
-
-  if (d.rolarAntecedente) {
-    const a = ANTECEDENTES.find(x => x.id === d.rolarAntecedente);
-    const v = ficha.antecedentes[a.id];
-    return fazerRolagem({ rotulo: a.nome, lados: 6, bonus: v, partes: `${a.nome} ${v}`, violencia: a.id === "violencia" });
-  }
-
-  // Os três botões da mesa
-  if (d.atalho === "1d6") return fazerRolagem({ rotulo: "1d6", lados: 6, bonus: 0 });
-  if (d.atalho === "1d12") return fazerRolagem({ rotulo: "1d12", lados: 12, bonus: 0 });
-});
-
-// Clicar na arena rola 1d6
-$("arena").addEventListener("click", () => fazerRolagem({ rotulo: "1d6", lados: 6, bonus: 0 }));
-
-// Clique direto na barra: marca até o círculo clicado
-document.querySelectorAll("[data-barra-clique]").forEach(barra => {
-  barra.addEventListener("click", e => {
-    if (barra.dataset.barraClique === "dor" && ficha.dor >= BASE.dor) { rolarPenalidadeDor(); return; }
-    const { caminho } = BARRAS[barra.dataset.barraClique];
-    const max = BARRAS[barra.dataset.barraClique].max();
-    const caixa = barra.getBoundingClientRect();
-    let resta = Math.ceil(((e.clientX - caixa.left) / caixa.width) * max);
-    resta = Math.min(max, Math.max(1, resta));
-    if (max - lerCaminho(caminho) === resta) resta -= 1; // clicar no último cheio esvazia ele
-    gravarCaminho(caminho, max - resta);
-    salvar();
-    atualizarResumo();
-    verificarDorMontaria();
-  });
-});
-
-// Montaria: quando os 6 Pontos de Dor acabam, ela perde 1 Ponto de Vida e a Dor volta cheia.
-// Espera um instante pra dar tempo de ver a barra esvaziar.
-let timerDorMontaria;
-function verificarDorMontaria() {
-  if (ficha.montaria.dor < BASE.dor) return;
-  clearTimeout(timerDorMontaria);
-  timerDorMontaria = setTimeout(() => {
-    const m = ficha.montaria; // pega a ficha atual (ela pode ter sido recarregada da nuvem)
-    if (m.dor < BASE.dor) return;
-    m.dor = 0;
-    m.vidaRiscada = Math.min(m.vidaRiscada + 1, calcular().montariaVidaMax);
-    const nome = m.nome || "A montaria";
-    ficha.historico.unshift({ rotulo: "Dor da montaria", total: "−1", conta: `${nome} perdeu 1 Ponto de Vida`, extra: "Pontos de Dor zerados", hora: horaAgora() });
-    ficha.historico = ficha.historico.slice(0, 30);
-    salvar();
-    atualizarResumo();
-    desenharHistorico();
-    avisoFicha(`${nome} chegou ao limite de dor: perdeu 1 Ponto de Vida e a Dor foi zerada.`);
-  }, 700);
+/* ícones de imagem do menu: pintados com a mesma cor dos outros ícones (currentColor) */
+#tela-ficha .menu-lateral .aba .icone-menu {
+  display: block; width: 28px; height: 28px;
+  background-color: currentColor;
+  -webkit-mask: var(--m) center / contain no-repeat;
+          mask: var(--m) center / contain no-repeat;
 }
 
-$("rolar-potencia").addEventListener("click", () => {
-  const p = ficha.montaria.potencia, m = ficha.antecedentes.montaria;
-  fazerRolagem({ rotulo: `Montaria · ${ficha.montaria.nome || "Potência"}`, lados: 6, bonus: p + m, partes: `Potência ${p} + Montaria ${m}` });
-});
-
-$("rolar-de-novo").addEventListener("click", () => { if (ultimaRolagem) fazerRolagem(ultimaRolagem); });
-
-$("limpar-historico").addEventListener("click", () => {
-  ficha.historico = [];
-  salvar();
-  desenharHistorico();
-});
-
-// Seis Pontos de Dor: a barra vira botão. Ao clicar, rola a penalidade, risca 1 Vida,
-// mostra o nome na própria barra (vermelha) e depois ela desliza pra direita e a Dor volta cheia.
-let penalidadeEmAndamento = false;
-function rolarPenalidadeDor() {
-  if (penalidadeEmAndamento || ficha.dor < BASE.dor) return;
-  penalidadeEmAndamento = true;
-  const n = rolar(6);
-  const [nome, efeito] = TABELA_DOR[n - 1];
-  const el = $("barra-dor");
-  ficha.vidaRiscada = Math.min(ficha.vidaRiscada + 1, calcular().vidaMax);
-  ficha.historico.unshift({ rotulo: "Penalidade de Dor", total: String(n), conta: `${nome}: ${efeito}`, extra: "1 Ponto de Vida riscado", hora: horaAgora() });
-  salvar();
-  el.classList.remove("pronta");
-  el.setAttribute("role", "meter");
-  $("faixa-penalidade").textContent = `${nome}`;
-  el.classList.add("penalizada");
-  atualizarResumo();
-  desenharHistorico();
-  avisarNoCelular(`Dor: ${nome}`, String(n));
-  setTimeout(() => {
-    ficha.dor = 0;
-    salvar();
-    el.classList.add("saindo");
-    atualizarResumo();
-  }, 2600);
-  setTimeout(() => {
-    el.classList.remove("penalizada", "saindo");
-    penalidadeEmAndamento = false;
-    atualizarResumo();
-  }, 3200);
-}
-
-// Nível: a pessoa digita no círculo do banner (1 a 8)
-$("val-nivel").addEventListener("change", e => {
-  ficha.nivel = Math.min(NIVEL_MAXIMO, Math.max(1, Number(e.target.value) || 1));
-  salvar();
-  desenharTudo();
-});
-
-$("add-item").addEventListener("click", () => { ficha.itens.push({ nome: "", espaco: "" }); salvar(); desenharItens(); });
-
-
-// Digitação em qualquer campo
-document.addEventListener("input", e => {
-  const el = e.target;
-  if (el.dataset.campo) {
-    gravarCaminho(el.dataset.campo, el.type === "number" ? Number(el.value) : el.value);
-  } else if (el.dataset.lista) {
-    ficha[el.dataset.lista][Number(el.dataset.i)][el.dataset.k] = el.value;
-  } else return;
-  salvar();
-  atualizarResumo();
-});
-
-// ---------- 8. Retrato do personagem ----------
-
-// Padrão da ficha: retrato 3:4, salvo em 600 × 800 px.
-// Qualquer foto enviada é cortada no centro e reduzida pra esse tamanho,
-// assim todas as fichas ficam iguais e a imagem não pesa no navegador.
-const FOTO_LARGURA = 600;
-const FOTO_ALTURA = 800;
-
-function desenharFoto() {
-  const tem = Boolean(ficha.foto);
-  $("foto").hidden = !tem;
-  if (tem) $("foto").src = ficha.foto;
-  $("retrato-vazio").hidden = tem;
-  $("foto-acoes").hidden = !tem;
-}
-
-function avisoFoto(texto) {
-  $("aviso-foto").textContent = texto;
-  $("aviso-foto").hidden = !texto;
-}
-
-$("input-foto").addEventListener("change", e => {
-  const arquivo = e.target.files[0];
-  e.target.value = ""; // permite escolher a mesma foto de novo depois
-  if (!arquivo) return;
-  if (!arquivo.type.startsWith("image/")) return avisoFoto("Escolha um arquivo de imagem (JPG, PNG ou WEBP).");
-
-  const leitor = new FileReader();
-  leitor.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      // corta no centro mantendo 3:4 e redimensiona
-      const proporcao = FOTO_LARGURA / FOTO_ALTURA;
-      let sw = img.width, sh = img.height;
-      if (sw / sh > proporcao) sw = sh * proporcao; else sh = sw / proporcao;
-      const sx = (img.width - sw) / 2, sy = (img.height - sh) / 2;
-      const tela = document.createElement("canvas");
-      tela.width = FOTO_LARGURA; tela.height = FOTO_ALTURA;
-      tela.getContext("2d").drawImage(img, sx, sy, sw, sh, 0, 0, FOTO_LARGURA, FOTO_ALTURA);
-      ficha.foto = tela.toDataURL("image/jpeg", 0.85);
-      avisoFoto(img.width < 300 || img.height < 400 ? "A foto é pequena e pode ficar borrada. O ideal é 600 × 800 px." : "");
-      salvar();
-      desenharFoto();
-    };
-    img.onerror = () => avisoFoto("Não deu pra abrir essa imagem. Tente outra.");
-    img.src = leitor.result;
-  };
-  leitor.readAsDataURL(arquivo);
-});
-
-$("remover-foto").addEventListener("click", () => {
-  ficha.foto = "";
-  avisoFoto("");
-  salvar();
-  desenharFoto();
-});
-
-// ---------- 8b. Habilidades em cartas ----------
-
-const NOME_TIPO = { combate: "Combate", profissao: "Profissão" };
-
-// Quebra o texto da habilidade em frases curtas (uma por linha)
-// e destaca números, tipos de dano e a regra dos 2 dados.
-function regrasHtml(texto) {
-  const frases = texto.split(/(?<=[.!])\s+(?=[A-ZÀ-Ú+−♣])/);
-  const destacar = f => esc(f)
-    .replace(/(\+?\d+ (?:de )?Dano Letal|Dano Letal extra|Dano Letal)/g, '<span class="dano-letal">$1</span>')
-    .replace(/(\+?\d+ de Dano de Dor|Dano de Dor)/g, '<span class="dano-dor">$1</span>')
-    .replace(/(rola 2 dados e usa o maior)/g, "<b>$1</b>")
-    .replace(/(^|[\s(])([+−]\d+(?:%)?)(?![^<]*<\/span>)/g, "$1<b>$2</b>");
-  return `<ul class="regras">${frases.map(f => `<li>${destacar(f)}</li>`).join("")}</ul>`;
-}
-
-function tabelaNiveis(h) {
-  if (!h.niveis) return "";
-  // a linha "atual" é o maior nível da tabela que o personagem já alcançou
-  const alcancados = h.niveis.filter(([n]) => n <= ficha.nivel);
-  const atual = alcancados.length ? alcancados[alcancados.length - 1][0] : null;
-  return `
-    <table class="carta-niveis">
-      <thead><tr><th>Nível</th><th>Efeito</th></tr></thead>
-      <tbody>${h.niveis.map(([n, efeito]) =>
-        `<tr class="${n === atual ? "atual" : ""}"><td>${n}</td><td>${esc(efeito)}</td></tr>`).join("")}
-      </tbody>
-    </table>`;
-}
-
-function desenharHabilidades() {
-  const lista = ficha.habilidadesLista;
-  if (!lista.length) {
-    $("cartas-habilidades").innerHTML = `
-      <p class="cartas-vazio">Nenhuma habilidade ainda. No nível 1, o livro manda escolher duas.</p>`;
-    return;
-  }
-  if (typeof HABILIDADES === "undefined") {
-    $("cartas-habilidades").innerHTML = '<p class="cartas-vazio">A lista de habilidades não carregou (falta o habilidades.js no site).</p>';
-    return;
-  }
-  $("cartas-habilidades").innerHTML = lista.map((id, i) => {
-    const h = HABILIDADES.find(x => x.id === id);
-    if (!h) return "";
-    return `
-      <article class="carta carta-${h.tipo}">
-        <header class="carta-topo">
-          <span class="carta-tipo">${NOME_TIPO[h.tipo]}</span>
-          <button class="carta-remover" data-remover-hab="${i}" aria-label="Remover ${esc(h.nome)}">×</button>
-        </header>
-        <h3 class="carta-nome">${esc(h.nome)}</h3>
-        ${regrasHtml(h.texto)}
-        ${tabelaNiveis(h)}
-      </article>`;
-  }).join("");
-}
-
-$("cartas-habilidades").addEventListener("click", e => {
-  const botao = e.target.closest("[data-remover-hab]");
-  if (!botao) return;
-  const i = Number(botao.dataset.removerHab);
-  const h = HABILIDADES.find(x => x.id === ficha.habilidadesLista[i]);
-  ficha.habilidadesLista.splice(i, 1);
-  salvar();
-  desenharTudo();
-  if (h) avisoFicha(`${h.nome} saiu da ficha.`, true);
-});
-
-// Janela de escolher habilidade
-const semAcento = t => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-
-function desenharOpcoes() {
-  if (typeof HABILIDADES === "undefined") {
-    $("lista-habilidades").innerHTML = '<p class="cartas-vazio">Não consegui carregar a lista de habilidades. Confira se o arquivo habilidades.js está no site, com esse nome em minúsculas.</p>';
-    return;
-  }
-  const busca = semAcento($("busca-habilidade").value.trim());
-  const secoes = ["combate", "profissao"].map(tipo => {
-    const opcoes = HABILIDADES
-      .filter(h => h.tipo === tipo)
-      .filter(h => !busca || semAcento(h.nome + " " + h.texto).includes(busca))
-      .map(h => {
-        const vezes = ficha.habilidadesLista.filter(id => id === h.id).length;
-        const bloqueada = vezes > 0 && !h.repetir;
-        return `
-          <div class="opcao-hab carta-${h.tipo}" role="button" tabindex="${bloqueada ? -1 : 0}" data-add-hab="${h.id}" aria-disabled="${bloqueada}">
-            <span class="opcao-nome">${esc(h.nome)}${vezes && h.repetir ? ` <small>(tem ${vezes})</small>` : ""}</span>
-            ${regrasHtml(h.texto)}
-            ${h.niveis ? `<span class="opcao-niveis">${h.niveis.map(([n, e]) => `<span class="nv">Nível ${n}</span><span>${esc(e)}</span>`).join("")}</span>` : ""}
-            ${bloqueada ? '<span class="opcao-tem">Já está na ficha</span>' : ""}
-          </div>`;
-      }).join("");
-    return opcoes ? `<h3 class="janela-secao">${NOME_TIPO[tipo]}</h3><div class="opcoes">${opcoes}</div>` : "";
-  }).join("");
-  $("lista-habilidades").innerHTML = secoes || '<p class="cartas-vazio">Nenhuma habilidade com esse nome.</p>';
-}
-
-function janelaHabilidades(abrir) {
-  $("janela-habilidades").hidden = !abrir;
-  document.body.classList.toggle("sem-rolagem", abrir);
-  if (abrir) {
-    $("busca-habilidade").value = "";
-    desenharOpcoes();
-    $("busca-habilidade").focus();
-  } else {
-    $("abrir-habilidades").focus();
-  }
-}
-
-$("abrir-habilidades").addEventListener("click", () => janelaHabilidades(true));
-$("fechar-habilidades").addEventListener("click", () => janelaHabilidades(false));
-$("janela-habilidades").addEventListener("click", e => {
-  if (e.target.id === "janela-habilidades") janelaHabilidades(false); // clicou fora da janela
-});
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !$("janela-habilidades").hidden) janelaHabilidades(false);
-});
-$("busca-habilidade").addEventListener("input", desenharOpcoes);
-function escolherHabilidade(e) {
-  const botao = e.target.closest("[data-add-hab]");
-  if (!botao || botao.getAttribute("aria-disabled") === "true") return;
-  const h = HABILIDADES.find(x => x.id === botao.dataset.addHab);
-  ficha.habilidadesLista.push(h.id);
-  salvar();
-  desenharTudo();
-  janelaHabilidades(false);
-  avisoFicha(`${h.nome} entrou na ficha.`, true);
-}
-$("lista-habilidades").addEventListener("click", escolherHabilidade);
-$("lista-habilidades").addEventListener("keydown", e => {
-  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); escolherHabilidade(e); }
-});
-
-// ---------- 8c. Guia Rápido do Jogador ----------
-function janelaGuia(abrir) {
-  $("janela-guia").hidden = !abrir;
-  document.body.classList.toggle("sem-rolagem", abrir);
-  if (abrir) { $("guia-corpo").scrollTop = 0; $("fechar-guia").focus(); }
-  else $("abrir-guia").focus();
-}
-$("abrir-guia").addEventListener("click", () => janelaGuia(true));
-$("fechar-guia").addEventListener("click", () => janelaGuia(false));
-$("janela-guia").addEventListener("click", e => {
-  if (e.target.id === "janela-guia") janelaGuia(false);
-  // links do índice: rola até a parte certa sem mudar o endereço da página
-  const link = e.target.closest(".guia-indice a");
-  if (link) {
-    e.preventDefault();
-    document.querySelector(link.getAttribute("href")).scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-});
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape" && !$("janela-guia").hidden) janelaGuia(false);
-});
-
-// ---------- 9. Tela inicial e troca de fichas ----------
-/*
-  Sem "?ficha=" no endereço, a página mostra a TELA INICIAL:
-  a lista de fichas (da nuvem, ou deste aparelho se a nuvem estiver desligada)
-  e o botão de criar ficha. Clicar numa ficha abre index.html?ficha=ID.
-*/
-const naInicio = !idDoLink;
-document.body.classList.toggle("na-inicio", naInicio);
-$("tela-inicio").hidden = !naInicio;
-$("tela-ficha").hidden = naInicio;
-
-function nomeDaFicha(f) { return (f.nome || "").trim() || "Personagem sem nome"; }
-function irParaFicha(id) { location.href = `index.html?ficha=${encodeURIComponent(id)}`; }
-
-function quandoFoi(ms) {
-  if (!ms) return "";
-  const min = Math.round((Date.now() - ms) / 60000);
-  if (min < 1) return "agora";
-  if (min < 60) return `há ${min} min`;
-  const h = Math.round(min / 60);
-  if (h < 24) return `há ${h} h`;
-  return `há ${Math.round(h / 24)} dias`;
-}
-
-// lista = [{ id, ficha, atualizadoEm }]
-function desenharInicio(lista) {
-  lista = lista.filter(x => x.ficha).sort((a, b) => nomeDaFicha(a.ficha).localeCompare(nomeDaFicha(b.ficha), "pt-BR"));
-  const cards = lista.map(({ id, ficha: f, atualizadoEm }) => {
-    const vidaMax = BASE.vida + ((f.atributos || {}).fisico || 0) + (Number(f.vidaBonus) || 0) + vidaDasHabilidades(f);
-    const resta = Math.max(0, vidaMax - (f.vidaRiscada || 0));
-    return `
-      <button class="card-inicio" data-abrir="${esc(id)}">
-        <span class="card-inicio-foto">${f.foto ? `<img src="${esc(f.foto)}" alt="">` : ""}</span>
-        <span class="card-inicio-nome">${esc(nomeDaFicha(f))}</span>
-        <span class="card-inicio-info">Vida ${resta}/${vidaMax}${atualizadoEm ? ` · ${quandoFoi(atualizadoEm)}` : ""}</span>
-      </button>`;
-  }).join("");
-  $("lista-inicio").innerHTML = `
-    <button class="card-inicio card-nova" id="criar-ficha">
-      <span class="card-nova-mais">+</span>
-      <span class="card-inicio-nome">Criar nova ficha</span>
-    </button>` + cards;
-}
-
-function listaLocal() {
-  return Object.entries(banco.fichas)
-    .filter(([, f]) => temConteudo(f))
-    .map(([id, f]) => ({ id, ficha: f }));
-}
-
-// Uma ficha "tem conteúdo" quando alguém já mexeu nela
-function temConteudo(f) {
-  const { historico, ...resto } = f;
-  const { historico: h0, ...vazia } = fichaNova();
-  return JSON.stringify(resto) !== JSON.stringify(vazia);
-}
-
-$("lista-inicio").addEventListener("click", e => {
-  const card = e.target.closest("button");
-  if (!card) return;
-  if (card.id === "criar-ficha") return irParaFicha(novoId());
-  if (card.dataset.abrir) irParaFicha(card.dataset.abrir);
-});
-
-let timerAvisoFicha;
-function avisoFicha(texto, bom = false) {
-  const el = $("aviso-ficha");
-  el.textContent = texto;
-  el.classList.toggle("bom", bom);
-  el.hidden = !texto;
-  clearTimeout(timerAvisoFicha);
-  if (texto) timerAvisoFicha = setTimeout(() => { el.hidden = true; }, 6000);
-}
-
-// Exportar: baixa a ficha aberta como um arquivo .json
-$("exportar-ficha").addEventListener("click", () => {
-  const arquivo = new Blob([JSON.stringify({ tipo: "ficha-sacramento", versao: 2, ficha }, null, 2)], { type: "application/json" });
-  const link = document.createElement("a");
-  const nomeArquivo = nomeDaFicha(ficha).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\w-]+/g, "-").toLowerCase();
-  link.href = URL.createObjectURL(arquivo);
-  link.download = `ficha-${nomeArquivo || "personagem"}.json`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-  avisoFicha("Arquivo da ficha baixado. Guarde ele num lugar seguro.", true);
-});
-
-// Importar (tela inicial): lê um .json exportado e abre como ficha nova
-$("importar-ficha").addEventListener("change", e => {
-  const arquivo = e.target.files[0];
-  e.target.value = "";
-  if (!arquivo) return;
-  const leitor = new FileReader();
-  leitor.onload = () => {
-    try {
-      const dados = JSON.parse(leitor.result);
-      const f = dados.ficha || dados;
-      if (!f || typeof f !== "object" || !f.atributos) throw new Error("formato");
-      const id = novoId();
-      banco.fichas[id] = normalizar(f);
-      banco.atual = id;
-      salvarLocal();
-      irParaFicha(id);
-    } catch (erro) {
-      avisoFicha("Esse arquivo não é uma ficha exportada daqui. Escolha um arquivo .json gerado pelo botão Exportar.");
-    }
-  };
-  leitor.readAsText(arquivo);
-});
-
-// ---------- 10. Nuvem (Firebase) ----------
-/*
-  O arquivo nuvem.js carrega o Firebase e chama FichaApp.conectarNuvem().
-  - Na tela inicial: ouve TODAS as fichas pra montar a lista.
-  - Na ficha: toda mudança vai pra nuvem (meio segundo depois de parar de mexer)
-    e mudanças feitas em outro aparelho chegam aqui sozinhas.
-*/
-let nuvem = null;              // funções do nuvem.js (null = só no aparelho)
-let pararDeOuvir = null;
-let esperandoNuvem = false;    // ainda não chegou a primeira resposta da nuvem
-let ultimaEdicao = 0;          // hora da última mudança feita aqui
-let timerNuvem;
-
-window.FichaApp = {
-  conectarNuvem(api) {
-    nuvem = api;
-    nuvemRespondeu = true;
-    if (naInicio) {
-      statusNuvem("conectando");
-      api.ouvirTodas(lista => {
-        desenharInicio(lista);
-        statusNuvem("salvo", `Ao vivo · ${lista.length} ${lista.length === 1 ? "ficha" : "fichas"} na nuvem`);
-      }, erro => {
-        console.error(erro);
-        statusNuvem("erro", "Não deu pra ler as fichas da nuvem. Mostrando as deste aparelho.");
-      });
-    } else {
-      ouvirNaNuvem(banco.atual);
-    }
-  },
-  nuvemIndisponivel(mensagem) {
-    nuvemRespondeu = true;
-    statusNuvem("local", mensagem);
-  },
-};
-let nuvemRespondeu = false;
-
-function statusNuvem(estado, texto) {
-  const textos = {
-    local: "Salvando só neste aparelho",
-    conectando: "Conectando na nuvem…",
-    salvando: "Salvando na nuvem…",
-    salvo: "Salvo na nuvem",
-    erro: "Sem conexão. Salvo só neste aparelho por enquanto.",
-  };
-  const el = $(naInicio ? "status-inicio" : "status-nuvem");
-  el.textContent = texto || textos[estado];
-  el.dataset.estado = estado;
-}
-
-function ouvirNaNuvem(id) {
-  if (!nuvem) return;
-  if (pararDeOuvir) pararDeOuvir();
-  esperandoNuvem = true;
-  statusNuvem("conectando");
-
-  pararDeOuvir = nuvem.ouvir(id, (dados, ehMinhaGravacao) => {
-    if (ehMinhaGravacao) return; // é o eco da gravação que acabei de fazer
-    const primeira = esperandoNuvem;
-    esperandoNuvem = false;
-
-    if (!dados) {
-      // ficha ainda não existe na nuvem: só sobe se já tiver algo preenchido
-      if (temConteudo(ficha)) enviarNuvem();
-      else statusNuvem("salvo", "Ficha nova. Ela aparece na lista assim que você preencher algo.");
-      return;
-    }
-    // se a pessoa está mexendo agora, não atropela o que ela digita
-    if (!primeira && Date.now() - ultimaEdicao < 2000) return;
-
-    banco.fichas[id] = normalizar(dados.ficha || dados);
-    ficha = banco.fichas[id];
-    salvarLocal();
-    desenharTudo();
-    statusNuvem("salvo");
-  }, erro => {
-    console.error(erro);
-    esperandoNuvem = false;
-    statusNuvem("erro");
-  });
-}
-
-function agendarNuvem() {
-  if (!nuvem || naInicio) return;
-  ultimaEdicao = Date.now();
-  clearTimeout(timerNuvem);
-  timerNuvem = setTimeout(enviarNuvem, 600);
-}
-
-async function enviarNuvem() {
-  if (!nuvem || esperandoNuvem) return;
-  statusNuvem("salvando");
-  try {
-    await nuvem.salvar(banco.atual, { ficha, nome: ficha.nome, atualizadoEm: Date.now() });
-    statusNuvem("salvo");
-  } catch (erro) {
-    console.error(erro);
-    statusNuvem("erro");
-  }
-}
-
-// ---------- 11. Utilidades ----------
-
-function esc(t) {
-  return String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
-function formatar(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","); }
-function horaAgora() { return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }); }
-
-// ---------- Começa ----------
-desenharTudo();
-if (naInicio) desenharInicio(listaLocal());
-statusNuvem("local");
-
-// Se o nuvem.js nem rodar (arquivo faltando no site, por exemplo), avisa depois de 8 segundos
-setTimeout(() => {
-  if (!nuvemRespondeu) statusNuvem("erro", "A nuvem não carregou. Confira se nuvem.js e firebase-config.js estão no site.");
-}, 8000);
+/* ícones do menu embutidos (funcionam mesmo sem a pasta icones/ e abrindo o arquivo direto) */
+#tela-ficha .menu-lateral .aba .icone-mochila { --m: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAANB0lEQVR42u2df6wcVRXHPzO7j9b+RDCtBGyhtUVQRFSUgkIQjMRomhgSSUzwV6ygiYmxwSCKv1ApBjUaEqMYGtEiPxIMVIwIYrAFBA0SoPwQ9fWHkUKlv15/7ttd/7jnuLfzZmdnd2d3Zt6ek0ze7r6d2Xvv+d5zzj333HMCpj8FQAWYjHx+NDBX/jcB7ATq3v8rQBNoTPfBmc5U8Zg6D3gv8D7gdGAR8CogBA4BLwKbgPuBe4HxmGcYlYz5APOBrwFbZEanuSaAtcCp3kQJbEjLx/wPAC94jJ0EajKjG5Gr7v3fB8KVIyQxpxXzr/IYWRMmp5UAjQgQfg3MlueGNsTFZ/413oyvd8H4OCAcltcPALMEACYJCsz8VcKww13O+qRLQXBb5LeMCkI6K18PHPB0fBJTVeenlRIKgk8aCIoJAID1ns5PEuvtGD7ZATB14GVgoQCu9PbAdEBxRZj6DuA6ed2uXw1PWowDG2Xtf1iYGsp3gjY+kzowR1YHf/R+26gAIL4pxnqPzuAmsBX4iGfVK3PPFkMvSRKoahmX+80/kDPp4M8BtkcYHcf854DFEfBUvOeEwM0Jz/E/v9BsgeLM/nM8/d5O5x/EuYABjoqZuVX5bAx4Qu6LkwTqU/iGd19padiN99fQQUbtD4C3yft6TJ/0s9uFsTOFsdGZ2wRmCIO/DfwqQeoEwJny3CwlQBRs0wIAoVyTAzCYdIdvfgo1cZP8PZjwXd30uQN4BThGGBEH1qO9ZeSgpNvAdyMHCQBdJtW9TiwGlgCvwe3EBRmAaxI4L7IcjFsingsc7w1sp8GvdVhyLgY+Lv3LQprVcFvS47j9i1rk90q12vAZcRLwFeAvwH6y8cxN56smxuoNwFllXLL727DXA3sSPHBZXWlcvt0+M80+weQArujv3AEsKwsItIFvFgeLj+o62fnmp/OlqxZ/B3Mn8OGirzqU+RcBu8l+Q2aUVYK+vryoIFCdf4a4SZspxahd6a6654C6qGjqQJd5xwL/MuYPFAQN4L9iWBdmM0qReCOdd+LsykYd3Jmw7M1F9L9RGmczfziSoInb/exbFfSLIHWAfFoMkyZGgyZ1CK3KylvXz73qP98kHr4GFjQ5DACEwDZgOS4CKuh18oUZgOdkMUqaxvyhqd0mcAJwSr8TOeyzIQqAAIuMyUMNLOuXj1nM2IXy1/T/8EjHekFWVnw/NMP4kRvNKAIALCau5AaFkQHAaFSpiFuL6ulSX3fZVYwfrKrJKgwAbZY2YcwA1Slv6LW2vdKmrwaAmAF5BPgn8GpgBS74soweRj2htAt4GBfUsQQX5hUyDbymCp7V9LcLqCL/SVx8v0/H4zJ1JB3UKPKGzVrpg0/nSF/76ZOO9eo8J3IWAPCPWi3wDNOo2FxHeeIMtI3rvPZrf0LPgTNO8kHVoQAgLICYDHAHMV7CndjRQdEDHQFwBS6iWP3gRTb4QmnrFdL2qtefhvTxJelz7i70sABqpAFskMGIHrLQ99uAZ+hj12uIAAikrdsiffD7FEifG3nbYWHOg4WIswMJjNWjWBOR+4oKAKStSSeHm9LnWt59KosV2iyZP6Dokqp0ADAqMAAsi2a+jqbcAbDH+JAb7c0TAKrjxk2d5Ca5t/RrRGYBgKfF6i36Gn26kPoaDuCCcXMDgPqyXwQeZQRSqxeEdGfxcfE19OVM6lds6/03Y5FBw15m3iKvcz0YotkxbsPt4IUmBQY++wOcK/mXtHIX5gYA3/f9RSw8fBjLvhBX/2BnFnZXVn6ACi6TxQ0433bNeJU51XAp7O4EfkxGlUzSAEDDmJJ822oQfg74nTS0ZquCzJn/FPBRb8zb8cvnWV8AUBHj71m3UwV6fQi4VRocePca9SZd67SSV74f5/wJUvBCx73SKwCqntFxqczsBbRPTKAN2g9cAnwVlyJGkahp2eNSxqS1N8p09dInv3SNMq8C/AKXCm9rgqGtfKkCd+GCRWbRY0yl3vAWXDybNlCTLY51UBkKkLfKCuEgyRE0SxIAqZ9tLBHzN6bozxI6Rzg9iKt7lGbCKk+u9O7fBFyQtFwM2jC/DnwK+IGgSBs6BqwUhFVJzpLpGynLRHydJ6+PxUXGaMm2s4DNbdCtn92Ni6ebpLhRwhrFtBH4YIf+LMYFwB7liew9Mg6PAL+Ryeer4maHsT4N+LPwqen9vRpXRmfKc+ISJk/iwpnWRKx8vXEv8C4xSDqBIC7LZYBLtV7xdNneFMvHOV6Hiu6kqdEKYEkam7keDxocGSTiS9N6h+c0ZFI9LBOsEQFfCHwP+AKtELVmnM4H+DztK23pjX+ndSo4TUiT6iZLrZ7tWFU88X8/8YGzfuGra9vxTB/0Hu8hDZKjXp+ilXt/rMsZEr16va/I1yDHwmfibOAekiOz/UIaF0dtAj/N279JF6+uIBgXQ1EfaFvCw1ExyvzXiqGYJixfl5Q7cdlFlO//R8L1dBffryCYAD4TkSYGhMEyHjGqx7vkmX7vZ74U6LbcWpxNoLnrTo/RZVZosT+mRw/JHCerszSVzpLyEJ/m/9B36P10j19a5RDwE+BNbQyWqndViD84mWQcVUpypZWA0fv88YlOmuNwafdfpnP5uzRS4If64Fm4AgW9PjAOiTXg9+JLWGIqoWdaKH6XdbgUsb3M+nZSezMwL8AlH/4t2cTeKzL9WX1IAPYE8KwYIa/QCmhs4Mq17W/j49bPzsZVGmkUWKXo9vgO4KEO/ZkFnO85Z2aKIX4MsAhXB2k5R5bDqWekUpXXK+HIQstZ5ryf7OKZS1O4Th8rkSv4sRT9WdrFjE1bFKNbaX1tVWYWGc8qPxOGD4roLAhEQqQJIpnwljJFdgVXUngBVfLtx2X6asZIi8Bfqg3AuARYUQVOHAAA4pwdYRsx1K0RSME9ir0YgcM++qa/tTgE5pmtNbI0N/SMDFurj5Z/AWB+SMlLnxr1p65sfT7iZAAwABgZAIwMAEYGACMDQG5tSHtCqWzr7Cz6PW0BoAdJx4iEKMUM5Bhuh6zoQNC2LaIVJxm0YfwJ8p1cdzfzRqBuflxOa0NIo4gqtDKHXowLQK0XXG1pCPdiabNmBtX9AXW6NWgVgs49zL0oiZVXt2nfCtz+eoNyVCLXdu6QtsfRagqSALsoCQ11N2w98HNcEer5uGNRl+GCJcqULFLbehB3lHs9sBtXX/FS6Vch+lOkjJZJ+fPLlim0U5sLUyugaClN9QhUxROlFcq7U9n07JYw0j8MAEbmBzAyABgZAIwMAEYGACMDgFEOADhswzCydDgE9skb8weMDimv92m6d6PRpO0h8Jy8sSTPo0PK6+dD4E82HiNLD4XAvbRSuhqNBlVwR8Tv0122Dbhj4o0egGDGY77U7U6p7k4+DpypIUo/ZWrp9kE1wKgYoFkLNPTs/kxc4seTaKU5SUv7aaUwNxruUm4uLtVMN8ZfgEs09QZglwZgHsBlmb6V9IGXk7ggxxuBL9M5b7BRdqRjfQ2uSIfyIg0AqsA3cbmaqr5RAK7sS5NWbtk06cbWmCrITe+vIX16P80LtIFWmr6gGhENq3AJBJd3gSrNWmUSYPgSIK2qVuP+FeBj3r3NqqdPQvnCSuAPuMSEaUHQbaUMo/71f9qx1sRVB3FnFV7Aq+UQxqDkWeBC4B8e0sxLWE6QaHGN3TKxH6BVLwBiRIiiZZMsC7UySEir5o/N8mKT5mhUtfw34N04h98UNV1NcBRsF9R8AvgSrWSO+p1JD2l+ujOjwZM/1pMew/UIWgjsAn6EywN9gJb3rytLUyXEXDEQH2RqAajvGz9yo+/GWPubcJVFF0UM9cTlRCe0+TVrluLy2J4CvE5+cLNJgKEvA+u4YlsLcFv6zwN/BZ5k6gGbZhY/WG0DmHdSvpp+0+X6VsIyMdUSMW2OwKanP0JP32gJkkPyrDKe4Ssj6fJ8i/BhjCMTSqfW9b0kiWx4fzXv/HbROYU59DgCKiAU9Vv3DPOuqR9mqfPokCw1muYvGNr6Xp12T0cm5VAB4N9/D92XPTPqjdQXs0FA0Jfx3S8AFHl34baEQ1sJDEX8B7gyMvQ76bIAQAX4D24nMehVFxmlHu9Q7K67izLeuio4WeyBrMub2DV1C/6yPoz4KU6eLIySCi7KZA7O71z0bF5l1f1VXCzfZ4tmdOuyZJZ4orIuQjXql27wHAbenuHkzVwVAJyK2340EGTH/KjoL2wIv1+F/KCBIJMcijp+X89K7w8LBBfIOlWNFzMMezP4msBVRZ/5Uap66uDRSKcMCJ11vTp7dgCXlI35UUkwA7jaswtUtNW8zjZG+PLHwgfDLbi6y6Vkfpyj6UTgOmCrzfS21wRwO3Buxkv1xOXbsJaI6rGaJ0bi+cAZuF3EebgtzVHaS6iJobwVeAYXbXWfePn8ydMoOwB8aaDBpT7NpnXEaVScR01h/j5c7F6c6hyKi/d/h5CPLwutJeIAAAAASUVORK5CYII="); }
+#tela-ficha .menu-lateral .aba .icone-cavalo { --m: url("data:image/png;base64,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"); }
