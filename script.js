@@ -197,9 +197,6 @@ const $ = id => document.getElementById(id);
 
 const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos)
 
-// Vantagem / desvantagem marcadas em cada atributo (vale só pra próxima rolagem)
-let vantagens = {};
-const rotuloVD = vd => vd === "vant" ? " (vantagem)" : vd === "desv" ? " (desvantagem)" : "";
 
 
 function desenharAtributos() {
@@ -218,15 +215,6 @@ function desenharAtributos() {
     </div>`).join("");
 }
 
-// Botões Vant. / Desv. de um antecedente
-function botoesVD(id, rotulo) {
-  const vd = vantagens[id] || null;
-  return `<span class="vd" role="group" aria-label="Vantagem ou desvantagem em ${rotulo}">
-            <button class="vd-btn ${vd === "vant" ? "ativo" : ""}" data-vd-antecedente="${id}" data-vd="vant" aria-pressed="${vd === "vant"}" title="Rola 2d6 e fica com o maior">Vant.</button>
-            <button class="vd-btn ${vd === "desv" ? "ativo" : ""}" data-vd-antecedente="${id}" data-vd="desv" aria-pressed="${vd === "desv"}" title="Rola 2d6 e fica com o menor">Desv.</button>
-          </span>`;
-}
-
 function desenharAntecedentes() {
   const lista = $("lista-antecedentes");
   lista.innerHTML = ANTECEDENTES.map(a => {
@@ -237,10 +225,7 @@ function desenharAntecedentes() {
     }
     return `
       <div class="antecedente">
-        <div class="atributo-nome">
-          <button class="nome-rolavel" data-rolar-antecedente="${a.id}">${a.nome}</button>
-          ${botoesVD(a.id, a.nome)}
-        </div>
+        <button class="nome-rolavel" data-rolar-antecedente="${a.id}">${a.nome}</button>
         <span class="antecedente-base">1d6 + ${valor}</span>
         <div class="pontos">${pontos}</div>
       </div>`;
@@ -407,7 +392,7 @@ const Arena = (() => {
   let tema = "classico";
   const PALETA = {
     classico: { base: ["#9a6436", "#5c3618"], escuro: "rgba(40, 20, 8,", pips: "#160f08", numero: "#1a1109", costura: "rgba(225, 200, 150, 0.75)", rugosidade: 0.75 },
-    azul:     { base: ["#4f8fd6", "#17386e"], escuro: "rgba(4, 14, 36,",  pips: "#eaf3ff", numero: "#eaf3ff", costura: "rgba(190, 220, 255, 0.8)", rugosidade: 0.3 },
+    azul:     { base: ["#4f8fd6", "#17386e"], escuro: "rgba(4, 14, 36,",  pips: "#0f1f1c", numero: "#0f1f1c", costura: "rgba(190, 220, 255, 0.8)", rugosidade: 0.45 },
   };
   const P = () => PALETA[tema];
   let animacao = 0;         // id pra cancelar animação antiga
@@ -589,6 +574,48 @@ const Arena = (() => {
     g.fillRect(0, 0, tam, tam);
   }
 
+  // Cobre oxidado: patina verde-azulada, manchas de cobre aparente e arranhões
+  function pintarCobre(g, tam, semente = 7) {
+    const aleatorio = sorteador(semente);
+    const k = tam / 256; // escala: a textura foi desenhada pensando em 256 px
+    const f = g.createLinearGradient(0, 0, tam, tam);
+    f.addColorStop(0, "#7fa89a");
+    f.addColorStop(0.5, "#4f7f74");
+    f.addColorStop(1, "#2c5a54");
+    g.fillStyle = f;
+    g.fillRect(0, 0, tam, tam);
+    // grãos de patina
+    for (let i = 0; i < 2500 * k * k; i++) {
+      g.fillStyle = `rgba(${aleatorio() < 0.5 ? "180, 220, 200" : "20, 50, 46"}, ${aleatorio() * 0.35})`;
+      const p = (1 + aleatorio() * 2) * k;
+      g.fillRect(aleatorio() * tam, aleatorio() * tam, p, p);
+    }
+    // manchas de cobre aparente, onde a patina saiu
+    for (let i = 0; i < 9; i++) {
+      const x = aleatorio() * tam, y = aleatorio() * tam, r = (20 + aleatorio() * 40) * k;
+      const m = g.createRadialGradient(x, y, 0, x, y, r);
+      m.addColorStop(0, "rgba(190, 110, 70, 0.45)");
+      m.addColorStop(1, "rgba(190, 110, 70, 0)");
+      g.fillStyle = m;
+      g.fillRect(0, 0, tam, tam);
+    }
+    // arranhões finos
+    g.strokeStyle = "rgba(20, 40, 38, 0.4)";
+    g.lineWidth = Math.max(1, k);
+    for (let i = 0; i < 10; i++) {
+      g.beginPath();
+      g.moveTo(aleatorio() * tam, aleatorio() * tam);
+      g.lineTo(aleatorio() * tam, aleatorio() * tam);
+      g.stroke();
+    }
+    // borda mais escura, como metal gasto pelo tempo
+    const borda = g.createRadialGradient(tam / 2, tam / 2, tam * 0.3, tam / 2, tam / 2, tam * 0.75);
+    borda.addColorStop(0, "rgba(10, 30, 28, 0)");
+    borda.addColorStop(1, "rgba(10, 30, 28, 0.5)");
+    g.fillStyle = borda;
+    g.fillRect(0, 0, tam, tam);
+  }
+
   // Pedra azul arcana (pedra filosofal): azul profundo, nuvens de cor, veios de luz e brilhos
   function pintarPedra(g, tam, semente = 7) {
     const aleatorio = sorteador(semente);
@@ -647,7 +674,7 @@ const Arena = (() => {
   // Qual material usar nos dados: "couro" ou "madeira"
   const MATERIAL_DADO = "couro";
   function pintarMaterial(g, tam, semente, ehFace) {
-    if (tema === "azul") return pintarPedra(g, tam, semente);
+    if (tema === "azul") return pintarCobre(g, tam, semente);
     if (MATERIAL_DADO === "couro") return pintarCouro(g, tam, semente, ehFace);
     pintarMadeira(g, tam, semente);
     if (ehFace) pintarChanfro(g, tam);
@@ -1061,10 +1088,8 @@ let ultimaRolagem = null; // pra "Rolar de novo"
 async function fazerRolagem(r) {
   ultimaRolagem = r;
   // Vantagem: rola 2 dados e fica com o maior. Desvantagem: fica com o menor.
-  const dadosRolados = r.vd ? [rolar(r.lados), rolar(r.lados)] : [rolar(r.lados)];
-  const valor = r.vd === "vant" ? Math.max(...dadosRolados)
-              : r.vd === "desv" ? Math.min(...dadosRolados)
-              : dadosRolados[0];
+  const dadosRolados = [rolar(r.lados)];
+  const valor = dadosRolados[0];
   const total = valor + r.bonus;
 
   // Críticos não são resolvidos pela ficha: o mestre narra e decide o efeito.
@@ -1075,9 +1100,7 @@ async function fazerRolagem(r) {
   let conta;
   if (r.sorte) conta = `Saiu ${valor} (${valor % 2 === 0 ? "par" : "ímpar"})`;
   else {
-    conta = r.vd
-      ? `2d${r.lados}: ${dadosRolados.join(" e ")} → ${r.vd === "vant" ? "maior" : "menor"} ${valor}`
-      : `1d${r.lados}: ${valor}`;
+    conta = `1d${r.lados}: ${valor}`;
     if (r.bonus) conta += ` ${r.bonus > 0 ? "+" : "−"} ${Math.abs(r.bonus)}`;
     if (r.partes) conta += ` (${r.partes})`;
   }
@@ -1220,12 +1243,6 @@ document.addEventListener("click", e => {
   }
 
   // Rolagens da ficha
-  // Vantagem / desvantagem do antecedente: clicar de novo desmarca
-  if (d.vdAntecedente) {
-    vantagens[d.vdAntecedente] = vantagens[d.vdAntecedente] === d.vd ? null : d.vd;
-    return desenharAntecedentes();
-  }
-
   if (d.rolarAtributo) {
     const a = ATRIBUTOS.find(x => x.id === d.rolarAtributo);
     const v = ficha.atributos[a.id];
@@ -1235,10 +1252,7 @@ document.addEventListener("click", e => {
   if (d.rolarAntecedente) {
     const a = ANTECEDENTES.find(x => x.id === d.rolarAntecedente);
     const v = ficha.antecedentes[a.id];
-    const vd = vantagens[a.id] || null;
-    vantagens[a.id] = null; // a marcação vale só pra esta rolagem
-    desenharAntecedentes();
-    return fazerRolagem({ rotulo: `${a.nome}${rotuloVD(vd)}`, lados: 6, bonus: v, partes: `${a.nome} ${v}`, violencia: a.id === "violencia", vd });
+    return fazerRolagem({ rotulo: a.nome, lados: 6, bonus: v, partes: `${a.nome} ${v}`, violencia: a.id === "violencia" });
   }
 
   // Os três botões da mesa
