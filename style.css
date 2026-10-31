@@ -1191,3 +1191,10 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 
 /* guia com filtros */
 .guia-indice a.ativa { color: var(--tinta); text-decoration: underline; text-underline-offset: 4px; }
+
+/* Defesa: bônus e total legíveis sobre o card creme */
+.cartao-cinza .combate-grade .defesa-bonus { color: #6f5f48; }
+.cartao-cinza .combate-grade .defesa-bonus.positivo { color: #3f5a12; }
+.cartao-cinza .combate-grade .defesa-bonus.negativo { color: #9a2f22; }
+.cartao-cinza .combate-grade .defesa-controle { color: #4a3d2b; }
+.cartao-cinza .combate-grade .defesa-total { color: #2b1f14; border-top-color: #8a7d62; font-weight: 700; }
