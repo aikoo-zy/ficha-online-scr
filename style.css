@@ -929,13 +929,15 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 }
 .barra-vida { --cor: #3f8f4e; --cor-clara: #6fbf7b; --cor-escura: #1f5a2c; }
 
-/* Vida em 1 ponto: pisca em vermelho */
-@keyframes piscar-vida {
-  0%, 49.9% { background: linear-gradient(180deg, #6fbf7b 0%, #3f8f4e 50%, #1f5a2c 100%); }
-  50%, 100% { background: linear-gradient(180deg, #ff6a5c 0%, #e0231a 50%, #7a0c07 100%); }
+/* Vida em 1 ponto: fica verde e vermelho aparece e some em fade */
+.barra.critica .barra-cheia::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, #ff6a5c 0%, #e0231a 50%, #7a0c07 100%);
+  animation: fade-vida 1s ease-in-out infinite;
+  pointer-events: none;
 }
-.barra.critica .barra-cheia { animation: piscar-vida 0.7s step-end infinite; }
-@media (prefers-reduced-motion: reduce) { .barra.critica .barra-cheia { animation: none; background: #d6392c; } }
+@keyframes fade-vida { 0%, 100% { opacity: 0; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .barra.critica .barra-cheia::after { animation: none; opacity: 1; } }
 
 /* Dor: a barra vira botão quando zera */
 .faixa-penalidade {
@@ -950,7 +952,38 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
   background: rgba(200, 71, 59, 0.18);
   outline: 1px dashed var(--sangue); outline-offset: -4px;
 }
-.barra.penalizada .faixa-penalidade { display: flex; background: #b3261e; color: #fff; }
-.barra.saindo .faixa-penalidade { animation: deslizar-penalidade 0.9s ease-in forwards; }
+.barra.penalizada .faixa-penalidade { display: flex; background: #b3261e; color: #fff; animation: revelar-penalidade 0.4s ease-out both; }
+@keyframes revelar-penalidade { from { opacity: 0; } to { opacity: 1; } }
+.barra.saindo .faixa-penalidade { animation: deslizar-penalidade 0.5s ease-in forwards; }
 @keyframes deslizar-penalidade { to { transform: translateX(100%); } }
-@media (prefers-reduced-motion: reduce) { .barra.saindo .faixa-penalidade { animation: none; display: none; } .barra.pronta { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .barra.saindo .faixa-penalidade, .barra.penalizada .faixa-penalidade { animation: none; } .barra.saindo .faixa-penalidade { display: none; } .barra.pronta { animation: none; } }
+
+/* Nome do personagem no cabeçalho */
+.marca-nome {
+  font-family: var(--fonte-letreiro); font-size: 2rem; line-height: 1.2; color: var(--tinta);
+  background: transparent; border: 0; border-bottom: 2px dashed var(--linha);
+  width: min(100%, 460px); padding: 0 4px;
+}
+.marca-nome::placeholder { color: var(--poeira); }
+.marca-nome:focus { outline: none; border-bottom-color: var(--sangue); }
+
+/* Retrato um pouco menor, centralizado */
+.retrato { max-width: 210px; margin: 5px auto; }
+
+/* Nível: faixa larga, símbolo maior */
+.perfil-nivel {
+  width: 100%; box-sizing: border-box;
+  border: 2px solid var(--borda); border-radius: var(--raio);
+  padding: 8px 12px; margin-top: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.perfil-nivel .perfil-rotulo { font-size: 1.15rem; margin: 0; }
+#val-nivel { min-width: 104px; }
+.nivel-img { width: 100px; height: 100px; }
+
+/* Combate: 2x2 dentro de uma caixa só */
+.combate-caixa {
+  border: 2px solid var(--borda); border-radius: var(--raio);
+  padding: 10px; box-sizing: border-box;
+}
+.combate-caixa .condicao { border-color: var(--linha); }
