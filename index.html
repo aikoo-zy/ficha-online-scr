@@ -8,6 +8,14 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
   <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
        Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
+  <!-- evita o "pisca": decide antes de desenhar se é a lista ou a ficha -->
+  <script>
+    if (!new URLSearchParams(location.search).get("ficha")) document.documentElement.classList.add("sem-ficha");
+  </script>
+  <style>
+    html:not(.sem-ficha) #tela-inicio { display: none !important; }
+    html.sem-ficha #tela-ficha { display: none !important; }
+  </style>
   <link rel="stylesheet" href="style.css?v=20261031j">
 </head>
 <body>
@@ -18,7 +26,7 @@
      ============================================================ -->
 
 <!-- ===================== TELA INICIAL: escolher ou criar ficha ===================== -->
-<section class="inicio" id="tela-inicio" hidden>
+<section class="inicio" id="tela-inicio">
   <header class="inicio-topo">
     <h1 class="marca">Fichas de Sacramento</h1>
     <p class="dica">Escolha a sua ficha ou crie uma nova.</p>
