@@ -1565,9 +1565,19 @@ $("lista-habilidades").addEventListener("keydown", e => {
 function janelaGuia(abrir) {
   $("janela-guia").hidden = !abrir;
   document.body.classList.toggle("sem-rolagem", abrir);
-  if (abrir) { $("guia-corpo").scrollTop = 0; $("fechar-guia").focus(); }
+  if (abrir) { filtrarGuia("todos"); $("fechar-guia").focus(); }
   else $("abrir-guia").focus();
 }
+// Guia com filtros: o índice mostra só a seção escolhida ("Todos" mostra tudo)
+const SECOES_GUIA = [...document.querySelectorAll("#guia-corpo > .guia-pagina")];
+function filtrarGuia(filtro) {
+  const todos = filtro === "todos";
+  SECOES_GUIA.forEach(s => { s.hidden = !todos && s.id !== filtro; });
+  document.querySelectorAll(".guia-indice a").forEach(a => a.classList.toggle("ativa", a.getAttribute("href") === "#" + filtro));
+  $("guia-corpo").scrollTop = 0;
+}
+filtrarGuia("todos");
+
 $("abrir-guia").addEventListener("click", () => janelaGuia(true));
 $("fechar-guia").addEventListener("click", () => janelaGuia(false));
 $("janela-guia").addEventListener("click", e => {
@@ -1576,7 +1586,7 @@ $("janela-guia").addEventListener("click", e => {
   const link = e.target.closest(".guia-indice a");
   if (link) {
     e.preventDefault();
-    document.querySelector(link.getAttribute("href")).scrollIntoView({ behavior: "smooth", block: "start" });
+    filtrarGuia(link.getAttribute("href").slice(1));
   }
 });
 document.addEventListener("keydown", e => {
