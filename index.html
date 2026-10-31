@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
   <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
        Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
-  <link rel="stylesheet" href="style.css?v=20261031h">
+  <link rel="stylesheet" href="style.css?v=20261031j">
 </head>
 <body>
 <!-- ============================================================
@@ -312,6 +312,8 @@
       <button class="mini" id="fechar-guia" aria-label="Fechar">×</button>
     </header>
     <nav class="guia-indice" aria-label="Partes do guia">
+      <a href="#todos" class="ativa">Todos</a>
+      <a href="#guia-atributos">Atributos</a>
       <a href="#guia-rolagens">Rolagens</a>
       <a href="#guia-combate">Combate</a>
       <a href="#guia-vida">Vida, Dor e Morte</a>
@@ -320,7 +322,23 @@
     </nav>
     <div class="janela-corpo guia" id="guia-corpo">
 
-      <section id="guia-rolagens">
+      <section id="guia-atributos" class="guia-pagina">
+        <h3>Atributos</h3>
+        <p class="guia-intro">Os quatro números base do personagem. Na criação você distribui 4 pontos entre eles, e depois pode subir ou descer.</p>
+        <dl>
+          <div class="guia-item"><dt>Físico</dt>
+          <dd>Corpo e resistência. Cada ponto dá <b>+1 Ponto de Vida</b>. Os Pontos de Vida começam em 6, então Físico 3 dá 9.</dd></div>
+          <div class="guia-item"><dt>Velocidade</dt>
+          <dd>Rapidez de movimento. Cada ponto dá <b>+1 Movimento</b> por turno. Cada Movimento anda uns 3 metros.</dd></div>
+          <div class="guia-item"><dt>Intelecto</dt>
+          <dd>Raciocínio e conhecimento. Cada ponto dá <b>+1 ponto de Antecedente</b>. Os Antecedentes começam com 4 pontos, então Intelecto 2 dá 6.</dd></div>
+          <div class="guia-item"><dt>Coragem</dt>
+          <dd>Determinação na briga. Cada ponto dá <b>+1 Ação de Combate</b> por turno.</dd></div>
+        </dl>
+        <p class="guia-intro">Pra rolar um Atributo, clique no nome dele na ficha. Rola 1d6 e soma o valor, em um Teste de Resistência: quando algo afeta o personagem.</p>
+      </section>
+
+      <section id="guia-rolagens" class="guia-pagina">
         <h3>Rolagens</h3>
         <p class="guia-intro">Como os dados funcionam na ficha.</p>
         <dl>
@@ -341,7 +359,7 @@
         </dl>
       </section>
 
-      <section id="guia-combate">
+      <section id="guia-combate" class="guia-pagina">
         <h3>Combate</h3>
         <p class="guia-intro">A ordem das coisas quando a bala começa a voar.</p>
         <dl>
@@ -368,7 +386,7 @@
         </dl>
       </section>
 
-      <section id="guia-vida">
+      <section id="guia-vida" class="guia-pagina">
         <h3>Vida, Dor e Morte</h3>
         <p class="guia-intro">O que acontece quando o personagem se machuca.</p>
         <dl>
@@ -397,7 +415,7 @@
         </dl>
       </section>
 
-      <section id="guia-montaria">
+      <section id="guia-montaria" class="guia-pagina">
         <h3>Montaria</h3>
         <p class="guia-intro">O seu cavalo (ou burrico) também tem ficha.</p>
         <dl>
@@ -412,7 +430,7 @@
         </dl>
       </section>
 
-      <section id="guia-equipamento">
+      <section id="guia-equipamento" class="guia-pagina">
         <h3>Equipamento</h3>
         <p class="guia-intro">O que dá pra carregar.</p>
         <dl>
@@ -445,7 +463,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="habilidades.js?v=20261022a"></script>
-<script src="script.js?v=20261031f"></script>
+<script src="script.js?v=20261031h"></script>
 <script type="module" src="nuvem.js?v=20261022a"></script>
 </body>
 </html>
