@@ -40,7 +40,7 @@
   <div class="topo-titulo">
     <a class="voltar" href="index.html">← Todas as fichas</a>
     <div class="titulo-linha">
-      <div class="marca">Ficha de Personagem</div>
+      <input id="nome" class="marca-nome" type="text" placeholder="Nome do personagem" data-campo="nome" aria-label="Nome do personagem">
       <button class="botao-guia" id="abrir-guia">Guia Rápido do Jogador</button>
     </div>
   </div>
@@ -72,8 +72,6 @@
   </div>
   <p class="aviso-foto" id="aviso-foto" hidden></p>
 
-  <label for="nome" class="perfil-rotulo">Nome</label>
-  <input id="nome" class="perfil-nome" type="text" placeholder="Nome do personagem" data-campo="nome">
   <div class="perfil-nivel">
     <span class="perfil-rotulo">Nível</span>
     <div class="ajuste">
@@ -83,8 +81,8 @@
     </div>
   </div>
 
-    <!-- COMBATE (2x2) -->
-    <div class="combate-grade">
+    <!-- COMBATE (2x2, numa caixa só) -->
+    <div class="combate-grade combate-caixa">
       <div class="condicao"><span class="condicao-rotulo">Ações de Combate</span><span class="condicao-valor" id="val-acoes">1</span></div>
       <div class="condicao">
         <span class="condicao-rotulo">Defesa</span>
