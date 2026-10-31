@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
   <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
        Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
-  <link rel="stylesheet" href="style.css?v=20261027g">
+  <link rel="stylesheet" href="style.css?v=20261031b">
 </head>
 <body>
 <!-- ============================================================
@@ -82,6 +82,62 @@
       <button class="mini" data-ajuste="nivel" data-passo="1" aria-label="Aumentar nível">+</button>
     </div>
   </div>
+
+    <!-- COMBATE (2x2) -->
+    <div class="combate-grade">
+      <div class="condicao"><span class="condicao-rotulo">Ações de Combate</span><span class="condicao-valor" id="val-acoes">1</span></div>
+      <div class="condicao">
+        <span class="condicao-rotulo">Defesa</span>
+        <div class="defesa-linha">
+          <span class="condicao-valor">5</span>
+          <span class="defesa-bonus" id="defesa-bonus-valor">±0</span>
+        </div>
+        <div class="defesa-controle">
+          <button class="mini" data-ajuste="defesaBonus" data-passo="-1" aria-label="Diminuir bônus de Defesa">−</button>
+          <span>bônus</span>
+          <button class="mini" data-ajuste="defesaBonus" data-passo="1" aria-label="Aumentar bônus de Defesa">+</button>
+        </div>
+        <span class="defesa-total" id="val-defesa"></span>
+      </div>
+      <div class="condicao">
+        <label class="condicao-rotulo" for="iniciativa">Iniciativa</label>
+        <input id="iniciativa" class="condicao-campo" type="text" placeholder="carta" data-campo="iniciativa">
+      </div>
+      <div class="condicao"><span class="condicao-rotulo">Movimentos</span><span class="condicao-valor" id="val-movimentos">1</span></div>
+    </div>
+
+    <!-- PONTOS DE DOR -->
+    <div class="barra-bloco">
+      <h2 class="barra-titulo">Pontos de Dor</h2>
+      <div class="barra-linha">
+        <button class="mini" data-barra="dor" data-passo="-1" aria-label="Riscar 1 Ponto de Dor">−</button>
+        <div class="barra barra-dor" id="barra-dor" data-barra-clique="dor" role="meter" aria-label="Pontos de Dor" aria-valuemin="0">
+          <div class="barra-cheia"><span class="barra-pulso"></span></div>
+          <div class="faixa-penalidade" id="faixa-penalidade" aria-live="polite"></div>
+        </div>
+        <button class="mini" data-barra="dor" data-passo="1" aria-label="Recuperar 1 Ponto de Dor">+</button>
+      </div>
+    </div>
+
+    <!-- PONTOS DE VIDA -->
+    <div class="barra-bloco">
+      <h2 class="barra-titulo">Pontos de Vida</h2>
+      <div class="barra-linha">
+        <button class="mini" data-barra="vida" data-passo="-1" aria-label="Riscar 1 Ponto de Vida">−</button>
+        <div class="barra barra-vida" id="barra-vida" data-barra-clique="vida" role="meter" aria-label="Pontos de Vida" aria-valuemin="0">
+          <div class="barra-cheia"><span class="barra-pulso"></span></div>
+        </div>
+        <button class="mini" data-barra="vida" data-passo="1" aria-label="Recuperar 1 Ponto de Vida">+</button>
+      </div>
+      <div class="vida-extra">
+        <span>Vida extra <small>(outras fontes)</small></span>
+        <div class="ajuste">
+          <button class="mini" data-ajuste="vidaBonus" data-passo="-1" aria-label="Diminuir vida extra">−</button>
+          <span class="valor-grande" id="val-vida-bonus">0</span>
+          <button class="mini" data-ajuste="vidaBonus" data-passo="1" aria-label="Aumentar vida extra">+</button>
+        </div>
+      </div>
+    </div>
   <span class="status-nuvem" id="status-nuvem" data-estado="local"></span>
   <button class="link-botao perfil-exportar" id="exportar-ficha">Exportar ficha (.json)</button>
 </aside>
@@ -111,69 +167,6 @@
       </div>
     </div>
 
-    <!-- CONDIÇÕES -->
-    <div class="condicoes">
-      <div class="condicao"><span class="condicao-rotulo">Movimentos</span><span class="condicao-valor" id="val-movimentos">1</span></div>
-      <div class="condicao"><span class="condicao-rotulo">Ações de Combate</span><span class="condicao-valor" id="val-acoes">1</span></div>
-      <div class="condicao">
-        <label class="condicao-rotulo" for="iniciativa">Iniciativa</label>
-        <input id="iniciativa" class="condicao-campo" type="text" placeholder="carta" data-campo="iniciativa">
-      </div>
-      <div class="condicao">
-        <span class="condicao-rotulo">Defesa</span>
-        <div class="defesa-linha">
-          <span class="condicao-valor">5</span>
-          <span class="defesa-bonus" id="defesa-bonus-valor">±0</span>
-        </div>
-        <div class="defesa-controle">
-          <button class="mini" data-ajuste="defesaBonus" data-passo="-1" aria-label="Diminuir bônus de Defesa">−</button>
-          <span>bônus</span>
-          <button class="mini" data-ajuste="defesaBonus" data-passo="1" aria-label="Aumentar bônus de Defesa">+</button>
-        </div>
-        <span class="defesa-total" id="val-defesa"></span>
-      </div>
-    </div>
-
-    <div class="grade-2">
-      <!-- CÍRCULOS DE DOR -->
-      <div class="bloco">
-        <div class="bloco-cabeca"><h2>Pontos de Dor</h2></div>
-        <div class="barra-linha">
-          <button class="mini" data-barra="dor" data-passo="-1" aria-label="Riscar 1 Ponto de Dor">−</button>
-          <div class="barra barra-dor" id="barra-dor" data-barra-clique="dor" role="meter" aria-label="Pontos de Dor" aria-valuemin="0">
-            <div class="barra-cheia"><span class="barra-pulso"></span></div>
-          </div>
-          <button class="mini" data-barra="dor" data-passo="1" aria-label="Recuperar 1 Ponto de Dor">+</button>
-        </div>
-        <div class="alerta-dor" id="alerta-dor" hidden>
-          <strong>Seis Pontos de Dor riscados!</strong>
-          <span>Role a penalidade: risca 1 Ponto de Vida e zera a Dor.</span>
-          <button class="botao" id="botao-penalidade">Rolar penalidade</button>
-        </div>
-        <ol class="tabela-dor" id="tabela-dor"></ol>
-      </div>
-
-      <!-- CÍRCULOS DE VIDA -->
-      <div class="bloco">
-        <div class="bloco-cabeca"><h2>Pontos de Vida</h2></div>
-        <div class="barra-linha">
-          <button class="mini" data-barra="vida" data-passo="-1" aria-label="Riscar 1 Ponto de Vida">−</button>
-          <div class="barra barra-vida" id="barra-vida" data-barra-clique="vida" role="meter" aria-label="Pontos de Vida" aria-valuemin="0">
-            <div class="barra-cheia"><span class="barra-pulso"></span></div>
-          </div>
-          <button class="mini" data-barra="vida" data-passo="1" aria-label="Recuperar 1 Ponto de Vida">+</button>
-        </div>
-        <div class="vida-extra">
-          <span>Vida extra <small>(outras fontes)</small></span>
-          <div class="ajuste">
-            <button class="mini" data-ajuste="vidaBonus" data-passo="-1" aria-label="Diminuir vida extra">−</button>
-            <span class="valor-grande" id="val-vida-bonus">0</span>
-            <button class="mini" data-ajuste="vidaBonus" data-passo="1" aria-label="Aumentar vida extra">+</button>
-          </div>
-        </div>
-        <p class="dica">6 Pontos iniciais +1 por ponto de Físico (mais Parrudeza e vida extra). Use − e + ou clique na barra pra marcar dano e cura.</p>
-      </div>
-    </div>
 
     <!-- HABILIDADES -->
     <div class="bloco">
@@ -397,7 +390,7 @@
           <div class="guia-item"><dt>Dano Letal e Dano de Dor</dt>
           <dd><b>Dano Letal</b> tira Pontos de Vida. <b>Dano de Dor</b> tira Pontos de Dor.</dd></div>
           <div class="guia-item"><dt>Quando a Dor acaba</dt>
-          <dd>Ao perder os 6 Pontos de Dor, você perde 1 Ponto de Vida, sofre uma penalidade sorteada (tabela na ficha) e a Dor volta cheia. A ficha mostra o botão "Rolar penalidade".</dd></div>
+          <dd>Ao perder os 6 Pontos de Dor, você perde 1 Ponto de Vida, sofre uma penalidade sorteada (tabela de penalidades) e a Dor volta cheia. A própria barra de Dor vira um botão "Rolar penalidade": ao clicar, o nome da penalidade aparece na barra e, depois de um instante, ela desliza e a Dor volta cheia.</dd></div>
           <div class="guia-item"><dt>Morrendo</dt>
           <dd>Ao zerar os Pontos de Vida, você entra no estado <b>morrendo</b>. Só dá pra entrar nesse estado <b>uma vez por combate</b>: se a vida zerar de novo no mesmo combate, a morte é certa.</dd></div>
           <div class="guia-item"><dt>Teste de Morte</dt>
@@ -463,7 +456,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="habilidades.js?v=20261022a"></script>
-<script src="script.js?v=20261027h"></script>
+<script src="script.js?v=20261031b"></script>
 <script type="module" src="nuvem.js?v=20261022a"></script>
 </body>
 </html>
