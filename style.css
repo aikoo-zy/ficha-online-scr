@@ -1141,7 +1141,7 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 #tela-ficha .folha .bloco > .bloco-cabeca { border-bottom: 1px solid #c9b98f; }
 
 /* Menu de marcadores, saindo pela borda direita da folha */
-#tela-ficha .menu-lateral { margin-right: -46px; gap: 10px; }
+#tela-ficha .menu-lateral { margin: 0 0 0 -25px; gap: 10px; }
 #tela-ficha .menu-lateral .aba {
   width: 60px; height: 58px;
   background: #e4dbc2; color: #5a4a36;
@@ -1153,11 +1153,9 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 #tela-ficha .menu-lateral .aba:hover:not(.ativa) { color: #2b1f14; background: #efe8d2; }
 #tela-ficha .menu-lateral .aba.ativa { background: #7a1c22; color: #f8efdc; border-color: #4a1117; }
 
-@media (max-width: 1180px) {
-  #tela-ficha .menu-lateral { margin-right: -10px; }
-}
+
 @media (max-width: 860px) {
-  #tela-ficha .menu-lateral { margin-right: 0; }
+  #tela-ficha .menu-lateral { margin: 0; }
   .faixa-atributos { margin-top: -26px; }
   .atributo-tile { width: 46%; }
 }
@@ -1196,15 +1194,7 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 .carta, .carta p, .carta li, .carta td, .carta th { text-shadow: none; }
 .carta-remover { color: #d8ccb0; }
 
-/* ícones de imagem do menu (mochila e cavalo) */
+/* ícones de imagem do menu (icones/mochila.png e icones/cavalo.png) */
 #tela-ficha .menu-lateral .aba .icone-menu { width: 30px; height: 30px; object-fit: contain; filter: brightness(0); }
 #tela-ficha .menu-lateral .aba.ativa .icone-menu { filter: brightness(0) invert(1); }
 #tela-ficha .menu-lateral .aba:hover:not(.ativa) .icone-menu { filter: brightness(0); }
-
-/* ícones de imagem do menu: pintados com a mesma cor dos outros ícones (currentColor) */
-#tela-ficha .menu-lateral .aba .icone-menu {
-  display: block; width: 28px; height: 28px;
-  background-color: currentColor;
-  -webkit-mask: var(--m) center / contain no-repeat;
-          mask: var(--m) center / contain no-repeat;
-}
