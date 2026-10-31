@@ -233,11 +233,6 @@ function desenharAntecedentes() {
 }
 
 
-function desenharTabelaDor(sorteado) {
-  $("tabela-dor").innerHTML = TABELA_DOR.map(([nome, efeito], i) =>
-    `<li class="${sorteado === i + 1 ? "sorteado" : ""}"><span>${i + 1}</span><span>${nome}</span><span>${efeito}</span></li>`
-  ).join("");
-}
 
 function desenharItens() {
   $("corpo-itens").innerHTML = ficha.itens.map((item, i) => `
@@ -328,7 +323,6 @@ function atualizarResumo() {
   $("val-potencia").textContent = m.potencia;
   $("val-resistencia").textContent = m.resistencia;
 
-  $("alerta-dor").hidden = ficha.dor < BASE.dor;
 }
 
 // Qual valor cada barra controla e qual o máximo dela
@@ -348,9 +342,19 @@ function desenharBarra(id, max, riscados) {
   el.style.setProperty("--pct", `${razao * 100}%`);
   el.style.setProperty("--segmentos", Math.max(1, max));
   el.style.setProperty("--vel", razao > 0.6 ? "2.6s" : razao > 0.3 ? "1.6s" : "0.9s");
-  el.classList.toggle("perigo", resta > 0 && razao <= 0.3);
+  // Vida em 1 ponto: a barra pisca em vermelho
+  const critica = id.endsWith("vida") && resta === 1;
+  el.classList.toggle("critica", critica);
+  el.classList.toggle("perigo", resta > 0 && razao <= 0.3 && !critica);
   el.setAttribute("aria-valuemax", max);
   el.setAttribute("aria-valuenow", resta);
+  // Dor zerada: a barra vira um botão pra rolar a penalidade
+  if (id === "barra-dor") {
+    const pronta = resta === 0 && !el.classList.contains("penalizada");
+    el.classList.toggle("pronta", pronta);
+    el.setAttribute("role", pronta ? "button" : "meter");
+    if (pronta) $("faixa-penalidade").textContent = "Rolar penalidade";
+  }
 }
 
 function desenharTudo() {
@@ -363,7 +367,6 @@ function desenharTudo() {
   $("val-nivel").innerHTML = `<img class="nivel-img" src="niveis/nivel-${ficha.nivel}.png" alt="Nível ${ficha.nivel}">`;
   desenharAtributos();
   desenharAntecedentes();
-  desenharTabelaDor();
   desenharItens();
   desenharColdres();
   desenharFidelidade();
@@ -1263,6 +1266,7 @@ document.addEventListener("click", e => {
 // Clique direto na barra: marca até o círculo clicado
 document.querySelectorAll("[data-barra-clique]").forEach(barra => {
   barra.addEventListener("click", e => {
+    if (barra.dataset.barraClique === "dor" && ficha.dor >= BASE.dor) { rolarPenalidadeDor(); return; }
     const { caminho } = BARRAS[barra.dataset.barraClique];
     const max = BARRAS[barra.dataset.barraClique].max();
     const caixa = barra.getBoundingClientRect();
@@ -1310,18 +1314,37 @@ $("limpar-historico").addEventListener("click", () => {
   desenharHistorico();
 });
 
-// Seis Pontos de Dor: rola a penalidade, risca 1 Vida e zera a Dor
-$("botao-penalidade").addEventListener("click", () => {
+// Seis Pontos de Dor: a barra vira botão. Ao clicar, rola a penalidade, risca 1 Vida,
+// mostra o nome na própria barra (vermelha) e depois ela desliza pra direita e a Dor volta cheia.
+let penalidadeEmAndamento = false;
+function rolarPenalidadeDor() {
+  if (penalidadeEmAndamento || ficha.dor < BASE.dor) return;
+  penalidadeEmAndamento = true;
   const n = rolar(6);
   const [nome, efeito] = TABELA_DOR[n - 1];
-  ficha.dor = 0;
+  const el = $("barra-dor");
   ficha.vidaRiscada = Math.min(ficha.vidaRiscada + 1, calcular().vidaMax);
   ficha.historico.unshift({ rotulo: "Penalidade de Dor", total: String(n), conta: `${nome}: ${efeito}`, extra: "1 Ponto de Vida riscado", hora: horaAgora() });
   salvar();
-  desenharTudo();
-  desenharTabelaDor(n);
+  el.classList.remove("pronta");
+  el.setAttribute("role", "meter");
+  $("faixa-penalidade").textContent = `${nome}`;
+  el.classList.add("penalizada");
+  atualizarResumo();
+  desenharHistorico();
   avisarNoCelular(`Dor: ${nome}`, String(n));
-});
+  setTimeout(() => {
+    ficha.dor = 0;
+    salvar();
+    el.classList.add("saindo");
+    atualizarResumo();
+  }, 2600);
+  setTimeout(() => {
+    el.classList.remove("penalizada", "saindo");
+    penalidadeEmAndamento = false;
+    atualizarResumo();
+  }, 3600);
+}
 
 $("add-item").addEventListener("click", () => { ficha.itens.push({ nome: "", espaco: "" }); salvar(); desenharItens(); });
 
