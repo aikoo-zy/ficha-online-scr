@@ -1178,3 +1178,20 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 /* mesa de dados dentro da linha de Antecedentes */
 .grade-2 > .mesa.folha { position: static; align-self: start; }
 .mesa-historico[hidden] { display: none !important; }
+
+/* Cards de habilidade: texto claro sobre o fundo escuro do card */
+.carta {
+  --tinta: #ece3cf;
+  --poeira: #c4b89c;
+  --bloco-texto: #ece3cf;
+  color: #ece3cf;
+}
+.carta .carta-nome { color: #f6eee0; }
+.carta-combate .carta-nome, .carta-combate .carta-tipo { color: #f0a494; }
+.carta-profissao .carta-nome, .carta-profissao .carta-tipo { color: #ebcc93; }
+.carta-niveis th { color: #d8ccb0; border-bottom-color: #5a4f42; }
+.carta-niveis td { color: #f1e9d8; }
+.carta-niveis tr.atual td { color: #fff8ea; background: color-mix(in srgb, var(--cor-carta) 45%, transparent); }
+.carta li::marker { color: var(--cor-carta); }
+.carta, .carta p, .carta li, .carta td, .carta th { text-shadow: none; }
+.carta-remover { color: #d8ccb0; }
