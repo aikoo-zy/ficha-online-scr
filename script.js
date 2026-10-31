@@ -1343,7 +1343,7 @@ function rolarPenalidadeDor() {
     el.classList.remove("penalizada", "saindo");
     penalidadeEmAndamento = false;
     atualizarResumo();
-  }, 3600);
+  }, 3200);
 }
 
 $("add-item").addEventListener("click", () => { ficha.itens.push({ nome: "", espaco: "" }); salvar(); desenharItens(); });
