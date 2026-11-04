@@ -692,3 +692,15 @@ body {
   .topo .marca { font-size: 1.7rem; }
   .grade-mestre { grid-template-columns: 1fr; }
 }
+
+/* Nomes roláveis (atributos, antecedentes, potência): mesma resposta ao passar o mouse,
+   na cor tema petróleo */
+#tela-ficha .nome-rolavel { transition: color 0.15s, text-decoration-color 0.15s; }
+#tela-ficha .nome-rolavel:hover,
+#tela-ficha .nome-rolavel:focus-visible {
+  color: #243d54;
+  text-decoration: underline solid #243d54 2px;
+  text-underline-offset: 4px;
+  outline: none;
+}
+#tela-ficha .nome-rolavel:active { color: #14212d; }
