@@ -291,3 +291,270 @@ body {
   #tela-ficha .grade-2 { grid-template-columns: 1fr; }
   #tela-ficha .lista-antecedentes { grid-template-columns: 1fr; }
 }
+
+/* =====================================================================
+   OUTRAS TELAS: janelas (guia e habilidades) e tela inicial
+   Mesma linguagem da ficha: papel envelhecido, ferrugem, latão,
+   rótulos datilografados e rebites.
+   ===================================================================== */
+
+/* Fundo das janelas: carvão com ferrugem ao fundo */
+.janela-fundo {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(154, 74, 34, 0.22), transparent 60%),
+    rgba(8, 6, 5, 0.82);
+}
+
+/* Janela em papel envelhecido */
+.janela {
+  background: #e6d6b2 var(--textura-papel, none);
+  border: 2px solid #2a1b12;
+  border-radius: 6px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.75), inset 0 0 0 5px #e6d6b2, inset 0 0 0 6px rgba(90, 59, 38, 0.45);
+  color: #2b1f14;
+  --tinta: #2b1f14;
+  --poeira: #6b5538;
+  --bloco: #d9c49a;
+  --bloco-texto: #2b1f14;
+  --borda: #5a3b26;
+  --linha: #bda77e;
+  --papel-2: #d4bf90;
+}
+
+/* Topo com faixa vinho, como o banner da ficha */
+.janela-topo {
+  background: linear-gradient(180deg, #8c2730, #5a1620);
+  border-bottom: 2px solid #2a0b0e;
+  box-shadow: inset 0 -4px 0 #2a0b0e;
+  color: #f3e3bd;
+  padding: 16px 20px 14px;
+  margin: 0;
+}
+.janela-topo h2, .janela-topo h3, #titulo-guia, #titulo-janela-hab {
+  font-family: var(--fonte-letreiro, "Rye", Georgia, serif);
+  color: #f3e3bd;
+  text-shadow: 0 2px 0 #2a0b0e;
+}
+.janela-topo .dica, .janela-topo p { color: #e6c7b5; font-family: "Special Elite", "Courier New", monospace; }
+
+/* Botão fechar: rebite */
+.janela .mini {
+  border: 2px solid #2b1f14;
+  background: radial-gradient(circle at 35% 30%, #f8efdc 0%, #d9c49a 55%, #a8905e 100%);
+  color: #2b1f14;
+  box-shadow: 0 2px 0 #2b1f14;
+}
+
+/* Texto de apoio das janelas e títulos das seções */
+.janela-guia, .janela-secao, .guia-intro, .janela-corpo > p { color: #5a4530; font-family: "Special Elite", "Courier New", monospace; font-style: normal; font-size: 0.85rem; }
+.janela-secao { font-family: var(--fonte-letreiro, "Rye", Georgia, serif); color: #2b1f14; font-size: 1.1rem; }
+
+/* Busca: papel escuro com borda de latão */
+.janela-busca {
+  background: #c8ae7c;
+  border: 2px solid #8a7140;
+  color: #2b1f14;
+  box-shadow: inset 0 2px 5px rgba(43, 31, 20, 0.35);
+  font-family: "Special Elite", "Courier New", monospace;
+}
+.janela-busca::placeholder { color: #6b5538; opacity: 0.85; }
+.janela-busca:focus { border-color: #3fd7ff; box-shadow: 0 0 10px rgba(63, 215, 255, 0.4); }
+
+/* Cards de habilidade: mesma ficha escura da folha */
+.janela .opcao-hab {
+  --tinta: #efe3c6;
+  --poeira: #b8a88a;
+  --bloco-texto: #efe3c6;
+  --linha: #4a3d2e;
+  --borda: #5a4a36;
+  background: linear-gradient(180deg, #2a2420, #161311);
+  border: 2px solid #8a7140;
+  border-left-width: 6px;
+  border-radius: 4px;
+  box-shadow: inset 0 3px 0 var(--cor-carta, #9a4a22), 0 3px 10px rgba(0, 0, 0, 0.4);
+  color: #efe3c6;
+}
+.janela .opcao-hab:hover:not([aria-disabled="true"]), .janela .opcao-hab:focus-visible {
+  border-color: #c9a85a; border-left-color: var(--cor-carta, #9a4a22);
+  box-shadow: inset 0 3px 0 var(--cor-carta, #9a4a22), 0 0 14px rgba(201, 168, 90, 0.35);
+}
+.janela .opcao-nome { font-family: var(--fonte-letreiro, "Rye", Georgia, serif); color: #f3e3bd; }
+.janela .opcao-nome small { font-family: "Special Elite", "Courier New", monospace; color: #b8a88a; }
+.janela .opcao-tem { color: #c9a85a; font-family: "Special Elite", "Courier New", monospace; }
+
+/* Guia: seções em blocos de papel escuro */
+.janela .guia-indice { border-bottom: 2px solid #8a7140; }
+.janela .guia-indice a { font-family: "Special Elite", "Courier New", monospace; color: #6b5538; }
+.janela .guia-indice a.ativa, .janela .guia-indice a:hover { color: #2b1f14; text-decoration: underline; text-decoration-color: #9a4a22; }
+.janela .guia h3 {
+  font-family: var(--fonte-letreiro, "Rye", Georgia, serif);
+  color: #2b1f14;
+  text-shadow: 0 1px 0 rgba(255, 245, 220, 0.6);
+}
+.janela .guia h3::after { background: #9a4a22; height: 2px; }
+.janela .guia-item {
+  background: #c8ae7c;
+  border: 2px solid #8a7140;
+  border-left: 6px solid #9a4a22;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 2px rgba(255, 245, 220, 0.25), 0 2px 6px rgba(0, 0, 0, 0.25);
+  padding: 12px 14px;
+}
+.janela .guia dt { font-family: var(--fonte-letreiro, "Rye", Georgia, serif); color: #2b1f14; }
+.janela .guia dd { color: #2b1f14; }
+.janela .guia dd b { color: #5a1620; }
+
+/* Tela inicial: fundo carvão, cards de papel com latão */
+.inicio-topo {
+  border-bottom: 3px double #8a7140;
+}
+.inicio-topo .marca {
+  color: #f3e3bd;
+  text-shadow: 0 3px 0 #2a0b0e, 0 0 24px rgba(154, 74, 34, 0.35);
+}
+.inicio-topo .dica { color: #c8b898; font-family: "Special Elite", "Courier New", monospace; }
+
+.card-inicio {
+  --tinta: #2b1f14;
+  --poeira: #6b5538;
+  --bloco-texto: #2b1f14;
+  --borda: #5a3b26;
+  background: #e6d6b2 var(--textura-papel, none);
+  border: 2px solid #8a7140;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 3px #e6d6b2, inset 0 0 0 4px rgba(90, 59, 38, 0.4), 0 6px 14px rgba(0, 0, 0, 0.55);
+  color: #2b1f14;
+  padding: 12px;
+}
+.card-inicio:hover {
+  border-color: #c9a85a;
+  transform: translateY(-3px);
+  box-shadow: inset 0 0 0 3px #e6d6b2, inset 0 0 0 4px rgba(90, 59, 38, 0.4), 0 10px 22px rgba(0, 0, 0, 0.65), 0 0 0 2px rgba(201, 168, 90, 0.5);
+}
+.card-inicio-foto { border: 2px solid #5a3b26; box-shadow: inset 0 0 0 2px rgba(255, 245, 220, 0.4); background: #c8ae7c; }
+.card-inicio-foto img { filter: sepia(0.2) contrast(1.05); }
+.card-inicio-nome { font-family: var(--fonte-letreiro, "Rye", Georgia, serif); color: #2b1f14; }
+.card-inicio-info { font-family: "Special Elite", "Courier New", monospace; color: #6b5538; font-size: 0.78rem; }
+.card-nova {
+  background: transparent;
+  border: 2px dashed #8a7140;
+  box-shadow: none;
+  color: #c9a85a;
+}
+.card-nova .card-inicio-nome { color: #c9a85a; }
+.card-nova:hover { border-color: #c9a85a; box-shadow: 0 0 14px rgba(201, 168, 90, 0.35); }
+.card-nova-mais { border: 1px dashed #8a7140; color: #c9a85a; }
+.card-nova:hover .card-nova-mais { color: #f3e3bd; }
+
+/* Botões de rodapé: rebite vinho */
+.inicio-rodape .botao-ficha {
+  font-family: "Special Elite", "Courier New", monospace;
+  background: linear-gradient(180deg, #8c2730, #5a1620);
+  border: 2px solid #c9a85a;
+  color: #f3e3bd;
+  box-shadow: 0 2px 0 #1d0709;
+  padding: 9px 16px;
+  border-radius: 4px;
+}
+.inicio-rodape .botao-ficha:hover { filter: brightness(1.12); border-color: #f3e3bd; }
+.inicio-rodape .link-botao { color: #c8b898; font-family: "Special Elite", "Courier New", monospace; }
+
+/* Telas menores */
+@media (max-width: 520px) {
+  .janela-topo { padding: 12px 14px 10px; }
+  .janela-corpo { padding: 4px 12px 14px; }
+  .janela .guia-item { padding: 10px 12px; }
+}
+
+/* =====================================================================
+   REDESIGN — cabeçalho petróleo, lírio, atributos no centro,
+   barras contínuas, armas equipadas, mesa menor e habilidades
+   sob demanda.
+   ===================================================================== */
+
+/* Cabeçalho em azul petróleo (cor principal) */
+#tela-ficha .banner {
+  padding-bottom: 18px;
+  background:
+    var(--textura-metal),
+    radial-gradient(ellipse at 12% 0%, #3a5876 0%, #243d54 48%, #14212d 100%);
+  border-color: #0e1820;
+  box-shadow: inset 0 0 0 3px #1b2f42, inset 0 -6px 0 #0e1820, inset 0 0 60px rgba(0, 0, 0, 0.45);
+}
+#tela-ficha .banner .marca-nome { color: #eef2f5; border-bottom-color: rgba(190, 210, 225, 0.45); text-shadow: 0 2px 0 #0e1820; }
+#tela-ficha .banner .botao-guia { background: rgba(10, 18, 26, 0.5); border-color: rgba(190, 210, 225, 0.55); color: #eef2f5; }
+#tela-ficha .banner .voltar { color: #b9c8d4; }
+#tela-ficha .nivel-circulo { border-color: #b9c8d4; box-shadow: 0 0 0 3px #0e1820, 0 0 0 5px #3a5876, 0 6px 14px rgba(0, 0, 0, 0.6); }
+
+/* Lírio preto: ilustração decorativa no cabeçalho */
+#tela-ficha .banner .lirio {
+  position: absolute; top: 6px; bottom: 6px; right: 240px;
+  height: calc(100% - 12px); width: auto;
+  opacity: 0.7; pointer-events: none;
+}
+/* ---------- Atributos no centro: grade 2x2 ---------- */
+#tela-ficha .painel-atributos .lista-atributos {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px;
+}
+#tela-ficha .painel-atributos .atributo-tile { width: 100%; }
+#tela-ficha .painel-atributos .lista-atributos > div { padding: 0; border: 0; }
+
+/* Colunas do centro e da direita */
+#tela-ficha .coluna-central, #tela-ficha .coluna-direita { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+#tela-ficha .coluna-direita .mesa { position: static; }
+
+/* ---------- Barras contínuas (vida, dor e montaria) ---------- */
+#tela-ficha .barra { height: 30px; background: #1b1714; }
+#tela-ficha .barra::after { display: none; }
+#tela-ficha .barra-dor { --cor: #7a1c22; --cor-clara: #a8323b; --cor-escura: #4a0f15; }
+#tela-ficha .barra-vida { --cor: #3f8f4e; --cor-clara: #6fb57a; --cor-escura: #22502b; }
+#tela-ficha .barra-numero {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  display: grid; place-items: center;
+  font-family: var(--fonte-letreiro); font-size: 0.95rem; color: #f8efdc;
+  text-shadow: 0 1px 2px #000, 0 0 4px #000;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Armas equipadas ---------- */
+#tela-ficha .armas-equipadas .coldres { display: flex; flex-direction: column; gap: 12px; }
+#tela-ficha .armas-equipadas .coldre { border-radius: 4px; }
+
+/* ---------- Mesa de dados menor ---------- */
+#tela-ficha .arena-feltro { height: 170px; }
+#tela-ficha .resultado-total { font-size: 2.2rem; }
+#tela-ficha .placar { margin-top: 8px; padding: 10px; }
+
+/* ---------- Habilidades: só o nome ---------- */
+#tela-ficha .carta-compacta {
+  position: relative; min-height: 72px; justify-content: center;
+  padding: 14px 40px 14px 16px; cursor: pointer;
+}
+#tela-ficha .carta-compacta .carta-remover { position: absolute; top: 8px; right: 8px; }
+#tela-ficha .carta-compacta:hover, #tela-ficha .carta-compacta:focus-visible { border-color: #c9a85a; }
+#tela-ficha .carta-compacta .carta-nome { font-size: 1.1rem; margin: 0; }
+
+/* Card flutuante com o detalhe (fica fora de #tela-ficha, no corpo da página) */
+.dica-habilidade {
+  position: fixed; z-index: 70; width: 300px; max-height: 70vh; overflow-y: auto;
+  pointer-events: none;
+  padding: 14px 16px 16px;
+  background: linear-gradient(180deg, #2a2420, #161311);
+  border: 2px solid #8a7140; border-radius: 6px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), inset 0 3px 0 var(--cor-carta, #9a4a22);
+  color: #efe3c6;
+  animation: dica-entra 0.18s ease-out;
+}
+.dica-habilidade .carta-topo { display: flex; justify-content: flex-start; }
+.dica-habilidade .carta-tipo { font-family: "Special Elite", "Courier New", monospace; color: #c9a85a; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.dica-habilidade .carta-nome { font-family: var(--fonte-letreiro); font-size: 1.15rem; color: #f3e3bd; margin: 0 0 6px; }
+.dica-habilidade .carta-detalhe { display: flex; flex-direction: column; gap: 8px; }
+@keyframes dica-entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 600px) {
+  .dica-habilidade { width: auto; max-height: 55vh; pointer-events: auto; }
+  #tela-ficha .banner .lirio { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dica-habilidade { animation: none; }
+}
