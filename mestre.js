@@ -1,109 +1,37 @@
-/* ============================================================
-   MESA DO MESTRE — lógica
-   O nuvem.js chama FichaApp.conectarNuvem() e aqui a gente pede
-   pra ouvir TODAS as fichas. Cada mudança redesenha os cards.
-   ============================================================ */
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mesa do Mestre</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+  <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
+       Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
+  <link rel="stylesheet" href="style.css?v=20261104g">
+  <link rel="stylesheet" href="tema-botanico.css?v=20261104h">
+</head>
+<body>
+<!-- ============================================================
+     MESA DO MESTRE
+     Mostra todas as fichas salvas na nuvem, atualizando ao vivo.
+     ============================================================ -->
 
-const $ = id => document.getElementById(id);
+<header class="topo">
+  <div class="marca">Mesa do Mestre</div>
+  <a class="botao-ficha link-topo" href="index.html">Abrir ficha</a>
+</header>
 
-function esc(t) {
-  return String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-}
+<main class="mesa-mestre">
+  <div class="mestre-cabeca-status">
+    <p class="status-nuvem mestre-status" id="status-nuvem" data-estado="conectando">Conectando na nuvem…</p>
+    <label class="mestre-filtro"><input type="checkbox" id="mostrar-vazias"> Mostrar fichas vazias</label>
+  </div>
+  <div class="grade-mestre" id="grade-mestre"></div>
+</main>
 
-function status(estado, texto) {
-  const el = $("status-nuvem");
-  el.dataset.estado = estado;
-  el.textContent = texto;
-}
-
-// Barra igual à da ficha, só pra leitura
-function barra(classe, max, riscados) {
-  const resta = Math.max(0, max - riscados);
-  const razao = max ? resta / max : 0;
-  const vel = razao > 0.6 ? "2.6s" : razao > 0.3 ? "1.6s" : "0.9s";
-  return `
-    <div class="barra ${classe} ${resta > 0 && razao <= 0.3 ? "perigo" : ""}"
-      style="--pct:${razao * 100}%; --segmentos:${Math.max(1, max)}; --vel:${vel}; cursor:default">
-      <div class="barra-cheia"><span class="barra-pulso"></span></div>
-    </div>
-    <span class="mestre-numero">${resta}/${max}</span>`;
-}
-
-function quandoFoi(ms) {
-  if (!ms) return "";
-  const min = Math.round((Date.now() - ms) / 60000);
-  if (min < 1) return "agora";
-  if (min < 60) return `há ${min} min`;
-  const h = Math.round(min / 60);
-  if (h < 24) return `há ${h} h`;
-  return `há ${Math.round(h / 24)} dias`;
-}
-
-function card({ id, ficha: f, atualizadoEm }) {
-  if (!f) return "";
-  const at = f.atributos || {};
-  const habs = (f.habilidadesLista || []).map(id => HABILIDADES.find(h => h.id === id)).filter(Boolean);
-  const vidaMax = 6 + (at.fisico || 0) + (Number(f.vidaBonus) || 0) + habs.reduce((s, h) => s + (h.vida || 0), 0);
-  const defesa = 5 + (Number(f.defesaBonus) || 0);
-  const m = f.montaria || {};
-  const montariaVidaMax = 6 + (m.resistencia || 0);
-  const armas = (f.coldres || []).filter(c => c.nome);
-
-  return `
-  <article class="card-mestre">
-    <div class="card-mestre-topo">
-      <div class="card-mestre-foto">${f.foto ? `<img src="${esc(f.foto)}" alt="">` : ""}</div>
-      <div class="card-mestre-id">
-        <h2>${esc(f.nome || "Personagem sem nome")}</h2>
-        <span class="dica">Nível ${Number(f.nivel) || 1} · atualizada ${quandoFoi(atualizadoEm)}</span>
-      </div>
-    </div>
-
-    <div class="mestre-linha"><span class="mestre-rotulo">Vida</span>${barra("barra-vida", vidaMax, f.vidaRiscada || 0)}</div>
-    <div class="mestre-linha"><span class="mestre-rotulo">Dor</span>${barra("barra-dor", 6, f.dor || 0)}</div>
-
-    <dl class="mestre-numeros">
-      <div><dt>Defesa</dt><dd>${defesa}</dd></div>
-      <div><dt>Movimentos</dt><dd>${1 + (at.velocidade || 0)}</dd></div>
-      <div><dt>Ações</dt><dd>${1 + (at.coragem || 0)}</dd></div>
-      <div><dt>Iniciativa</dt><dd>${esc(f.iniciativa) || "–"}</dd></div>
-    </dl>
-
-    ${habs.length ? `<p class="mestre-habs">${habs.map(h => esc(h.nome)).join(" · ")}</p>` : ""}
-
-    ${armas.length ? `
-    <ul class="mestre-armas">
-      ${armas.map(c => `<li><span>${esc(c.nome)}</span><span>${Number(c.municao) || 0} / ${Number(c.reserva) || 0}</span></li>`).join("")}
-    </ul>` : ""}
-
-    ${m.nome ? `<div class="mestre-linha"><span class="mestre-rotulo">${esc(m.nome)}</span>${barra("barra-vida", montariaVidaMax, m.vidaRiscada || 0)}</div>` : ""}
-
-    <a class="botao-ficha" href="index.html?ficha=${encodeURIComponent(id)}">Abrir ficha</a>
-  </article>`;
-}
-
-let nuvemRespondeu = false;
-setTimeout(() => {
-  if (!nuvemRespondeu) status("erro", "A nuvem não carregou. Confira se nuvem.js e firebase-config.js estão no site.");
-}, 8000);
-
-window.FichaApp = {
-  conectarNuvem(api) {
-    nuvemRespondeu = true;
-    status("conectando", "Conectando na nuvem…");
-    api.ouvirTodas(lista => {
-      lista.sort((a, b) => String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR"));
-      $("grade-mestre").innerHTML = lista.length
-        ? lista.map(card).join("")
-        : '<p class="dica">Nenhuma ficha na nuvem ainda. Quando os jogadores abrirem a ficha pelo site, elas aparecem aqui.</p>';
-      status("salvo", `Ao vivo · ${lista.length} ${lista.length === 1 ? "ficha" : "fichas"}`);
-    }, erro => {
-      console.error(erro);
-      status("erro", "Não deu pra ler as fichas. Confira as Regras do Firestore.");
-    });
-  },
-  nuvemIndisponivel(mensagem) {
-    nuvemRespondeu = true;
-    status("local", mensagem);
-  },
-};
+<script src="habilidades.js?v=20261104g"></script>
+<script src="mestre.js?v=20261104g"></script>
+<script type="module" src="nuvem.js?v=20261104g"></script>
+</body>
+</html>
