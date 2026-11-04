@@ -17,7 +17,7 @@
     html.sem-ficha #tela-ficha { display: none !important; }
   </style>
   <link rel="stylesheet" href="style.css?v=20261031j">
-  <link rel="stylesheet" href="tema-botanico.css?v=20261104c">
+  <link rel="stylesheet" href="tema-botanico.css?v=20261104e">
 </head>
 <body>
 <!-- ============================================================
@@ -57,7 +57,7 @@
       <input id="val-nivel" class="nivel-input" type="number" min="1" max="8" step="1" data-campo="nivel" aria-label="Nível do personagem">
     </label>
   </div>
-  <img class="lirio" src="icones/lirio-preto.png" alt="" aria-hidden="true">
+  <div class="lirio" aria-hidden="true"></div>
 </header>
 
 <div class="layout">
@@ -164,6 +164,17 @@
         <p class="dica">4 pontos + 1 por ponto de Intelecto. Clique no nome pra rolar 1d6 + pontos.</p>
         <div id="lista-antecedentes" class="lista-antecedentes"></div>
       </div>
+
+      <!-- HABILIDADES -->
+      <div class="bloco">
+        <div class="bloco-cabeca">
+          <h2>Habilidades</h2>
+          <button class="botao" id="abrir-habilidades">+ Adicionar habilidade</button>
+        </div>
+        <div class="cartas" id="cartas-habilidades"></div>
+        <label class="perfil-rotulo anotacoes-rotulo" for="habilidades">Anotações</label>
+        <textarea id="habilidades" class="texto-livre" rows="3" placeholder="Habilidades da sua mesa, detalhes ou lembretes…" data-campo="habilidades"></textarea>
+      </div>
       </div>
 
       <div class="coluna-direita">
@@ -204,16 +215,6 @@
     </div>
 
 
-    <!-- HABILIDADES -->
-    <div class="bloco">
-      <div class="bloco-cabeca">
-        <h2>Habilidades</h2>
-        <button class="botao" id="abrir-habilidades">+ Adicionar habilidade</button>
-      </div>
-      <div class="cartas" id="cartas-habilidades"></div>
-      <label class="perfil-rotulo anotacoes-rotulo" for="habilidades">Anotações</label>
-      <textarea id="habilidades" class="texto-livre" rows="3" placeholder="Habilidades da sua mesa, detalhes ou lembretes…" data-campo="habilidades"></textarea>
-    </div>
   </section>
 
   <!-- ===================== ABA EQUIPAMENTO ===================== -->
