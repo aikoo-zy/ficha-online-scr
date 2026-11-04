@@ -17,7 +17,7 @@
     html.sem-ficha #tela-ficha { display: none !important; }
   </style>
   <link rel="stylesheet" href="style.css?v=20261031j">
-  <link rel="stylesheet" href="tema-botanico.css?v=20261104a">
+  <link rel="stylesheet" href="tema-botanico.css?v=20261104c">
 </head>
 <body>
 <!-- ============================================================
@@ -57,11 +57,8 @@
       <input id="val-nivel" class="nivel-input" type="number" min="1" max="8" step="1" data-campo="nivel" aria-label="Nível do personagem">
     </label>
   </div>
+  <img class="lirio" src="icones/lirio-preto.png" alt="" aria-hidden="true">
 </header>
-
-<div class="faixa-atributos" id="faixa-atributos">
-  <div class="lista-atributos" id="lista-atributos"></div>
-</div>
 
 <div class="layout">
 
@@ -114,6 +111,7 @@
         <button class="mini" data-barra="dor" data-passo="-1" aria-label="Riscar 1 Ponto de Dor">−</button>
         <div class="barra barra-dor" id="barra-dor" data-barra-clique="dor" role="meter" aria-label="Pontos de Dor" aria-valuemin="0">
           <div class="barra-cheia"><span class="barra-pulso"></span></div>
+          <span class="barra-numero" aria-hidden="true"></span>
           <div class="faixa-penalidade" id="faixa-penalidade" aria-live="polite"></div>
         </div>
         <button class="mini" data-barra="dor" data-passo="1" aria-label="Recuperar 1 Ponto de Dor">+</button>
@@ -127,6 +125,7 @@
         <button class="mini" data-barra="vida" data-passo="-1" aria-label="Riscar 1 Ponto de Vida">−</button>
         <div class="barra barra-vida" id="barra-vida" data-barra-clique="vida" role="meter" aria-label="Pontos de Vida" aria-valuemin="0">
           <div class="barra-cheia"><span class="barra-pulso"></span></div>
+          <span class="barra-numero" aria-hidden="true"></span>
         </div>
         <button class="mini" data-barra="vida" data-passo="1" aria-label="Recuperar 1 Ponto de Vida">+</button>
       </div>
@@ -150,6 +149,13 @@
   <section class="painel ativo" data-painel="personagem">
 
     <div class="grade-2">
+      <div class="coluna-central">
+      <!-- ATRIBUTOS -->
+      <section class="bloco painel-atributos">
+        <div class="bloco-cabeca"><h2>Atributos</h2></div>
+        <div class="lista-atributos" id="lista-atributos"></div>
+      </section>
+
       <!-- ANTECEDENTES -->
       <div class="bloco">
         <div class="bloco-cabeca">
@@ -158,7 +164,9 @@
         <p class="dica">4 pontos + 1 por ponto de Intelecto. Clique no nome pra rolar 1d6 + pontos.</p>
         <div id="lista-antecedentes" class="lista-antecedentes"></div>
       </div>
+      </div>
 
+      <div class="coluna-direita">
       <aside class="mesa folha" id="mesa">
         <div class="tema-dado" id="tema-dado">
           <span class="tema-rotulo" data-tema="classico">Clássico</span>
@@ -185,6 +193,14 @@
           <ol class="historico" id="historico"></ol>
         </div>
       </aside>
+
+      <!-- ARMAS EQUIPADAS (até 3) -->
+      <section class="bloco armas-equipadas">
+        <div class="bloco-cabeca"><h2>Armas equipadas</h2></div>
+        <p class="dica">Até 3 armas. O espaço delas entra na conta da bolsa.</p>
+        <div class="coldres" id="coldres"></div>
+      </section>
+      </div>
     </div>
 
 
@@ -219,12 +235,6 @@
         </table>
       </div>
       <button class="botao botao-claro" id="add-item">+ Adicionar item</button>
-    </div>
-
-    <div class="bloco">
-      <div class="bloco-cabeca"><h2>Coldres</h2></div>
-      <p class="dica">Até 4 armas. O espaço delas entra na conta da bolsa.</p>
-      <div class="coldres" id="coldres"></div>
     </div>
   </section>
 
@@ -272,6 +282,7 @@
             <button class="mini" data-barra="montaria-dor" data-passo="-1" aria-label="Riscar 1 Ponto de Dor da montaria">−</button>
             <div class="barra barra-dor" id="barra-montaria-dor" data-barra-clique="montaria-dor" role="meter" aria-label="Ponto de Dor da montaria" aria-valuemin="0">
               <div class="barra-cheia"><span class="barra-pulso"></span></div>
+          <span class="barra-numero" aria-hidden="true"></span>
             </div>
             <button class="mini" data-barra="montaria-dor" data-passo="1" aria-label="Recuperar 1 Ponto de Dor da montaria">+</button>
           </div>
@@ -283,6 +294,7 @@
             <button class="mini" data-barra="montaria-vida" data-passo="-1" aria-label="Riscar 1 Ponto de Vida da montaria">−</button>
             <div class="barra barra-vida" id="barra-montaria-vida" data-barra-clique="montaria-vida" role="meter" aria-label="Ponto de Vida da montaria" aria-valuemin="0">
               <div class="barra-cheia"><span class="barra-pulso"></span></div>
+          <span class="barra-numero" aria-hidden="true"></span>
             </div>
             <button class="mini" data-barra="montaria-vida" data-passo="1" aria-label="Recuperar 1 Ponto de Vida da montaria">+</button>
           </div>
@@ -444,7 +456,7 @@
         <p class="guia-intro">O que dá pra carregar.</p>
         <dl>
           <div class="guia-item"><dt>Espaço na bolsa</dt>
-          <dd>A bolsa tem 10 espaços. A maioria dos itens ocupa 1, itens maiores ocupam 2 ou 3, e coisas pequenas ocupam meio espaço. Roupa, chapéu e bota que você está vestindo não ocupam. As armas dos coldres também contam. A tabela completa está na aba Equipamento.</dd></div>
+          <dd>A bolsa tem 10 espaços. A maioria dos itens ocupa 1, itens maiores ocupam 2 ou 3, e coisas pequenas ocupam meio espaço. Roupa, chapéu e bota que você está vestindo não ocupam. As armas equipadas também contam. A tabela completa está na aba Equipamento.</dd></div>
           <div class="guia-item"><dt>Itens comuns, especiais e raros</dt>
           <dd>Itens comuns são os da tabela de preços. Especiais e raros são mais difíceis de achar, e descontos como o do Sorrisão não valem pra eles.</dd></div>
         </dl>
@@ -472,7 +484,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="habilidades.js?v=20261022a"></script>
-<script src="script.js?v=20261031h"></script>
+<script src="script.js?v=20261104a"></script>
 <script type="module" src="nuvem.js?v=20261022a"></script>
 </body>
 </html>
