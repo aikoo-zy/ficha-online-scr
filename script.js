@@ -50,7 +50,7 @@ const MAX_ANTECEDENTE = 5; // bolinhas na ficha
 
 const CHAVE = "ficha-sacramento-v2";
 
-const TOTAL_COLDRES = 4;
+const TOTAL_COLDRES = 3; // armas equipadas (antes eram 4)
 function coldreVazio() {
   return { nome: "", dano: "", espaco: "", municao: 0, reserva: 0 };
 }
@@ -71,7 +71,7 @@ function fichaNova() {
     nivel: 1,
     capacidade: 10,
     itens: [{ nome: "", espaco: "" }],
-    coldres: Array.from({ length: 4 }, coldreVazio),
+    coldres: Array.from({ length: TOTAL_COLDRES }, coldreVazio),
     montaria: { nome: "", potencia: 0, resistencia: 0, dor: 0, vidaRiscada: 0, fidelidade: 0 },
     historico: [],
   };
@@ -97,6 +97,15 @@ function normalizar(dados) {
   if (f.armas) {
     f.armas.slice(0, TOTAL_COLDRES).forEach((a, i) => Object.assign(f.coldres[i], { nome: a.nome, dano: a.dano, espaco: a.espaco }));
     delete f.armas;
+  }
+  // Um 4º coldre não existe mais: o que estava nele vai para a bolsa como item
+  const sobras = (f.coldres || []).slice(TOTAL_COLDRES).filter(c => c && (c.nome || c.espaco || c.dano));
+  if (sobras.length) {
+    if (!Array.isArray(f.itens)) f.itens = [];
+    sobras.forEach(c => f.itens.push({
+      nome: [c.nome, c.dano && `dano ${c.dano}`, `munição ${Number(c.municao) || 0}`, `reserva ${Number(c.reserva) || 0}`].filter(Boolean).join(" · "),
+      espaco: c.espaco || "",
+    }));
   }
   while (f.coldres.length < TOTAL_COLDRES) f.coldres.push(coldreVazio());
   f.coldres = f.coldres.slice(0, TOTAL_COLDRES).map(c => Object.assign(coldreVazio(), c));
@@ -246,7 +255,7 @@ function desenharColdres() {
     return `
     <article class="coldre ${vazio ? "vazio" : ""}">
       <header class="coldre-topo">
-        <span class="coldre-num">Coldre ${i + 1}</span>
+        <span class="coldre-num">Arma ${i + 1}</span>
         <button class="link-botao" data-limpar-coldre="${i}" ${vazio ? "hidden" : ""}>Esvaziar</button>
       </header>
       <input class="coldre-nome" type="text" placeholder="Nome da arma" value="${esc(c.nome)}"
@@ -345,6 +354,8 @@ function desenharBarra(id, max, riscados) {
   el.classList.toggle("perigo", resta > 0 && razao <= 0.3 && !critica);
   el.setAttribute("aria-valuemax", max);
   el.setAttribute("aria-valuenow", resta);
+  const numero = el.querySelector(".barra-numero");
+  if (numero) numero.textContent = `${resta} / ${max}`;
   // Dor zerada: a barra vira um botão pra rolar a penalidade
   if (id === "barra-dor") {
     const pronta = resta === 0 && !el.classList.contains("penalizada");
@@ -1469,21 +1480,101 @@ function desenharHabilidades() {
     $("cartas-habilidades").innerHTML = '<p class="cartas-vazio">A lista de habilidades não carregou (falta o habilidades.js no site).</p>';
     return;
   }
+  fecharDica();
   $("cartas-habilidades").innerHTML = lista.map((id, i) => {
     const h = HABILIDADES.find(x => x.id === id);
     if (!h) return "";
     return `
-      <article class="carta carta-${h.tipo}">
-        <header class="carta-topo">
-          <span class="carta-tipo">${NOME_TIPO[h.tipo]}</span>
-          <button class="carta-remover" data-remover-hab="${i}" aria-label="Remover ${esc(h.nome)}">×</button>
-        </header>
+      <article class="carta carta-${h.tipo} carta-compacta" tabindex="0" data-hab-detalhe="${i}" data-tipo="${h.tipo}">
+        <button class="carta-remover" data-remover-hab="${i}" aria-label="Remover ${esc(h.nome)}">×</button>
         <h3 class="carta-nome">${esc(h.nome)}</h3>
-        ${regrasHtml(h.texto)}
-        ${tabelaNiveis(h)}
+        <div class="carta-detalhe" hidden>
+          ${regrasHtml(h.texto)}
+          ${tabelaNiveis(h)}
+        </div>
       </article>`;
   }).join("");
 }
+
+// Detalhe da habilidade num card flutuante: abre com o mouse (após ~500 ms) ou com toque
+const cartasHab = $("cartas-habilidades");
+const dicaHab = document.createElement("div");
+dicaHab.className = "dica-habilidade";
+dicaHab.hidden = true;
+dicaHab.setAttribute("role", "tooltip");
+document.body.appendChild(dicaHab);
+let dicaTimer = null;
+let dicaAtual = null;
+let ultimoPonteiro = "mouse";
+
+function fecharDica() {
+  clearTimeout(dicaTimer);
+  dicaHab.hidden = true;
+  dicaAtual = null;
+}
+
+function abrirDica(card) {
+  const detalhe = card.querySelector(".carta-detalhe");
+  const nome = card.querySelector(".carta-nome").textContent;
+  const tipo = card.dataset.tipo;
+  dicaHab.className = `dica-habilidade carta carta-${tipo}`;
+  dicaHab.innerHTML = `
+    <header class="carta-topo"><span class="carta-tipo">${NOME_TIPO[tipo] || ""}</span></header>
+    <h3 class="carta-nome">${nome}</h3>
+    ${detalhe ? detalhe.innerHTML : ""}`;
+  dicaAtual = card;
+  dicaHab.hidden = false;
+  const r = card.getBoundingClientRect();
+  if (window.innerWidth < 600) {
+    // celular: aparece como folha embaixo da tela
+    Object.assign(dicaHab.style, { left: "12px", right: "12px", bottom: "12px", top: "auto", width: "auto" });
+  } else {
+    const w = dicaHab.offsetWidth, h = dicaHab.offsetHeight;
+    let x = r.right + 12;
+    if (x + w > window.innerWidth - 8) x = r.left - w - 12;
+    x = Math.max(8, Math.min(x, window.innerWidth - w - 8));
+    const y = Math.max(8, Math.min(r.top, window.innerHeight - h - 8));
+    Object.assign(dicaHab.style, { left: x + "px", top: y + "px", right: "", bottom: "", width: "" });
+  }
+}
+
+cartasHab.addEventListener("pointerdown", e => { ultimoPonteiro = e.pointerType || "mouse"; });
+
+cartasHab.addEventListener("pointerover", e => {
+  if (ultimoPonteiro !== "mouse") return;
+  const card = e.target.closest("[data-hab-detalhe]");
+  if (!card || card === dicaAtual) return;
+  clearTimeout(dicaTimer);
+  dicaTimer = setTimeout(() => abrirDica(card), 500);
+});
+
+cartasHab.addEventListener("pointerout", e => {
+  if (ultimoPonteiro !== "mouse") return;
+  const card = e.target.closest("[data-hab-detalhe]");
+  if (!card || card.contains(e.relatedTarget)) return;
+  fecharDica();
+});
+
+cartasHab.addEventListener("click", e => {
+  if (e.target.closest("[data-remover-hab]")) return;
+  const card = e.target.closest("[data-hab-detalhe]");
+  if (!card || ultimoPonteiro === "mouse") return;
+  // toque: abre ou fecha
+  if (dicaAtual === card) fecharDica(); else abrirDica(card);
+});
+
+cartasHab.addEventListener("keydown", e => {
+  const card = e.target.closest("[data-hab-detalhe]");
+  if (!card || (e.key !== "Enter" && e.key !== " ")) return;
+  e.preventDefault();
+  if (dicaAtual === card) fecharDica(); else abrirDica(card);
+});
+
+document.addEventListener("pointerdown", e => {
+  if (!dicaHab.hidden && !dicaHab.contains(e.target) && !(dicaAtual && dicaAtual.contains(e.target))) fecharDica();
+});
+window.addEventListener("scroll", () => { if (!dicaHab.hidden && ultimoPonteiro !== "mouse") fecharDica(); }, { passive: true });
+window.addEventListener("resize", () => { if (!dicaHab.hidden && dicaAtual) abrirDica(dicaAtual); });
 
 $("cartas-habilidades").addEventListener("click", e => {
   const botao = e.target.closest("[data-remover-hab]");
