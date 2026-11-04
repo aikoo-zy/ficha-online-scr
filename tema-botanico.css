@@ -591,3 +591,6 @@ body {
 .janela-topo .dica, .janela-topo p { color: #b9c8d4; }
 
 .janela-busca:focus, .dica-habilidade { border-color: #b9c8d4; }
+
+/* Mesa de dados: mesma largura da coluna das armas */
+#tela-ficha .coluna-direita .mesa { align-self: stretch; width: 100%; }
