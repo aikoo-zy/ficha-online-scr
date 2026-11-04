@@ -1,0 +1,293 @@
+/* ============================================================
+   WEIRD WEST BOTANICAL HORROR — camada visual da ficha
+   Carregada depois de style.css. Só muda aparência: cores,
+   texturas, tipografia e molduras. Não mexe em ids, data-*
+   nem na lógica (que está no script.js).
+
+   Paleta:
+   - papel envelhecido (documento antigo)
+   - vinho e ferrugem (sangue seco, terra queimada)
+   - latão e ferro envelhecidos (rebites, molduras)
+   - carvão (contraste)
+   - azul bioluminescente (a flor): só em foco e destaques
+     sobrenaturais, para não virar cor principal
+   ============================================================ */
+
+/* ---------- Tokens ---------- */
+#tela-ficha {
+  --papel-velho: #e6d6b2;
+  --papel-escuro: #cdb88a;
+  --vinho: #5a1620;
+  --vinho-claro: #8c2730;
+  --ferrugem: #9a4a22;
+  --ferrugem-claro: #b8653a;
+  --latao: #c9a85a;
+  --latao-escuro: #8a7140;
+  --carvao: #1a1714;
+  --carvao-claro: #2a2420;
+  --azul: #3fd7ff;
+  --azul-brilho: rgba(63, 215, 255, 0.45);
+
+  --fonte-letreiro: "Rye", "Rockwell", Georgia, serif;
+  --fonte-datilo: "Special Elite", "Courier New", monospace;
+  --fonte-texto: "Zilla Slab", "Rockwell", Georgia, serif;
+
+  --textura-papel: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35  0 0 0 0 .24  0 0 0 0 .12  0 0 0 .16 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  --textura-metal: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='m'><feTurbulence type='fractalNoise' baseFrequency='1.4' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .2  0 0 0 0 .14  0 0 0 0 .08  0 0 0 .22 0'/></filter><rect width='100%' height='100%' filter='url(%23m)'/></svg>");
+}
+
+/* Fundo da página: carvão com ferrugem nas bordas */
+body {
+  background:
+    radial-gradient(ellipse at 50% -10%, rgba(154, 74, 34, 0.18), transparent 60%),
+    radial-gradient(ellipse at 50% 120%, rgba(90, 22, 32, 0.35), transparent 60%),
+    #0d0b0a;
+}
+
+/* ---------- Folha ---------- */
+#tela-ficha {
+  background: var(--papel-velho) var(--textura-papel);
+  border: 2px solid #2a1b12;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.7), inset 0 0 0 6px var(--papel-velho), inset 0 0 0 7px rgba(90, 59, 38, 0.45);
+  color: #2b1f14;
+  --tinta: #2b1f14;
+  --poeira: #6b5538;
+  --linha: #bda77e;
+  --borda: #5a3b26;
+}
+
+/* ---------- Banner: vinho com ferrugem e rebites ---------- */
+#tela-ficha .banner {
+  position: relative;
+  background:
+    var(--textura-metal),
+    radial-gradient(ellipse at 12% 0%, #8c2730 0%, #5a1620 48%, #2e0c11 100%);
+  border: 2px solid #1d0709;
+  border-radius: 6px 6px 0 0;
+  box-shadow:
+    inset 0 0 0 3px #3a1116,
+    inset 0 -8px 0 #1d0709,
+    inset 0 0 60px rgba(0, 0, 0, 0.5);
+}
+/* rebites nos cantos superiores */
+#tela-ficha .banner::before,
+#tela-ficha .banner::after {
+  content: ""; position: absolute; top: 10px; width: 9px; height: 9px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #f3e3bd, var(--latao) 45%, var(--latao-escuro) 100%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+#tela-ficha .banner::before { left: 10px; }
+#tela-ficha .banner::after { right: 10px; }
+
+#tela-ficha .banner .marca-nome {
+  color: #f3e3bd;
+  border-bottom-color: rgba(201, 168, 90, 0.55);
+  text-shadow: 0 2px 0 #1d0709, 0 0 18px rgba(0, 0, 0, 0.5);
+}
+#tela-ficha .banner .marca-nome::placeholder { color: rgba(243, 227, 189, 0.55); }
+#tela-ficha .banner .marca-nome:focus { border-bottom-color: var(--latao); }
+#tela-ficha .banner .voltar { color: #d9c49a; font-family: var(--fonte-datilo); letter-spacing: 0.02em; }
+
+#tela-ficha .banner .botao-guia {
+  font-family: var(--fonte-datilo); letter-spacing: 0.02em;
+  border: 2px solid var(--latao-escuro);
+  background: rgba(20, 8, 10, 0.55);
+  color: #f3e3bd;
+  box-shadow: inset 0 0 0 2px rgba(201, 168, 90, 0.18);
+}
+#tela-ficha .banner .botao-guia:hover { border-color: var(--latao); }
+
+/* Medalhão de nível em latão */
+#tela-ficha .nivel-circulo {
+  background:
+    var(--textura-metal),
+    radial-gradient(circle at 50% 35%, #3a2f25, #14110e 72%);
+  border: 4px solid var(--latao);
+  box-shadow: 0 0 0 3px #1d0709, 0 0 0 5px var(--latao-escuro), 0 6px 14px rgba(0, 0, 0, 0.6);
+}
+#tela-ficha .nivel-rotulo { font-family: var(--fonte-datilo); color: #d9c49a; }
+#tela-ficha .nivel-input { font-family: var(--fonte-letreiro); color: #f3e3bd; }
+
+/* ---------- Atributos: placas de latão com número ---------- */
+#tela-ficha .faixa-atributos { margin-top: -44px; }
+#tela-ficha .atributo-tile {
+  background: var(--textura-metal), linear-gradient(180deg, #e2c888 0%, #c9a85a 55%, #a8864a 100%);
+  border: 2px solid #3a2a1a;
+  border-radius: 4px;
+  outline: 1px solid rgba(243, 227, 189, 0.5);
+  outline-offset: -5px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 245, 210, 0.6);
+  color: #2b1f14;
+  padding: 8px 10px 10px;
+}
+#tela-ficha .atributo-tile .nome-rolavel {
+  font-family: var(--fonte-datilo); font-size: 0.95rem; color: #2b1f14;
+  text-decoration: none; border-bottom: 1px dotted rgba(43, 31, 20, 0.6);
+}
+#tela-ficha .atributo-tile .valor-grande { font-family: var(--fonte-letreiro); color: #1a1208; }
+
+/* Botões tipo rebite (usados nos ajustes) */
+#tela-ficha .mini {
+  border: 2px solid #2b1f14;
+  background: radial-gradient(circle at 35% 30%, #f8efdc 0%, #d9c49a 55%, #a8905e 100%);
+  color: #2b1f14;
+  box-shadow: 0 2px 0 #2b1f14, inset 0 -2px 0 rgba(0, 0, 0, 0.18);
+  font-family: var(--fonte-datilo);
+}
+#tela-ficha .mini:hover { filter: brightness(1.06); }
+#tela-ficha .mini:active { transform: translateY(2px); box-shadow: 0 0 0 #2b1f14; }
+
+/* ---------- Rótulos em máquina de escrever ---------- */
+#tela-ficha .condicao-rotulo,
+#tela-ficha .perfil-rotulo,
+#tela-ficha .barra-titulo,
+#tela-ficha .carta-tipo,
+#tela-ficha .coldre-num,
+#tela-ficha .municao-rotulo,
+#tela-ficha .antecedente-base,
+#tela-ficha .contador,
+#tela-ficha .tema-rotulo {
+  font-family: var(--fonte-datilo);
+  letter-spacing: 0.03em;
+}
+#tela-ficha .barra-titulo { color: #3a2a1a; }
+#tela-ficha .cartao-cinza .barra-titulo { color: #efe3c6; text-shadow: 0 1px 0 #000; }
+
+/* Títulos dos blocos com filete de ferrugem */
+#tela-ficha .bloco-cabeca h2,
+#tela-ficha .bloco-cabeca > h2 {
+  font-family: var(--fonte-letreiro);
+  color: #2b1f14;
+  text-shadow: 0 1px 0 rgba(255, 245, 220, 0.6);
+}
+#tela-ficha .bloco-cabeca { padding-bottom: 8px; border-bottom: 2px solid var(--ferrugem); }
+
+/* ---------- Painéis (blocos de papel) ---------- */
+#tela-ficha .folha .bloco {
+  background: var(--papel-velho) var(--textura-papel);
+  border: 2px solid var(--borda);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 3px var(--papel-velho), inset 0 0 0 4px rgba(90, 59, 38, 0.4), 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
+/* ---------- Cartão lateral: carvão com latão ---------- */
+#tela-ficha .cartao-cinza {
+  background: var(--textura-metal), linear-gradient(180deg, var(--carvao-claro), var(--carvao));
+  border: 2px solid var(--latao-escuro);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 3px #15110e, 0 6px 16px rgba(0, 0, 0, 0.5);
+  --tinta: #efe3c6; --poeira: #b8a88a; --borda: #5a4a36; --linha: #4a3d2e;
+}
+
+/* Foto: moldura de latão, papel envelhecido */
+#tela-ficha .retrato {
+  border: 3px solid var(--latao);
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px #15110e, inset 0 0 0 5px #15110e, 0 6px 14px rgba(0, 0, 0, 0.55);
+  background: linear-gradient(180deg, #2f2a24, #1c1915);
+}
+#tela-ficha .retrato-foto { filter: sepia(0.25) contrast(1.05) saturate(0.9); }
+#tela-ficha .retrato-texto { font-family: var(--fonte-datilo); color: #efe3c6; }
+#tela-ficha .retrato-dica { font-family: var(--fonte-datilo); color: #b8a88a; }
+
+/* Caixa de combate e de condições: selos de papel */
+#tela-ficha .cartao-cinza .combate-grade .condicao {
+  background: var(--papel-velho) var(--textura-papel);
+  border: 2px solid var(--latao-escuro);
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 2px var(--papel-velho), inset 0 0 0 3px rgba(90, 59, 38, 0.35);
+  color: #2b1f14;
+}
+#tela-ficha .cartao-cinza .combate-grade .condicao-valor { font-family: var(--fonte-letreiro); color: #1a1208; }
+
+/* Barras: trilho escuro com borda de ferro */
+#tela-ficha .barra {
+  background: #120f0c;
+  border: 2px solid #2b1f14;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+#tela-ficha .barra-dor { --cor: #b8653a; --cor-clara: #d8905e; --cor-escura: #6a3418; }
+#tela-ficha .barra-vida { --cor: #3f8f4e; --cor-clara: #6fb57a; --cor-escura: #22502b; }
+
+/* ---------- Menu lateral: placas de metal ---------- */
+#tela-ficha .menu-lateral .aba {
+  background: var(--papel-velho) var(--textura-papel);
+  border: 2px solid var(--latao-escuro);
+  color: #5a3b26;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.45), inset 0 0 0 2px rgba(255, 245, 220, 0.5);
+}
+#tela-ficha .menu-lateral .aba:hover:not(.ativa) { color: #2b1f14; border-color: var(--latao); }
+#tela-ficha .menu-lateral .aba.ativa {
+  background: linear-gradient(180deg, var(--vinho-claro), var(--vinho));
+  border-color: var(--latao);
+  color: #f3e3bd;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.55), inset 0 0 0 2px rgba(201, 168, 90, 0.35);
+}
+
+/* ---------- Mesa de dados: couro queimado ---------- */
+#tela-ficha .arena {
+  background: var(--textura-metal), linear-gradient(180deg, #3a2a1c, #22180f);
+  border: 2px solid var(--latao-escuro);
+  box-shadow: inset 0 0 0 3px #15110e, 0 6px 14px rgba(0, 0, 0, 0.5);
+}
+#tela-ficha .placar {
+  background: var(--carvao);
+  border: 2px solid var(--latao-escuro);
+  box-shadow: inset 0 0 0 2px #0d0b0a;
+}
+#tela-ficha .tema-dado { color: #d9c49a; }
+#tela-ficha .tema-chave {
+  border: 2px solid var(--latao-escuro);
+  background: #15110e;
+}
+/* Tema azul = a flor: o azul aparece quando ativo */
+#tela-ficha .tema-chave[aria-checked="true"] {
+  background: rgba(63, 215, 255, 0.25);
+  border-color: var(--azul);
+  box-shadow: 0 0 10px var(--azul-brilho);
+}
+#tela-ficha .tema-bolinha { background: var(--latao); }
+#tela-ficha .tema-chave[aria-checked="true"] .tema-bolinha { background: var(--azul); }
+
+/* ---------- Cards de habilidade: fichas de papel escuro ---------- */
+#tela-ficha .carta {
+  background: linear-gradient(180deg, #2a2420, #161311);
+  border: 2px solid var(--latao-escuro);
+  border-radius: 4px;
+  box-shadow: inset 0 3px 0 var(--cor-carta, var(--ferrugem)), 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+#tela-ficha .carta-nome { font-family: var(--fonte-letreiro); color: #f3e3bd; }
+#tela-ficha .carta-combate { --cor-carta: var(--ferrugem-claro); }
+#tela-ficha .carta-profissao { --cor-carta: var(--latao); }
+
+/* Botão principal: vinho com latão */
+#tela-ficha .botao {
+  font-family: var(--fonte-datilo);
+  background: linear-gradient(180deg, var(--vinho-claro), var(--vinho));
+  border: 2px solid var(--latao-escuro);
+  color: #f3e3bd;
+  box-shadow: 0 2px 0 #1d0709;
+}
+#tela-ficha .botao:hover { filter: brightness(1.12); }
+
+/* ---------- Foco: azul bioluminescente ---------- */
+#tela-ficha :focus-visible { outline: 2px solid var(--azul); outline-offset: 2px; box-shadow: 0 0 10px var(--azul-brilho); }
+
+/* ---------- Telas menores ---------- */
+@media (max-width: 860px) {
+  #tela-ficha { border-radius: 6px; }
+  #tela-ficha .banner { border-radius: 6px 6px 0 0; }
+}
+
+@media (max-width: 520px) {
+  body { padding-inline: 10px; }
+  #tela-ficha .layout { padding: 16px 12px 20px; }
+  #tela-ficha .banner { padding: 14px 16px; }
+  #tela-ficha .banner .marca-nome { font-size: 1.7rem; }
+  #tela-ficha .nivel-circulo { width: 72px; height: 72px; }
+  #tela-ficha .faixa-atributos { margin-top: -28px; padding: 0 8px; }
+  #tela-ficha .atributo-tile { width: 46%; min-width: 0; }
+  #tela-ficha .grade-2 { grid-template-columns: 1fr; }
+  #tela-ficha .lista-antecedentes { grid-template-columns: 1fr; }
+}
