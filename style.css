@@ -570,6 +570,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   z-index: 10;
 }
 .aviso-rolagem strong { font-family: var(--fonte-letreiro); font-size: 1.6rem; font-weight: 400; }
+/* No computador o aviso fica centralizado embaixo, sem ocupar a tela toda */
+@media (min-width: 861px) {
+  .aviso-rolagem { left: 50%; right: auto; transform: translateX(-50%); width: min(420px, calc(100vw - 32px)); }
+}
 
 /* ---------- Fichas salvas ---------- */
 .gerenciar { display: flex; flex-direction: column; gap: 6px; }
