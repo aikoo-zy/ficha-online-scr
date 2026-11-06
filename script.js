@@ -1164,16 +1164,20 @@ function desenharHistorico() {
     : '<li class="historico-vazio">Nenhuma rolagem ainda.</li>';
 }
 
-// No celular a mesa fica em outra aba, então mostra um aviso rápido
+// Quando a mesa de dados não está na tela (celular, ou aba Equipamento/Montaria no computador),
+// mostra um aviso rápido com o resultado
 let timerAviso;
 function avisarNoCelular(rotulo, total) {
-  if (!window.matchMedia("(max-width: 860px)").matches) return;
-  if (document.body.classList.contains("ver-dados")) return;
+  const mesa = $("mesa");
+  if (mesa && mesa.getClientRects().length > 0) return; // a mesa já está visível: o resultado aparece nela
   let aviso = document.querySelector(".aviso-rolagem");
   if (!aviso) {
     aviso = document.createElement("button");
     aviso.className = "aviso-rolagem";
-    aviso.addEventListener("click", () => { trocarAba("dados"); aviso.hidden = true; });
+    aviso.addEventListener("click", () => {
+      trocarAba(window.matchMedia("(max-width: 860px)").matches ? "dados" : "personagem");
+      aviso.hidden = true;
+    });
     document.body.appendChild(aviso);
   }
   aviso.innerHTML = `<span>${esc(rotulo)}<br><small>Toque pra ver os detalhes</small></span><strong>${esc(total)}</strong>`;
