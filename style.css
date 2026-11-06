@@ -943,6 +943,10 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
   outline: 1px dashed var(--sangue); outline-offset: -4px;
 }
 .barra.penalizada .faixa-penalidade { display: flex; background: #b3261e; color: #fff; animation: revelar-penalidade 0.4s ease-out both; }
+/* Com a faixa de penalidade aparecendo, esconde o contador "0 / 6" pra não ficar por cima do texto */
+.barra.pronta .barra-numero,
+.barra.penalizada .barra-numero,
+.barra.saindo .barra-numero { visibility: hidden; }
 @keyframes revelar-penalidade { from { opacity: 0; } to { opacity: 1; } }
 .barra.saindo .faixa-penalidade { animation: deslizar-penalidade 0.5s ease-in forwards; }
 @keyframes deslizar-penalidade { to { transform: translateX(100%); } }
