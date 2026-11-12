@@ -861,6 +861,8 @@ a.botao-ficha { color: var(--tinta); }
   .layout { grid-template-columns: minmax(0, 1fr); }
   .so-celular { display: inline-block; }
   .mesa { display: none; position: static; max-height: none; overflow: visible; }
+  /* No celular o cartão do personagem rola junto com a página (sticky prendia ele na tela e cobria o resto) */
+  .perfil { position: static; }
   body.ver-dados .mesa { display: flex; }
   body.ver-dados .conteudo, body.ver-dados .perfil { display: none; }
   .condicoes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
