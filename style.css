@@ -856,15 +856,28 @@ a.botao-ficha { color: var(--tinta); }
   .mesa { position: static; }
 }
 
+/* Celular e tablet: o perfil (retrato + vida e dor) é mais alto que a tela. Grudado no topo, ele
+   cobria o resto da ficha e não dava pra rolar até o conteúdo. Aqui ele rola junto com a página.
+   No computador (mouse) continua grudado, como sempre foi. */
+@media (max-width: 860px), (pointer: coarse) and (max-height: 900px) {
+  .perfil { position: static; }
+}
+
 /* ---------- Celular ---------- */
 @media (max-width: 860px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .so-celular { display: inline-block; }
   .mesa { display: none; position: static; max-height: none; overflow: visible; }
-  /* No celular o cartão do personagem rola junto com a página (sticky prendia ele na tela e cobria o resto) */
-  .perfil { position: static; }
-  body.ver-dados .mesa { display: flex; }
-  body.ver-dados .conteudo, body.ver-dados .perfil { display: none; }
+
+  /* Aba Dados: a mesa mora DENTRO do .conteudo (aba Personagem). Por isso não dá pra esconder o
+     .conteudo inteiro, senão a mesa some junto. Aqui escondemos só o que não é a mesa. */
+  body.ver-dados .perfil { display: none; }
+  body.ver-dados .painel { display: none !important; }
+  body.ver-dados .painel[data-painel="personagem"] { display: flex !important; }
+  body.ver-dados #tela-ficha .grade-2 { grid-template-columns: minmax(0, 1fr); }
+  body.ver-dados #tela-ficha .coluna-central { display: none; }
+  body.ver-dados #tela-ficha .coluna-direita > :not(.mesa) { display: none; }
+  body.ver-dados #tela-ficha .mesa { display: flex; }
   .condicoes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 620px) {
