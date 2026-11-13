@@ -722,7 +722,7 @@ body.sem-rolagem { overflow: hidden; }
   cursor: pointer;
 }
 .botao-guia:hover { border-color: var(--tinta); }
-.guia-indice { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0 18px 10px; border-bottom: 1px solid var(--linha); }
+.guia-indice { display: flex; flex-wrap: wrap; gap: 10px 14px; padding: 16px 18px 12px; border-bottom: 1px solid var(--linha); }
 .guia-indice a { color: var(--poeira); font-size: 0.85rem; font-weight: 600; text-decoration: none; }
 .guia-indice a:hover { color: var(--tinta); }
 .guia { gap: 28px; padding-top: 16px; }
