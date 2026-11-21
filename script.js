@@ -246,7 +246,7 @@ function desenharAntecedentes() {
 /*
   BOLSA: o personagem e o cavalo têm bolsas separadas, cada uma com o seu espaço.
   A aba escolhida fica só na memória (volta pra "Personagem" ao abrir a ficha).
-  Armas nos coldres NÃO entram na conta do espaço do personagem.
+  O espaço das armas equipadas (coldres) soma só na bolsa do personagem.
 */
 let abaBolsa = "personagem";
 const BOLSAS = {
@@ -256,7 +256,10 @@ const BOLSAS = {
 const bolsaAtual = () => BOLSAS[abaBolsa];
 
 function espacoUsado(nomeBolsa) {
-  return ficha[BOLSAS[nomeBolsa].lista].reduce((s, x) => s + (parseFloat(x.espaco) || 0), 0);
+  const soma = lista => lista.reduce((s, x) => s + (parseFloat(x.espaco) || 0), 0);
+  const itens = soma(ficha[BOLSAS[nomeBolsa].lista]);
+  // o espaço das armas equipadas (coldres) conta só na bolsa do personagem, nunca na do cavalo
+  return nomeBolsa === "personagem" ? itens + soma(ficha.coldres) : itens;
 }
 
 const ICONE_ALCA = '<svg viewBox="0 0 10 16" width="10" height="16" fill="currentColor" aria-hidden="true"><circle cx="2.5" cy="3" r="1.4"/><circle cx="7.5" cy="3" r="1.4"/><circle cx="2.5" cy="8" r="1.4"/><circle cx="7.5" cy="8" r="1.4"/><circle cx="2.5" cy="13" r="1.4"/><circle cx="7.5" cy="13" r="1.4"/></svg>';
@@ -290,7 +293,7 @@ function desenharItens() {
 
 function desenharColdres() {
   $("coldres").innerHTML = ficha.coldres.map((c, i) => {
-    const vazio = !c.nome && !c.dano && !Number(c.municao) && !Number(c.reserva);
+    const vazio = !c.nome && !c.dano && !c.espaco && !Number(c.municao) && !Number(c.reserva);
     return `
     <article class="coldre ${vazio ? "vazio" : ""}">
       <header class="coldre-topo">
@@ -302,6 +305,9 @@ function desenharColdres() {
       <div class="coldre-dados">
         <label class="coldre-campo"><span>Dano</span>
           <input type="text" placeholder="ex.: 2" value="${esc(c.dano)}" data-lista="coldres" data-i="${i}" data-k="dano">
+        </label>
+        <label class="coldre-campo"><span>Espaço</span>
+          <input type="number" min="0" step="0.5" placeholder="0" value="${esc(c.espaco)}" data-lista="coldres" data-i="${i}" data-k="espaco">
         </label>
       </div>
       <div class="coldre-municao">
