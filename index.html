@@ -16,7 +16,7 @@
     html:not(.sem-ficha) #tela-inicio { display: none !important; }
     html.sem-ficha #tela-ficha { display: none !important; }
   </style>
-  <link rel="stylesheet" href="style.css?v=20261112b">
+  <link rel="stylesheet" href="style.css?v=20261113a">
   <link rel="stylesheet" href="tema-botanico.css?v=20261104i">
 </head>
 <body>
@@ -208,7 +208,7 @@
       <!-- ARMAS EQUIPADAS (até 3) -->
       <section class="bloco armas-equipadas">
         <div class="bloco-cabeca"><h2>Armas equipadas</h2></div>
-        <p class="dica">Até 3 armas. O espaço delas entra na conta da bolsa.</p>
+        <p class="dica">Até 3 armas. Elas não ocupam espaço na bolsa.</p>
         <div class="coldres" id="coldres"></div>
       </section>
       </div>
@@ -224,14 +224,19 @@
         <h2>Bolsa</h2>
         <span class="contador" id="resumo-espaco"></span>
       </div>
+      <div class="bolsa-abas" role="tablist" aria-label="De quem é a bolsa">
+        <button type="button" class="bolsa-aba ativa" role="tab" aria-selected="true" data-bolsa="personagem">Personagem</button>
+        <button type="button" class="bolsa-aba" role="tab" aria-selected="false" data-bolsa="cavalo">Cavalo</button>
+      </div>
       <p class="dica">
-        Bolsa com
+        <span id="rotulo-capacidade">Bolsa do personagem</span> com
         <input id="capacidade" class="campo-curto" type="number" min="0" step="1" data-campo="capacidade" aria-label="Capacidade da bolsa">
         espaços.
       </p>
+      <p class="dica dica-coldres" id="dica-coldres">Armas nos coldres (aba Personagem) não ocupam espaço aqui.</p>
       <div class="tabela-rolagem">
         <table class="tabela">
-          <thead><tr><th>Item</th><th class="col-num">Espaço</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th class="col-alca"><span class="so-leitor">Mover</span></th><th>Item</th><th class="col-num">Espaço</th><th class="col-acao"></th></tr></thead>
           <tbody id="corpo-itens"></tbody>
         </table>
       </div>
@@ -485,7 +490,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="habilidades.js?v=20261022a"></script>
-<script src="script.js?v=20261106a"></script>
+<script src="script.js?v=20261113b"></script>
 <script type="module" src="nuvem.js?v=20261022a"></script>
 </body>
 </html>
