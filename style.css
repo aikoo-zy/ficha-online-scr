@@ -382,28 +382,6 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .col-acao { width: 40px; }
 .remover { background: none; border: 0; color: var(--poeira); cursor: pointer; font-size: 1.2rem; padding: 4px 8px; }
 .remover:hover { color: var(--sangue); }
-/* Bolsa: abas Personagem / Cavalo e alça pra reordenar os itens */
-.bolsa-abas { display: flex; gap: 8px; margin: 12px 0 8px; }
-.bolsa-aba {
-  font-family: var(--fonte-datilo, var(--fonte-texto)); font-size: 0.95rem; font-weight: 600;
-  background: transparent; color: var(--tinta); border: 2px solid var(--borda); border-radius: var(--raio);
-  padding: 7px 18px; cursor: pointer;
-}
-.bolsa-aba:hover { background: var(--papel-2); }
-.bolsa-aba.ativa { background: linear-gradient(180deg, #3a5876, #243d54); border-color: #b9c8d4; color: #eef2f5; }
-.dica-coldres { margin-bottom: 8px; font-size: 0.8rem; }
-.so-leitor { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.col-alca { width: 30px; padding-left: 0; padding-right: 0; }
-.alca {
-  background: none; border: 0; color: var(--poeira); cursor: grab; border-radius: var(--raio);
-  padding: 10px 8px; display: inline-flex; align-items: center; touch-action: none; user-select: none;
-}
-.alca:hover, .alca:focus-visible { color: var(--tinta); background: var(--papel-2); }
-.alca:active { cursor: grabbing; }
-.tabela tbody tr.arrastando {
-  position: relative; z-index: 2; background: var(--papel-2);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
-}
 .campo-curto { width: 4.5em; background: var(--papel-2); border: 0; border-radius: var(--raio); padding: 2px 6px; font-weight: 700; }
 
 /* ---------- Resumo de espaço na bolsa ---------- */
@@ -744,7 +722,7 @@ body.sem-rolagem { overflow: hidden; }
   cursor: pointer;
 }
 .botao-guia:hover { border-color: var(--tinta); }
-.guia-indice { display: flex; flex-wrap: wrap; gap: 10px 14px; padding: 16px 18px 12px; border-bottom: 1px solid var(--linha); }
+.guia-indice { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 0 18px 10px; border-bottom: 1px solid var(--linha); }
 .guia-indice a { color: var(--poeira); font-size: 0.85rem; font-weight: 600; text-decoration: none; }
 .guia-indice a:hover { color: var(--tinta); }
 .guia { gap: 28px; padding-top: 16px; }
@@ -878,28 +856,13 @@ a.botao-ficha { color: var(--tinta); }
   .mesa { position: static; }
 }
 
-/* Celular e tablet: o perfil (retrato + vida e dor) é mais alto que a tela. Grudado no topo, ele
-   cobria o resto da ficha e não dava pra rolar até o conteúdo. Aqui ele rola junto com a página.
-   No computador (mouse) continua grudado, como sempre foi. */
-@media (max-width: 860px), (pointer: coarse) and (max-height: 900px) {
-  .perfil { position: static; }
-}
-
 /* ---------- Celular ---------- */
 @media (max-width: 860px) {
   .layout { grid-template-columns: minmax(0, 1fr); }
   .so-celular { display: inline-block; }
   .mesa { display: none; position: static; max-height: none; overflow: visible; }
-
-  /* Aba Dados: a mesa mora DENTRO do .conteudo (aba Personagem). Por isso não dá pra esconder o
-     .conteudo inteiro, senão a mesa some junto. Aqui escondemos só o que não é a mesa. */
-  body.ver-dados .perfil { display: none; }
-  body.ver-dados .painel { display: none !important; }
-  body.ver-dados .painel[data-painel="personagem"] { display: flex !important; }
-  body.ver-dados #tela-ficha .grade-2 { grid-template-columns: minmax(0, 1fr); }
-  body.ver-dados #tela-ficha .coluna-central { display: none; }
-  body.ver-dados #tela-ficha .coluna-direita > :not(.mesa) { display: none; }
-  body.ver-dados #tela-ficha .mesa { display: flex; }
+  body.ver-dados .mesa { display: flex; }
+  body.ver-dados .conteudo, body.ver-dados .perfil { display: none; }
   .condicoes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 620px) {
@@ -1243,3 +1206,55 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 .cartao-cinza .combate-grade .defesa-bonus.negativo { color: #9a2f22; }
 .cartao-cinza .combate-grade .defesa-controle { color: #4a3d2b; }
 .cartao-cinza .combate-grade .defesa-total { color: #2b1f14; border-top-color: #8a7d62; font-weight: 700; }
+
+
+/* ---------- Dinheiro no banner e Cofre do Bando ---------- */
+.dinheiro-banner { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; cursor: text; }
+.dinheiro-rotulo { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: #d8c59a; }
+.dinheiro-campo {
+  display: flex; align-items: center; gap: 4px;
+  background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(248, 239, 220, 0.5); border-radius: 6px;
+  padding: 3px 8px; color: #f8efdc; font-family: var(--fonte-letreiro, Georgia, serif); font-size: 1.1rem;
+}
+.dinheiro-input {
+  width: 84px; background: transparent; border: 0; padding: 0; color: inherit; font: inherit; text-align: right;
+  -moz-appearance: textfield; appearance: textfield;
+}
+.dinheiro-input::-webkit-inner-spin-button, .dinheiro-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.dinheiro-input:focus { outline: none; }
+.dinheiro-campo:focus-within { border-color: #f8efdc; }
+
+.janela-cofre { width: min(860px, 100%); }
+.cofre-aviso { margin: 10px 18px 0; padding: 8px 12px; border-radius: var(--raio, 6px); background: #f0d9c4; border: 1px solid #9a4a22; color: #5a1620; font-size: 0.85rem; }
+.cofre-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px 18px 6px; overflow-y: auto; min-height: 220px; }
+.cofre-coluna {
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--bloco, #d9c49a); border: 2px dashed var(--borda, #5a3b26); border-radius: 8px; padding: 10px;
+  transition: background .12s, border-color .12s;
+}
+.cofre-coluna h3 { margin: 0; font-size: 1.05rem; }
+.cofre-coluna.alvo { background: color-mix(in srgb, var(--bloco, #d9c49a) 70%, #c9a85a); border-style: solid; border-color: #8c2730; }
+.cofre-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.cofre-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--papel-2, #d4bf90); border: 1px solid var(--linha, #bda77e); border-radius: 6px;
+  padding: 6px 8px; cursor: grab;
+}
+.cofre-item.arrastando { opacity: 0.4; }
+.cofre-nome { flex: 1; min-width: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; }
+.cofre-item small { color: var(--poeira, #6b5538); white-space: nowrap; }
+.cofre-item .cofre-de { white-space: normal; }
+.cofre-vazio { color: var(--poeira, #6b5538); font-style: italic; padding: 8px 2px; }
+.cofre-dica { margin: 0; font-size: 0.78rem; }
+.cofre-dinheiro { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 22px; padding: 10px 18px 16px; border-top: 1px solid var(--linha, #bda77e); margin-top: 8px; }
+.cofre-saldo { display: flex; flex-direction: column; font-size: 0.8rem; color: var(--poeira, #6b5538); }
+.cofre-saldo strong { font-family: var(--fonte-letreiro, Georgia, serif); font-size: 1.5rem; color: var(--tinta, #2b1f14); }
+.cofre-seu strong { font-size: 1.1rem; }
+.cofre-valor { display: flex; gap: 6px; margin-left: auto; flex-wrap: wrap; }
+.cofre-valor input { width: 110px; padding: 7px 9px; border: 1px solid var(--borda, #5a3b26); border-radius: 6px; background: var(--papel-2, #d4bf90); color: var(--tinta, #2b1f14); }
+@media (max-width: 640px) {
+  .cofre-grade { grid-template-columns: 1fr; }
+  .cofre-valor { margin-left: 0; }
+  .banner-dir { gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  .dinheiro-input { width: 64px; }
+}
