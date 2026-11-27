@@ -1402,6 +1402,17 @@ document.addEventListener("input", e => {
 });
 
 
+// ---------- 8d2. Seletor de inventário (Jogador / Cavalo) ----------
+function mostrarInventario(caminho) {
+  document.querySelectorAll("[data-inv-bloco]").forEach(b => b.classList.toggle("inv-oculto", b.dataset.invBloco !== caminho));
+  document.querySelectorAll(".seletor-inv").forEach(b => {
+    const ativo = b.dataset.inv === caminho;
+    b.classList.toggle("ativo", ativo);
+    b.setAttribute("aria-selected", ativo);
+  });
+}
+document.querySelectorAll(".seletor-inv").forEach(b => b.addEventListener("click", () => mostrarInventario(b.dataset.inv)));
+
 // ---------- 8e. Reorganizar e mover itens arrastando ----------
 /*
   Cada linha tem uma alça (⋮⋮) na esquerda. Segure a alça e arraste:
@@ -1428,7 +1439,7 @@ document.addEventListener("input", e => {
     st.fantasma.style.visibility = "hidden";
     const el = document.elementFromPoint(x, y);
     st.fantasma.style.visibility = "";
-    return el ? el.closest("[data-zona-lista]") : null;
+    return el ? el.closest("[data-zona-lista], [data-aba-lista]") : null;
   }
 
   function mover(x, y) {
@@ -1436,6 +1447,14 @@ document.addEventListener("input", e => {
     st.fantasma.style.transform = `translate(${x - st.dx}px, ${y - st.dy}px)`;
     document.querySelectorAll(".insere-antes, .insere-depois, .zona-alvo").forEach(l => l.classList.remove("insere-antes", "insere-depois", "zona-alvo"));
     const zona = zonaEm(x, y);
+    // Soltar em cima do botão "Jogador" / "Cavalo": manda o item pro fim daquele inventário
+    if (zona && zona.dataset.abaLista) {
+      const dest = zona.dataset.abaLista;
+      st.alvoCaminho = dest;
+      st.alvo = dest === st.caminho ? st.de : lerCaminho(dest).length;
+      if (dest !== st.caminho) zona.classList.add("zona-alvo");
+      return;
+    }
     st.alvoCaminho = zona ? zona.dataset.zonaLista : st.caminho;
     const corpo = (zona || document.querySelector(`[data-zona-lista="${st.alvoCaminho}"]`)).querySelector("tbody");
     const outras = [...corpo.children].filter(l => l !== st.linha && !l.classList.contains("linha-vazia"));
