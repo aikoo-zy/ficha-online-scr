@@ -1238,7 +1238,8 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 .cofre-item {
   display: flex; align-items: center; gap: 8px;
   background: var(--papel-2, #d4bf90); border: 1px solid var(--linha, #bda77e); border-radius: 6px;
-  padding: 6px 8px; cursor: grab;
+  padding: 9px 10px; cursor: grab;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
 }
 .cofre-item.arrastando { opacity: 0.4; }
 .cofre-nome { flex: 1; min-width: 0; overflow-wrap: anywhere; display: flex; flex-direction: column; }
@@ -1264,3 +1265,23 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 @media (max-width: 860px), (max-height: 900px) {
   .perfil { position: static; }
 }
+
+/* Arrastar itens do cofre (mouse e toque) */
+.cofre-fantasma {
+  position: fixed; left: 0; top: 0; z-index: 200; pointer-events: none; margin: 0; list-style: none;
+  opacity: 0.92; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5); transform-origin: 0 0; cursor: grabbing;
+}
+.janela-cofre.em-arrasto, .em-arrasto .cofre-item { cursor: grabbing; }
+.janela-cofre .cofre-lista { touch-action: pan-y; }
+@media (max-width: 640px) {
+  /* as duas listas aparecem juntas na tela, cada uma com a sua rolagem */
+  .cofre-grade { grid-template-rows: 1fr 1fr; overflow-y: auto; }
+  .cofre-lista { max-height: 24vh; overflow-y: auto; }
+}
+.cofre-fantasma {
+  display: flex; align-items: center; gap: 8px; padding: 9px 10px; box-sizing: border-box;
+  background: #e8d6a8; color: #2b1f14; border: 2px solid #8c2730; border-radius: 6px;
+  font-family: var(--fonte-texto, Georgia, serif);
+}
+.cofre-fantasma .cofre-nome { flex: 1; display: flex; flex-direction: column; }
+.cofre-fantasma small { color: #6b5538; }
