@@ -51,7 +51,6 @@ const MAX_ANTECEDENTE = 5; // bolinhas na ficha
 const CHAVE = "ficha-sacramento-v2";
 
 const TOTAL_COLDRES = 3; // armas equipadas (antes eram 4)
-const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos)
 function coldreVazio() {
   return { nome: "", dano: "", espaco: "", municao: 0, reserva: 0 };
 }
@@ -70,10 +69,9 @@ function fichaNova() {
     habilidades: "",   // anotações livres
     habilidadesLista: [], // ids das habilidades do livro (ver habilidades.js)
     nivel: 1,
+    dinheiro: 0,       // dinheiro do personagem (em $)
     capacidade: 10,
     itens: [{ nome: "", espaco: "" }],
-    capacidadeMontaria: 15,   // a montaria carrega 15 espaços adicionais (livro, p. 52)
-    itensMontaria: [{ nome: "", espaco: "" }],
     coldres: Array.from({ length: TOTAL_COLDRES }, coldreVazio),
     montaria: { nome: "", potencia: 0, resistencia: 0, dor: 0, vidaRiscada: 0, fidelidade: 0 },
     historico: [],
@@ -113,7 +111,6 @@ function normalizar(dados) {
   while (f.coldres.length < TOTAL_COLDRES) f.coldres.push(coldreVazio());
   f.coldres = f.coldres.slice(0, TOTAL_COLDRES).map(c => Object.assign(coldreVazio(), c));
   if (!Array.isArray(f.itens)) f.itens = [];
-  if (!Array.isArray(f.itensMontaria)) f.itensMontaria = [{ nome: "", espaco: "" }];
   if (!Array.isArray(f.habilidadesLista)) f.habilidadesLista = [];
   f.nivel = Math.min(NIVEL_MAXIMO, Math.max(1, Number(f.nivel) || 1));
   if (!Array.isArray(f.historico)) f.historico = [];
@@ -208,6 +205,7 @@ function calcular() {
 
 const $ = id => document.getElementById(id);
 
+const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos)
 
 
 
@@ -243,51 +241,12 @@ function desenharAntecedentes() {
 
 
 
-/*
-  BOLSA: o personagem e o cavalo têm bolsas separadas, cada uma com o seu espaço.
-  A aba escolhida fica só na memória (volta pra "Personagem" ao abrir a ficha).
-  O espaço das armas equipadas (coldres) soma só na bolsa do personagem.
-*/
-let abaBolsa = "personagem";
-const BOLSAS = {
-  personagem: { lista: "itens", capacidade: "capacidade", rotulo: "Bolsa do personagem" },
-  cavalo: { lista: "itensMontaria", capacidade: "capacidadeMontaria", rotulo: "Bolsa do cavalo" },
-};
-const bolsaAtual = () => BOLSAS[abaBolsa];
-
-function espacoUsado(nomeBolsa) {
-  const soma = lista => lista.reduce((s, x) => s + (parseFloat(x.espaco) || 0), 0);
-  const itens = soma(ficha[BOLSAS[nomeBolsa].lista]);
-  // o espaço das armas equipadas (coldres) conta só na bolsa do personagem, nunca na do cavalo
-  return nomeBolsa === "personagem" ? itens + soma(ficha.coldres) : itens;
-}
-
-const ICONE_ALCA = '<svg viewBox="0 0 10 16" width="10" height="16" fill="currentColor" aria-hidden="true"><circle cx="2.5" cy="3" r="1.4"/><circle cx="7.5" cy="3" r="1.4"/><circle cx="2.5" cy="8" r="1.4"/><circle cx="7.5" cy="8" r="1.4"/><circle cx="2.5" cy="13" r="1.4"/><circle cx="7.5" cy="13" r="1.4"/></svg>';
-
-function desenharBolsa() {
-  const b = bolsaAtual();
-  document.querySelectorAll(".bolsa-aba").forEach(t => {
-    const ativa = t.dataset.bolsa === abaBolsa;
-    t.classList.toggle("ativa", ativa);
-    t.setAttribute("aria-selected", ativa);
-  });
-  const cap = $("capacidade");
-  cap.dataset.campo = b.capacidade;
-  cap.value = lerCaminho(b.capacidade);
-  cap.setAttribute("aria-label", `Capacidade da ${b.rotulo.toLowerCase()}`);
-  $("rotulo-capacidade").textContent = b.rotulo;
-  $("dica-coldres").hidden = abaBolsa !== "personagem";
-  desenharItens();
-}
-
 function desenharItens() {
-  const lista = bolsaAtual().lista;
-  $("corpo-itens").innerHTML = ficha[lista].map((item, i) => `
-    <tr data-i="${i}">
-      <td class="col-alca"><button type="button" class="alca" data-alca="${i}" title="Arraste para reordenar" aria-label="Mover o item ${i + 1}. Arraste, ou use as setas para cima e para baixo.">${ICONE_ALCA}</button></td>
-      <td><input type="text" value="${esc(item.nome)}" placeholder="Nome do item" data-lista="${lista}" data-i="${i}" data-k="nome" aria-label="Item"></td>
-      <td><input type="number" min="0" step="0.5" value="${esc(item.espaco)}" placeholder="0" data-lista="${lista}" data-i="${i}" data-k="espaco" aria-label="Espaço"></td>
-      <td><button class="remover" data-remover="${lista}" data-i="${i}" aria-label="Remover item">×</button></td>
+  $("corpo-itens").innerHTML = ficha.itens.map((item, i) => `
+    <tr>
+      <td><input type="text" value="${esc(item.nome)}" placeholder="Nome do item" data-lista="itens" data-i="${i}" data-k="nome" aria-label="Item"></td>
+      <td><input type="number" min="0" step="0.5" value="${esc(item.espaco)}" placeholder="0" data-lista="itens" data-i="${i}" data-k="espaco" aria-label="Espaço"></td>
+      <td><button class="remover" data-remover="itens" data-i="${i}" aria-label="Remover item">×</button></td>
     </tr>`).join("");
 }
 
@@ -363,8 +322,8 @@ function atualizarResumo() {
   desenharBarra("barra-montaria-vida", c.montariaVidaMax, m.vidaRiscada);
   $("val-vida-bonus").textContent = ficha.vidaBonus;
 
-  const usado = espacoUsado(abaBolsa);
-  const cap = Number(ficha[bolsaAtual().capacidade]) || 0;
+  const usado = [...ficha.itens, ...ficha.coldres].reduce((s, x) => s + (parseFloat(x.espaco) || 0), 0);
+  const cap = Number(ficha.capacidade) || 0;
   $("resumo-espaco").textContent = `${formatar(usado)} / ${cap} espaços`;
   $("resumo-espaco").classList.toggle("estourou", usado > cap);
 
@@ -416,7 +375,7 @@ function desenharTudo() {
   // Símbolo do nível (imagens niveis/nivel-1 a 8)
   desenharAtributos();
   desenharAntecedentes();
-  desenharBolsa();
+  desenharItens();
   desenharColdres();
   desenharFidelidade();
   desenharHistorico();
@@ -1248,13 +1207,6 @@ document.addEventListener("click", e => {
 
   if (d.aba) return trocarAba(d.aba);
 
-  // Abas da bolsa: Personagem / Cavalo
-  if (d.bolsa) {
-    abaBolsa = d.bolsa;
-    desenharBolsa();
-    return atualizarResumo();
-  }
-
   // Botões + e −
   if (d.ajuste) {
     const novo = Math.min(d.ajuste === "nivel" ? NIVEL_MAXIMO : Infinity, Math.max(d.ajuste === "nivel" ? 1 : 0, lerCaminho(d.ajuste) + Number(d.passo)));
@@ -1420,70 +1372,7 @@ $("val-nivel").addEventListener("change", e => {
   desenharTudo();
 });
 
-$("add-item").addEventListener("click", () => { ficha[bolsaAtual().lista].push({ nome: "", espaco: "" }); salvar(); desenharItens(); });
-
-/*
-  Reordenar os itens da bolsa: arraste a alça (⋮⋮) com o dedo ou o mouse.
-  Pelo teclado: foque a alça e use as setas ↑ ↓.
-*/
-function moverItem(de, para) {
-  const lista = ficha[bolsaAtual().lista];
-  if (para < 0 || para >= lista.length || de === para) return;
-  lista.splice(para, 0, lista.splice(de, 1)[0]);
-  salvar();
-}
-
-(() => {
-  const corpo = $("corpo-itens");
-  let arrasto = null; // { linha, de, id }
-
-  corpo.addEventListener("pointerdown", e => {
-    const alca = e.target.closest(".alca");
-    if (!alca || (e.pointerType === "mouse" && e.button !== 0)) return;
-    e.preventDefault();
-    const linha = alca.closest("tr");
-    // a captura fica no tbody (que não se mexe), senão ela se perde quando a linha troca de lugar
-    corpo.setPointerCapture(e.pointerId);
-    arrasto = { linha, de: Number(linha.dataset.i), id: e.pointerId };
-    linha.classList.add("arrastando");
-  });
-
-  corpo.addEventListener("pointermove", e => {
-    if (!arrasto || e.pointerId !== arrasto.id) return;
-    // perto da borda da tela, rola a página pra poder levar o item mais longe
-    if (e.clientY < 70) window.scrollBy(0, -14);
-    else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 14);
-    const alvo = [...corpo.rows]
-      .filter(r => r !== arrasto.linha)
-      .find(r => { const b = r.getBoundingClientRect(); return e.clientY < b.top + b.height / 2; });
-    if (alvo) { if (arrasto.linha.nextElementSibling !== alvo) corpo.insertBefore(arrasto.linha, alvo); }
-    else corpo.appendChild(arrasto.linha);
-  });
-
-  const soltar = e => {
-    if (!arrasto || e.pointerId !== arrasto.id) return;
-    const { linha, de } = arrasto;
-    arrasto = null;
-    linha.classList.remove("arrastando");
-    const para = [...corpo.rows].indexOf(linha);
-    if (e.type === "pointerup") moverItem(de, para);
-    desenharItens(); // redesenha com a ordem certa (ou desfaz, se foi cancelado)
-  };
-  corpo.addEventListener("pointerup", soltar);
-  corpo.addEventListener("pointercancel", soltar);
-
-  corpo.addEventListener("keydown", e => {
-    const alca = e.target.closest(".alca");
-    if (!alca || (e.key !== "ArrowUp" && e.key !== "ArrowDown")) return;
-    e.preventDefault();
-    const de = Number(alca.dataset.alca);
-    const para = de + (e.key === "ArrowUp" ? -1 : 1);
-    if (para < 0 || para >= ficha[bolsaAtual().lista].length) return;
-    moverItem(de, para);
-    desenharItens();
-    corpo.querySelector(`.alca[data-alca="${para}"]`).focus();
-  });
-})();
+$("add-item").addEventListener("click", () => { ficha.itens.push({ nome: "", espaco: "" }); salvar(); desenharItens(); });
 
 
 // Digitação em qualquer campo
@@ -1773,7 +1662,6 @@ function janelaGuia(abrir) {
   $("janela-guia").hidden = !abrir;
   document.body.classList.toggle("sem-rolagem", abrir);
   if (abrir) { filtrarGuia("todos"); $("fechar-guia").focus(); }
-  else $("abrir-guia").focus();
 }
 // Guia com filtros: o índice mostra só a seção escolhida ("Todos" mostra tudo)
 const SECOES_GUIA = [...document.querySelectorAll("#guia-corpo > .guia-pagina")];
@@ -1785,7 +1673,6 @@ function filtrarGuia(filtro) {
 }
 filtrarGuia("todos");
 
-$("abrir-guia").addEventListener("click", () => janelaGuia(true));
 $("fechar-guia").addEventListener("click", () => janelaGuia(false));
 $("janela-guia").addEventListener("click", e => {
   if (e.target.id === "janela-guia") janelaGuia(false);
@@ -1798,6 +1685,195 @@ $("janela-guia").addEventListener("click", e => {
 });
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !$("janela-guia").hidden) janelaGuia(false);
+  if (e.key === "Escape" && !$("janela-cofre").hidden) janelaCofre(false);
+});
+
+
+// ---------- 8d. Cofre do Bando ----------
+/*
+  O cofre é UM documento na nuvem (bando/cofre) que todas as fichas enxergam:
+  { itens: [{ id, nome, espaco, de }], dinheiro: 0 }
+  Mudanças passam por uma "transação" (nuvem.cofreAlterar), então dois jogadores
+  mexendo ao mesmo tempo não apagam um ao outro.
+  Mover um item = tira de um lado e põe no outro. Se a nuvem falhar no meio,
+  o item volta pra onde estava.
+*/
+let cofre = { itens: [], dinheiro: 0 };
+let cofreLigado = false;
+let cofreOcupado = false;
+
+const dinheiroTxt = n => {
+  const v = Math.round((Number(n) || 0) * 100) / 100;
+  return "$" + (Number.isInteger(v) ? String(v) : v.toFixed(2).replace(".", ","));
+};
+
+function avisoCofre(texto) {
+  const el = $("cofre-aviso");
+  el.textContent = texto || "";
+  el.hidden = !texto;
+}
+
+function janelaCofre(abrir) {
+  $("janela-cofre").hidden = !abrir;
+  document.body.classList.toggle("sem-rolagem", abrir);
+  if (abrir) {
+    avisoCofre(nuvem && nuvem.cofreAlterar
+      ? (cofreLigado ? "" : "Conectando ao cofre…")
+      : "O cofre só funciona com a nuvem ligada. Agora a ficha está salvando só neste aparelho.");
+    desenharCofre();
+    $("fechar-cofre").focus();
+  } else {
+    $("abrir-cofre").focus();
+  }
+}
+
+function linhaCofre(origem, item, i) {
+  const espaco = item.espaco !== "" && item.espaco != null ? `<small>${esc(formatar(parseFloat(item.espaco) || 0))} esp.</small>` : "";
+  const de = origem === "cofre" && item.de ? `<small class="cofre-de">de ${esc(item.de)}</small>` : "";
+  const seta = origem === "mochila"
+    ? `<button class="mini" data-mover="guardar" data-i="${i}" aria-label="Guardar ${esc(item.nome)} no cofre" title="Guardar no cofre">→</button>`
+    : `<button class="mini" data-mover="pegar" data-id="${esc(item.id)}" aria-label="Pegar ${esc(item.nome)} do cofre" title="Pegar do cofre">←</button>`;
+  const arrasto = origem === "mochila" ? `data-i="${i}"` : `data-id="${esc(item.id)}"`;
+  return `<li class="cofre-item" draggable="true" data-origem="${origem}" ${arrasto}>
+    <span class="cofre-nome">${esc(item.nome)}${de}</span>${espaco}${seta}
+  </li>`;
+}
+
+function desenharCofre() {
+  const mochila = ficha.itens.map((item, i) => ({ item, i })).filter(x => (x.item.nome || "").trim());
+  $("lista-mochila").innerHTML = mochila.length
+    ? mochila.map(x => linhaCofre("mochila", x.item, x.i)).join("")
+    : '<li class="cofre-vazio">Mochila vazia.</li>';
+  $("lista-cofre").innerHTML = cofre.itens.length
+    ? cofre.itens.map((item, i) => linhaCofre("cofre", item, i)).join("")
+    : '<li class="cofre-vazio">O cofre está vazio.</li>';
+  $("cofre-contagem").textContent = cofre.itens.length ? `(${cofre.itens.length})` : "";
+  $("mochila-contagem").textContent = mochila.length ? `(${mochila.length})` : "";
+  $("cofre-saldo").textContent = dinheiroTxt(cofre.dinheiro);
+  $("cofre-seu-saldo").textContent = dinheiroTxt(ficha.dinheiro);
+}
+
+// Roda uma ação do cofre; trata "nuvem desligada" e erros com um aviso
+async function comCofre(acao) {
+  if (!nuvem || !nuvem.cofreAlterar) { avisoCofre("O cofre precisa da nuvem ligada."); return false; }
+  if (cofreOcupado) return false;
+  cofreOcupado = true;
+  avisoCofre("");
+  try {
+    await acao();
+    return true;
+  } catch (erro) {
+    console.error(erro);
+    avisoCofre(erro && erro.aviso ? erro.aviso : "Não deu pra falar com o cofre. Nada foi movido.");
+    return false;
+  } finally {
+    cofreOcupado = false;
+    desenharCofre();
+  }
+}
+const erroCofre = aviso => Object.assign(new Error(aviso), { aviso });
+
+function guardarItem(i) {
+  const item = ficha.itens[i];
+  if (!item || !(item.nome || "").trim()) return;
+  return comCofre(async () => {
+    const [tirado] = ficha.itens.splice(i, 1);          // sai da mochila primeiro
+    salvar(); desenharItens(); atualizarResumo();
+    try {
+      await nuvem.cofreAlterar(c => {
+        c.itens.push({ id: novoId(), nome: tirado.nome, espaco: tirado.espaco, de: ficha.nome || "" });
+        return c;
+      });
+    } catch (e) {                                         // falhou: o item volta
+      ficha.itens.splice(i, 0, tirado);
+      salvar(); desenharItens(); atualizarResumo();
+      throw e;
+    }
+  });
+}
+
+function pegarItem(id) {
+  return comCofre(async () => {
+    let pegou = null;
+    await nuvem.cofreAlterar(c => {
+      const k = c.itens.findIndex(x => x.id === id);
+      if (k < 0) throw erroCofre("Esse item já foi pego por outra pessoa.");
+      pegou = c.itens.splice(k, 1)[0];
+      return c;
+    });
+    ficha.itens.push({ nome: pegou.nome, espaco: pegou.espaco });
+    salvar(); desenharItens(); atualizarResumo();
+  });
+}
+
+function mexerDinheiro(sentido) {
+  const campo = $("cofre-valor");
+  const valor = Math.round((Number(campo.value) || 0) * 100) / 100;
+  if (valor <= 0) { avisoCofre("Digite um valor maior que zero."); return; }
+  if (sentido === "depositar" && valor > (Number(ficha.dinheiro) || 0)) { avisoCofre("Você não tem tudo isso."); return; }
+  comCofre(async () => {
+    if (sentido === "depositar") {
+      ficha.dinheiro = Math.round(((Number(ficha.dinheiro) || 0) - valor) * 100) / 100;   // sai do bolso primeiro
+      salvar(); desenharTudo();
+      try {
+        await nuvem.cofreAlterar(c => { c.dinheiro = Math.round((c.dinheiro + valor) * 100) / 100; return c; });
+      } catch (e) {
+        ficha.dinheiro = Math.round(((Number(ficha.dinheiro) || 0) + valor) * 100) / 100;
+        salvar(); desenharTudo();
+        throw e;
+      }
+    } else {
+      await nuvem.cofreAlterar(c => {
+        if (c.dinheiro < valor) throw erroCofre("O cofre não tem tudo isso.");
+        c.dinheiro = Math.round((c.dinheiro - valor) * 100) / 100;
+        return c;
+      });
+      ficha.dinheiro = Math.round(((Number(ficha.dinheiro) || 0) + valor) * 100) / 100;
+      salvar(); desenharTudo();
+    }
+    campo.value = "";
+  });
+}
+
+$("abrir-cofre").addEventListener("click", () => janelaCofre(true));
+$("fechar-cofre").addEventListener("click", () => janelaCofre(false));
+$("janela-cofre").addEventListener("click", e => {
+  if (e.target.id === "janela-cofre") return janelaCofre(false);
+  const b = e.target.closest("[data-mover]");
+  if (!b) return;
+  if (b.dataset.mover === "guardar") guardarItem(Number(b.dataset.i));
+  else pegarItem(b.dataset.id);
+});
+$("cofre-depositar").addEventListener("click", () => mexerDinheiro("depositar"));
+$("cofre-sacar").addEventListener("click", () => mexerDinheiro("sacar"));
+
+// Arrastar e soltar (computador). No celular, use os botões → e ←.
+$("janela-cofre").addEventListener("dragstart", e => {
+  const li = e.target.closest(".cofre-item");
+  if (!li) return;
+  e.dataTransfer.effectAllowed = "move";
+  e.dataTransfer.setData("text/plain", JSON.stringify({ origem: li.dataset.origem, i: li.dataset.i, id: li.dataset.id }));
+  li.classList.add("arrastando");
+});
+$("janela-cofre").addEventListener("dragend", () => {
+  document.querySelectorAll(".arrastando, .alvo").forEach(el => el.classList.remove("arrastando", "alvo"));
+});
+$("janela-cofre").addEventListener("dragover", e => {
+  const zona = e.target.closest("[data-zona]");
+  if (!zona) return;
+  e.preventDefault();
+  document.querySelectorAll(".alvo").forEach(el => el !== zona && el.classList.remove("alvo"));
+  zona.classList.add("alvo");
+});
+$("janela-cofre").addEventListener("drop", e => {
+  const zona = e.target.closest("[data-zona]");
+  if (!zona) return;
+  e.preventDefault();
+  document.querySelectorAll(".alvo").forEach(el => el.classList.remove("alvo"));
+  let dado;
+  try { dado = JSON.parse(e.dataTransfer.getData("text/plain")); } catch (x) { return; }
+  if (dado.origem === "mochila" && zona.dataset.zona === "cofre") guardarItem(Number(dado.i));
+  else if (dado.origem === "cofre" && zona.dataset.zona === "mochila") pegarItem(dado.id);
 });
 
 // ---------- 9. Tela inicial e troca de fichas ----------
@@ -1939,6 +2015,17 @@ window.FichaApp = {
       });
     } else {
       ouvirNaNuvem(banco.atual);
+      if (api.cofreOuvir) {
+        api.cofreOuvir(dados => {
+          cofre = { itens: Array.isArray(dados.itens) ? dados.itens : [], dinheiro: Number(dados.dinheiro) || 0 };
+          cofreLigado = true;
+          if (!$("janela-cofre").hidden) desenharCofre();
+        }, erro => {
+          console.error(erro);
+          cofreLigado = false;
+          avisoCofre("Não consegui ler o cofre. Confira as regras do Firestore (coleção \"bando\").");
+        });
+      }
     }
   },
   nuvemIndisponivel(mensagem) {
