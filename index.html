@@ -16,7 +16,7 @@
     html:not(.sem-ficha) #tela-inicio { display: none !important; }
     html.sem-ficha #tela-ficha { display: none !important; }
   </style>
-  <link rel="stylesheet" href="style.css?v=20261127d">
+  <link rel="stylesheet" href="style.css?v=20261127e">
   <link rel="stylesheet" href="tema-botanico.css?v=20261104i">
 </head>
 <body>
@@ -233,13 +233,32 @@
         <input id="capacidade" class="campo-curto" type="number" min="0" step="1" data-campo="capacidade" aria-label="Capacidade da bolsa">
         espaços.
       </p>
-      <div class="tabela-rolagem">
+      <div class="tabela-rolagem" data-zona-lista="itens">
         <table class="tabela">
           <thead><tr><th class="col-alca"></th><th>Item</th><th class="col-num">Espaço</th><th class="col-acao"></th></tr></thead>
           <tbody id="corpo-itens"></tbody>
         </table>
       </div>
       <button class="botao botao-claro" id="add-item">+ Adicionar item</button>
+    </div>
+
+    <div class="bloco">
+      <div class="bloco-cabeca">
+        <h2>Alforje do cavalo</h2>
+        <span class="contador" id="resumo-alforje"></span>
+      </div>
+      <p class="dica">
+        Alforje com
+        <input id="capacidade-alforje" class="campo-curto" type="number" min="0" step="1" data-campo="montaria.capacidade" aria-label="Capacidade do alforje">
+        espaços. Arraste um item pela alça (⋮⋮) entre a bolsa e o alforje pra separar o que fica com você e o que fica no cavalo.
+      </p>
+      <div class="tabela-rolagem" data-zona-lista="montaria.itens">
+        <table class="tabela">
+          <thead><tr><th class="col-alca"></th><th>Item</th><th class="col-num">Espaço</th><th class="col-acao"></th></tr></thead>
+          <tbody id="corpo-alforje"></tbody>
+        </table>
+      </div>
+      <button class="botao botao-claro" id="add-alforje">+ Adicionar item</button>
     </div>
   </section>
 
@@ -526,7 +545,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="habilidades.js?v=20261022a"></script>
-<script src="script.js?v=20261127d"></script>
+<script src="script.js?v=20261127e"></script>
 <script type="module" src="nuvem.js?v=20261127a"></script>
 </body>
 </html>
