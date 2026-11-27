@@ -73,7 +73,7 @@ function fichaNova() {
     capacidade: 10,
     itens: [{ nome: "", espaco: "" }],
     coldres: Array.from({ length: TOTAL_COLDRES }, coldreVazio),
-    montaria: { nome: "", potencia: 0, resistencia: 0, dor: 0, vidaRiscada: 0, fidelidade: 0 },
+    montaria: { nome: "", potencia: 0, resistencia: 0, dor: 0, vidaRiscada: 0, fidelidade: 0, capacidade: 6, itens: [] },
     historico: [],
   };
 }
@@ -92,6 +92,7 @@ function novoId() {
 function normalizar(dados) {
   const f = Object.assign(fichaNova(), dados);
   f.montaria = Object.assign(fichaNova().montaria, f.montaria);
+  if (!Array.isArray(f.montaria.itens)) f.montaria.itens = [];
   f.atributos = Object.assign(fichaNova().atributos, f.atributos);
   f.antecedentes = Object.assign(fichaNova().antecedentes, f.antecedentes);
   // fichas antigas tinham uma lista "armas": passa as 4 primeiras pros coldres
@@ -241,14 +242,20 @@ function desenharAntecedentes() {
 
 
 
-function desenharItens() {
-  $("corpo-itens").innerHTML = ficha.itens.map((item, i) => `
+// Bolsa do personagem (ficha.itens) e alforje do cavalo (ficha.montaria.itens) usam a mesma tabela
+function linhasItens(lista, caminho) {
+  if (!lista.length) return '<tr class="linha-vazia"><td colspan="4">Nenhum item. Arraste um item pra cá.</td></tr>';
+  return lista.map((item, i) => `
     <tr data-i="${i}">
-      <td class="col-alca"><span class="alca" data-alca="${i}" role="button" tabindex="-1" aria-label="Arrastar para reorganizar" title="Arraste para reorganizar">⋮⋮</span></td>
-      <td><input type="text" value="${esc(item.nome)}" placeholder="Nome do item" data-lista="itens" data-i="${i}" data-k="nome" aria-label="Item"></td>
-      <td><input type="number" min="0" step="0.5" value="${esc(item.espaco)}" placeholder="0" data-lista="itens" data-i="${i}" data-k="espaco" aria-label="Espaço"></td>
-      <td><button class="remover" data-remover="itens" data-i="${i}" aria-label="Remover item">×</button></td>
+      <td class="col-alca"><span class="alca" data-alca="${i}" data-lista-alca="${caminho}" role="button" tabindex="-1" aria-label="Arrastar para reorganizar" title="Arraste para reorganizar ou mover entre a bolsa e o cavalo">⋮⋮</span></td>
+      <td><input type="text" value="${esc(item.nome)}" placeholder="Nome do item" data-lista="${caminho}" data-i="${i}" data-k="nome" aria-label="Item"></td>
+      <td><input type="number" min="0" step="0.5" value="${esc(item.espaco)}" placeholder="0" data-lista="${caminho}" data-i="${i}" data-k="espaco" aria-label="Espaço"></td>
+      <td><button class="remover" data-remover="${caminho}" data-i="${i}" aria-label="Remover item">×</button></td>
     </tr>`).join("");
+}
+function desenharItens() {
+  $("corpo-itens").innerHTML = linhasItens(ficha.itens, "itens");
+  $("corpo-alforje").innerHTML = linhasItens(ficha.montaria.itens, "montaria.itens");
 }
 
 function desenharColdres() {
@@ -327,6 +334,11 @@ function atualizarResumo() {
   const cap = Number(ficha.capacidade) || 0;
   $("resumo-espaco").textContent = `${formatar(usado)} / ${cap} espaços`;
   $("resumo-espaco").classList.toggle("estourou", usado > cap);
+
+  const usadoAlf = ficha.montaria.itens.reduce((s, x) => s + (parseFloat(x.espaco) || 0), 0);
+  const capAlf = Number(ficha.montaria.capacidade) || 0;
+  $("resumo-alforje").textContent = `${formatar(usadoAlf)} / ${capAlf} espaços`;
+  $("resumo-alforje").classList.toggle("estourou", usadoAlf > capAlf);
 
   $("val-potencia").textContent = m.potencia;
   $("val-resistencia").textContent = m.resistencia;
@@ -1256,7 +1268,7 @@ document.addEventListener("click", e => {
   }
 
   if (d.remover) {
-    ficha[d.remover].splice(Number(d.i), 1);
+    lerCaminho(d.remover).splice(Number(d.i), 1);
     salvar();
     desenharItens();
     return atualizarResumo();
@@ -1374,6 +1386,7 @@ $("val-nivel").addEventListener("change", e => {
 });
 
 $("add-item").addEventListener("click", () => { ficha.itens.push({ nome: "", espaco: "" }); salvar(); desenharItens(); });
+$("add-alforje").addEventListener("click", () => { ficha.montaria.itens.push({ nome: "", espaco: "" }); salvar(); desenharItens(); });
 
 
 // Digitação em qualquer campo
@@ -1382,89 +1395,99 @@ document.addEventListener("input", e => {
   if (el.dataset.campo) {
     gravarCaminho(el.dataset.campo, el.type === "number" ? Number(el.value) : el.value);
   } else if (el.dataset.lista) {
-    ficha[el.dataset.lista][Number(el.dataset.i)][el.dataset.k] = el.value;
+    lerCaminho(el.dataset.lista)[Number(el.dataset.i)][el.dataset.k] = el.value;
   } else return;
   salvar();
   atualizarResumo();
 });
 
 
-// ---------- 8e. Reorganizar a mochila arrastando ----------
+// ---------- 8e. Reorganizar e mover itens arrastando ----------
 /*
-  Cada linha tem uma alça (⋮⋮) na esquerda. Segure a alça e arraste a linha pra cima
-  ou pra baixo; uma linha vermelha mostra onde ela vai cair. Funciona com mouse e dedo.
+  Cada linha tem uma alça (⋮⋮) na esquerda. Segure a alça e arraste:
+  - dentro da mesma lista: muda a ordem;
+  - de uma lista pra outra: move o item entre a bolsa do personagem e o alforje do cavalo.
+  Uma linha vermelha mostra onde o item vai cair. Funciona com mouse e dedo.
   A alça tem "touch-action: none", então no celular arrastar por ela não rola a página.
 */
 (() => {
-  const corpo = $("corpo-itens");
-  let st = null;   // { de, linha, id, y0, alvo, raf, y }
+  const ZONAS = () => [...document.querySelectorAll("[data-zona-lista]")];
+  let st = null;   // { caminho, de, linha, id, fantasma, alvoCaminho, alvo, raf, x, y }
 
   function limpar() {
     if (!st) return;
     cancelAnimationFrame(st.raf);
+    if (st.fantasma) st.fantasma.remove();
     st.linha.classList.remove("linha-arrastada");
-    st.linha.style.transform = "";
-    corpo.querySelectorAll(".insere-antes, .insere-depois").forEach(l => l.classList.remove("insere-antes", "insere-depois"));
+    document.querySelectorAll(".insere-antes, .insere-depois, .zona-alvo").forEach(l => l.classList.remove("insere-antes", "insere-depois", "zona-alvo"));
     document.body.classList.remove("reordenando");
     st = null;
   }
 
-  // posição (entre as outras linhas) onde a linha arrastada cairia
-  function calcularAlvo(y) {
-    const outras = [...corpo.children].filter(l => l !== st.linha);
+  function zonaEm(x, y) {
+    st.fantasma.style.visibility = "hidden";
+    const el = document.elementFromPoint(x, y);
+    st.fantasma.style.visibility = "";
+    return el ? el.closest("[data-zona-lista]") : null;
+  }
+
+  function mover(x, y) {
+    st.x = x; st.y = y;
+    st.fantasma.style.transform = `translate(${x - st.dx}px, ${y - st.dy}px)`;
+    document.querySelectorAll(".insere-antes, .insere-depois, .zona-alvo").forEach(l => l.classList.remove("insere-antes", "insere-depois", "zona-alvo"));
+    const zona = zonaEm(x, y);
+    st.alvoCaminho = zona ? zona.dataset.zonaLista : st.caminho;
+    const corpo = (zona || document.querySelector(`[data-zona-lista="${st.alvoCaminho}"]`)).querySelector("tbody");
+    const outras = [...corpo.children].filter(l => l !== st.linha && !l.classList.contains("linha-vazia"));
     let k = 0;
     outras.forEach(l => { const r = l.getBoundingClientRect(); if (y > r.top + r.height / 2) k++; });
-    corpo.querySelectorAll(".insere-antes, .insere-depois").forEach(l => l.classList.remove("insere-antes", "insere-depois"));
-    if (!outras.length) return 0;
-    if (k < outras.length) outras[k].classList.add("insere-antes");
-    else outras[outras.length - 1].classList.add("insere-depois");
-    return k;
-  }
-
-  function mover(y) {
-    st.y = y;
-    st.linha.style.transform = `translateY(${y - st.y0 + (window.scrollY - st.scroll0)}px)`;
-    st.alvo = calcularAlvo(y);
+    st.alvo = k;
+    if (zona) {
+      if (!outras.length) zona.classList.add("zona-alvo");
+      else if (k < outras.length) outras[k].classList.add("insere-antes");
+      else outras[outras.length - 1].classList.add("insere-depois");
+    }
     cancelAnimationFrame(st.raf);
     const v = y < 70 ? -14 : y > window.innerHeight - 70 ? 14 : 0;
-    if (v) {
-      const passo = () => {
-        if (!st) return;
-        window.scrollBy(0, v);
-        mover(st.y);
-      };
-      st.raf = requestAnimationFrame(passo);
-    }
+    if (v) st.raf = requestAnimationFrame(() => { if (st) { window.scrollBy(0, v); mover(st.x, st.y); } });
   }
 
-  corpo.addEventListener("pointerdown", e => {
+  document.addEventListener("pointerdown", e => {
     const alca = e.target.closest(".alca");
     if (!alca || (e.pointerType === "mouse" && e.button !== 0)) return;
     e.preventDefault();
     limpar();
     const linha = alca.closest("tr");
-    st = { de: Number(alca.dataset.alca), linha, id: e.pointerId, y0: e.clientY, y: e.clientY, scroll0: window.scrollY, alvo: Number(alca.dataset.alca) };
+    const r = linha.getBoundingClientRect();
+    const f = document.createElement("div");
+    f.className = "alca-fantasma";
+    f.style.width = r.width + "px";
+    f.textContent = linha.querySelector('input[data-k="nome"]').value || "(sem nome)";
+    document.body.appendChild(f);
+    st = { caminho: alca.dataset.listaAlca, de: Number(alca.dataset.alca), linha, id: e.pointerId, fantasma: f, dx: e.clientX - r.left, dy: e.clientY - r.top, x: e.clientX, y: e.clientY };
+    st.alvoCaminho = st.caminho; st.alvo = st.de;
     alca.setPointerCapture(e.pointerId);
     linha.classList.add("linha-arrastada");
     document.body.classList.add("reordenando");
     if (e.pointerType !== "mouse" && navigator.vibrate) { try { navigator.vibrate(10); } catch (x) { /* sem vibração */ } }
-    mover(e.clientY);
+    mover(e.clientX, e.clientY);
   });
-  corpo.addEventListener("pointermove", e => { if (st && e.pointerId === st.id) mover(e.clientY); });
+  document.addEventListener("pointermove", e => { if (st && e.pointerId === st.id) mover(e.clientX, e.clientY); });
 
   function soltar(e, cancelado) {
     if (!st || e.pointerId !== st.id) return;
-    const { de, alvo } = st;
+    const { caminho, de, alvoCaminho, alvo } = st;
     limpar();
-    if (cancelado || alvo === de) return;
-    const [item] = ficha.itens.splice(de, 1);
-    ficha.itens.splice(alvo, 0, item);
+    if (cancelado) return;
+    if (alvoCaminho === caminho && alvo === de) return;
+    const [item] = lerCaminho(caminho).splice(de, 1);
+    lerCaminho(alvoCaminho).splice(alvo, 0, item);
     salvar();
     desenharItens();
     atualizarResumo();
   }
-  corpo.addEventListener("pointerup", e => soltar(e, false));
-  corpo.addEventListener("pointercancel", e => soltar(e, true));
+  document.addEventListener("pointerup", e => soltar(e, false));
+  document.addEventListener("pointercancel", e => soltar(e, true));
   document.addEventListener("keydown", e => { if (e.key === "Escape") limpar(); });
 })();
 
