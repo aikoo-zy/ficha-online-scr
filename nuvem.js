@@ -29,7 +29,7 @@ if (!app) {
 } else {
   try {
     const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${VERSAO_FIREBASE}/firebase-app.js`);
-    const { getFirestore, doc, setDoc, onSnapshot, collection } =
+    const { getFirestore, doc, setDoc, onSnapshot, collection, runTransaction } =
       await import(`https://www.gstatic.com/firebasejs/${VERSAO_FIREBASE}/firebase-firestore.js`);
 
     const db = getFirestore(initializeApp(firebaseConfig));
@@ -49,6 +49,26 @@ if (!app) {
         onSnapshot(collection(db, "fichas"),
           snap => aoMudar(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
           aoFalhar),
+
+      // COFRE DO BANDO: um único documento (bando/cofre) que todas as fichas compartilham
+      cofreOuvir: (aoMudar, aoFalhar) =>
+        onSnapshot(doc(db, "bando", "cofre"),
+          snap => aoMudar(snap.exists() ? snap.data() : { itens: [], dinheiro: 0 }),
+          aoFalhar),
+
+      // Muda o cofre com segurança: se duas pessoas mexerem ao mesmo tempo, o Firebase
+      // repete a conta em cima do valor mais novo. A função "mudar" recebe { itens, dinheiro }
+      // e devolve o novo estado (ou lança um erro pra cancelar).
+      cofreAlterar: (mudar) => runTransaction(db, async tx => {
+        const ref = doc(db, "bando", "cofre");
+        const snap = await tx.get(ref);
+        const atual = snap.exists() ? snap.data() : {};
+        const novo = mudar({
+          itens: Array.isArray(atual.itens) ? atual.itens.slice() : [],
+          dinheiro: Number(atual.dinheiro) || 0,
+        });
+        tx.set(ref, { itens: novo.itens, dinheiro: novo.dinheiro, atualizadoEm: Date.now() });
+      }),
     });
   } catch (erro) {
     console.error(erro);
