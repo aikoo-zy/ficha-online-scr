@@ -1258,3 +1258,9 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
   .banner-dir { gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
   .dinheiro-input { width: 64px; }
 }
+
+/* Correção: no celular (e em telas baixas) o perfil NÃO fica grudado no topo.
+   Grudado, ele é mais alto que a tela e cobre o resto da ficha enquanto você rola. */
+@media (max-width: 860px), (max-height: 900px) {
+  .perfil { position: static; }
+}
