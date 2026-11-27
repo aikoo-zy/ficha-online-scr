@@ -1730,12 +1730,9 @@ function janelaCofre(abrir) {
 function linhaCofre(origem, item, i) {
   const espaco = item.espaco !== "" && item.espaco != null ? `<small>${esc(formatar(parseFloat(item.espaco) || 0))} esp.</small>` : "";
   const de = origem === "cofre" && item.de ? `<small class="cofre-de">de ${esc(item.de)}</small>` : "";
-  const seta = origem === "mochila"
-    ? `<button class="mini" data-mover="guardar" data-i="${i}" aria-label="Guardar ${esc(item.nome)} no cofre" title="Guardar no cofre">→</button>`
-    : `<button class="mini" data-mover="pegar" data-id="${esc(item.id)}" aria-label="Pegar ${esc(item.nome)} do cofre" title="Pegar do cofre">←</button>`;
   const arrasto = origem === "mochila" ? `data-i="${i}"` : `data-id="${esc(item.id)}"`;
-  return `<li class="cofre-item" draggable="true" data-origem="${origem}" ${arrasto}>
-    <span class="cofre-nome">${esc(item.nome)}${de}</span>${espaco}${seta}
+  return `<li class="cofre-item" data-origem="${origem}" ${arrasto}>
+    <span class="cofre-nome">${esc(item.nome)}${de}</span>${espaco}
   </li>`;
 }
 
@@ -1838,43 +1835,127 @@ function mexerDinheiro(sentido) {
 $("abrir-cofre").addEventListener("click", () => janelaCofre(true));
 $("fechar-cofre").addEventListener("click", () => janelaCofre(false));
 $("janela-cofre").addEventListener("click", e => {
-  if (e.target.id === "janela-cofre") return janelaCofre(false);
-  const b = e.target.closest("[data-mover]");
-  if (!b) return;
-  if (b.dataset.mover === "guardar") guardarItem(Number(b.dataset.i));
-  else pegarItem(b.dataset.id);
+  if (e.target.id === "janela-cofre") janelaCofre(false);
 });
 $("cofre-depositar").addEventListener("click", () => mexerDinheiro("depositar"));
 $("cofre-sacar").addEventListener("click", () => mexerDinheiro("sacar"));
 
-// Arrastar e soltar (computador). No celular, use os botões → e ←.
-$("janela-cofre").addEventListener("dragstart", e => {
-  const li = e.target.closest(".cofre-item");
-  if (!li) return;
-  e.dataTransfer.effectAllowed = "move";
-  e.dataTransfer.setData("text/plain", JSON.stringify({ origem: li.dataset.origem, i: li.dataset.i, id: li.dataset.id }));
-  li.classList.add("arrastando");
-});
-$("janela-cofre").addEventListener("dragend", () => {
-  document.querySelectorAll(".arrastando, .alvo").forEach(el => el.classList.remove("arrastando", "alvo"));
-});
-$("janela-cofre").addEventListener("dragover", e => {
-  const zona = e.target.closest("[data-zona]");
-  if (!zona) return;
-  e.preventDefault();
-  document.querySelectorAll(".alvo").forEach(el => el !== zona && el.classList.remove("alvo"));
-  zona.classList.add("alvo");
-});
-$("janela-cofre").addEventListener("drop", e => {
-  const zona = e.target.closest("[data-zona]");
-  if (!zona) return;
-  e.preventDefault();
-  document.querySelectorAll(".alvo").forEach(el => el.classList.remove("alvo"));
-  let dado;
-  try { dado = JSON.parse(e.dataTransfer.getData("text/plain")); } catch (x) { return; }
-  if (dado.origem === "mochila" && zona.dataset.zona === "cofre") guardarItem(Number(dado.i));
-  else if (dado.origem === "cofre" && zona.dataset.zona === "mochila") pegarItem(dado.id);
-});
+/*
+  Arrastar e soltar com "pointer events": funciona igual com mouse, dedo e caneta.
+  - Mouse: clique no item e arraste.
+  - Celular: segure o dedo no item por um instante (~0,3 s) e arraste. Se o dedo
+    andar antes disso, é só rolagem da lista, e nada é arrastado.
+*/
+(() => {
+  const janela = $("janela-cofre");
+  const ESPERA_TOQUE = 300;   // ms segurando o dedo pra começar a arrastar
+  const DIST_MOUSE = 5;       // px de movimento pro mouse começar a arrastar
+  let st = null;              // { li, id, x0, y0, ativo, timer, fantasma, zonaAtual, raf }
+
+  function limpar() {
+    if (!st) return;
+    clearTimeout(st.timer);
+    cancelAnimationFrame(st.raf);
+    if (st.fantasma) st.fantasma.remove();
+    st.li.classList.remove("arrastando");
+    janela.querySelectorAll(".alvo").forEach(z => z.classList.remove("alvo"));
+    janela.classList.remove("em-arrasto");
+    st = null;
+  }
+
+  function comecar() {
+    if (!st || st.ativo) return;
+    st.ativo = true;
+    const r = st.li.getBoundingClientRect();
+    const f = st.li.cloneNode(true);
+    f.classList.add("cofre-fantasma");
+    f.style.width = r.width + "px";
+    document.body.appendChild(f);
+    st.fantasma = f;
+    st.dx = st.x0 - r.left; st.dy = st.y0 - r.top;
+    st.li.classList.add("arrastando");
+    janela.classList.add("em-arrasto");
+    if (navigator.vibrate) { try { navigator.vibrate(15); } catch (e) { /* sem vibração */ } }
+    mover(st.x, st.y);
+  }
+
+  function zonaEm(x, y) {
+    if (st.fantasma) st.fantasma.style.visibility = "hidden";
+    const el = document.elementFromPoint(x, y);
+    if (st.fantasma) st.fantasma.style.visibility = "";
+    return el ? el.closest("[data-zona]") : null;
+  }
+
+  function mover(x, y) {
+    st.x = x; st.y = y;
+    st.fantasma.style.transform = `translate(${x - st.dx}px, ${y - st.dy}px)`;
+    const zona = zonaEm(x, y);
+    janela.querySelectorAll(".alvo").forEach(z => z !== zona && z.classList.remove("alvo"));
+    // só destaca a zona de destino (a outra, de onde o item saiu, não)
+    if (zona && zona.dataset.zona !== st.li.dataset.origem) zona.classList.add("alvo");
+    st.zonaAtual = zona;
+    rolarBorda();
+  }
+
+  // Perto da borda de cima/baixo da janela, rola a área pra alcançar a outra lista
+  function rolarBorda() {
+    cancelAnimationFrame(st.raf);
+    const grade = janela.querySelector(".cofre-grade");
+    const r = grade.getBoundingClientRect();
+    const margem = 48;
+    let v = 0;
+    if (st.y < r.top + margem) v = -10;
+    else if (st.y > r.bottom - margem) v = 10;
+    if (!v) return;
+    const passo = () => {
+      if (!st || !st.ativo) return;
+      grade.scrollTop += v;
+      st.raf = requestAnimationFrame(passo);
+    };
+    st.raf = requestAnimationFrame(passo);
+  }
+
+  janela.addEventListener("pointerdown", e => {
+    if (cofreOcupado) return;
+    const li = e.target.closest(".cofre-item");
+    if (!li || (e.pointerType === "mouse" && e.button !== 0)) return;
+    limpar();
+    st = { li, id: e.pointerId, tipo: e.pointerType, x0: e.clientX, y0: e.clientY, x: e.clientX, y: e.clientY, ativo: false };
+    if (e.pointerType !== "mouse") st.timer = setTimeout(comecar, ESPERA_TOQUE);
+  });
+
+  janela.addEventListener("pointermove", e => {
+    if (!st || e.pointerId !== st.id) return;
+    st.x = e.clientX; st.y = e.clientY;
+    if (!st.ativo) {
+      const dist = Math.hypot(e.clientX - st.x0, e.clientY - st.y0);
+      if (st.tipo === "mouse") { if (dist > DIST_MOUSE) comecar(); }
+      else if (dist > 10) limpar();          // dedo andou antes do tempo: é rolagem
+      return;
+    }
+    mover(e.clientX, e.clientY);
+  });
+
+  function soltar(e, cancelado) {
+    if (!st || e.pointerId !== st.id) return;
+    const ativo = st.ativo, origem = st.li.dataset.origem;
+    const zona = ativo && !cancelado ? zonaEm(e.clientX, e.clientY) : null;
+    const i = Number(st.li.dataset.i), id = st.li.dataset.id;
+    limpar();
+    if (!zona) return;
+    if (origem === "mochila" && zona.dataset.zona === "cofre") guardarItem(i);
+    else if (origem === "cofre" && zona.dataset.zona === "mochila") pegarItem(id);
+  }
+  window.addEventListener("pointerup", e => soltar(e, false));
+  window.addEventListener("pointercancel", e => soltar(e, true));
+
+  // Enquanto arrasta no celular, a tela não pode rolar junto
+  janela.addEventListener("touchmove", e => { if (st && st.ativo) e.preventDefault(); }, { passive: false });
+  // Segurar o dedo não pode abrir o menu de "copiar" do navegador
+  janela.addEventListener("contextmenu", e => { if (e.target.closest(".cofre-item")) e.preventDefault(); });
+  // Fechar a janela no meio do arrasto cancela tudo
+  document.addEventListener("keydown", e => { if (e.key === "Escape") limpar(); });
+})();
 
 // ---------- 9. Tela inicial e troca de fichas ----------
 /*
