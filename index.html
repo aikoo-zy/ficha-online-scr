@@ -16,7 +16,7 @@
     html:not(.sem-ficha) #tela-inicio { display: none !important; }
     html.sem-ficha #tela-ficha { display: none !important; }
   </style>
-  <link rel="stylesheet" href="style.css?v=20261127e">
+  <link rel="stylesheet" href="style.css?v=20261127g">
   <link rel="stylesheet" href="tema-botanico.css?v=20261104i">
 </head>
 <body>
@@ -223,7 +223,12 @@
 
   <!-- ===================== ABA EQUIPAMENTO ===================== -->
   <section class="painel" data-painel="equipamento">
-    <div class="bloco">
+    <div class="seletor-inventario" role="tablist" aria-label="Qual inventário mostrar">
+      <button class="seletor-inv ativo" role="tab" aria-selected="true" data-inv="itens" data-aba-lista="itens">Jogador</button>
+      <button class="seletor-inv" role="tab" aria-selected="false" data-inv="montaria.itens" data-aba-lista="montaria.itens">Cavalo</button>
+    </div>
+    <p class="dica seletor-dica">Dica: arraste um item pela alça (⋮⋮) e solte em cima do botão <b>Jogador</b> ou <b>Cavalo</b> pra mandar o item pro outro inventário.</p>
+    <div class="bloco" data-inv-bloco="itens">
       <div class="bloco-cabeca">
         <h2>Bolsa</h2>
         <span class="contador" id="resumo-espaco"></span>
@@ -242,7 +247,7 @@
       <button class="botao botao-claro" id="add-item">+ Adicionar item</button>
     </div>
 
-    <div class="bloco">
+    <div class="bloco inv-oculto" data-inv-bloco="montaria.itens">
       <div class="bloco-cabeca">
         <h2>Alforje do cavalo</h2>
         <span class="contador" id="resumo-alforje"></span>
@@ -250,7 +255,7 @@
       <p class="dica">
         Alforje com
         <input id="capacidade-alforje" class="campo-curto" type="number" min="0" step="1" data-campo="montaria.capacidade" aria-label="Capacidade do alforje">
-        espaços. Arraste um item pela alça (⋮⋮) entre a bolsa e o alforje pra separar o que fica com você e o que fica no cavalo.
+        espaços.
       </p>
       <div class="tabela-rolagem" data-zona-lista="montaria.itens">
         <table class="tabela">
@@ -545,7 +550,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="habilidades.js?v=20261022a"></script>
-<script src="script.js?v=20261127e"></script>
+<script src="script.js?v=20261127g"></script>
 <script type="module" src="nuvem.js?v=20261127a"></script>
 </body>
 </html>
