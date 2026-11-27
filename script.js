@@ -243,7 +243,8 @@ function desenharAntecedentes() {
 
 function desenharItens() {
   $("corpo-itens").innerHTML = ficha.itens.map((item, i) => `
-    <tr>
+    <tr data-i="${i}">
+      <td class="col-alca"><span class="alca" data-alca="${i}" role="button" tabindex="-1" aria-label="Arrastar para reorganizar" title="Arraste para reorganizar">⋮⋮</span></td>
       <td><input type="text" value="${esc(item.nome)}" placeholder="Nome do item" data-lista="itens" data-i="${i}" data-k="nome" aria-label="Item"></td>
       <td><input type="number" min="0" step="0.5" value="${esc(item.espaco)}" placeholder="0" data-lista="itens" data-i="${i}" data-k="espaco" aria-label="Espaço"></td>
       <td><button class="remover" data-remover="itens" data-i="${i}" aria-label="Remover item">×</button></td>
@@ -1386,6 +1387,86 @@ document.addEventListener("input", e => {
   salvar();
   atualizarResumo();
 });
+
+
+// ---------- 8e. Reorganizar a mochila arrastando ----------
+/*
+  Cada linha tem uma alça (⋮⋮) na esquerda. Segure a alça e arraste a linha pra cima
+  ou pra baixo; uma linha vermelha mostra onde ela vai cair. Funciona com mouse e dedo.
+  A alça tem "touch-action: none", então no celular arrastar por ela não rola a página.
+*/
+(() => {
+  const corpo = $("corpo-itens");
+  let st = null;   // { de, linha, id, y0, alvo, raf, y }
+
+  function limpar() {
+    if (!st) return;
+    cancelAnimationFrame(st.raf);
+    st.linha.classList.remove("linha-arrastada");
+    st.linha.style.transform = "";
+    corpo.querySelectorAll(".insere-antes, .insere-depois").forEach(l => l.classList.remove("insere-antes", "insere-depois"));
+    document.body.classList.remove("reordenando");
+    st = null;
+  }
+
+  // posição (entre as outras linhas) onde a linha arrastada cairia
+  function calcularAlvo(y) {
+    const outras = [...corpo.children].filter(l => l !== st.linha);
+    let k = 0;
+    outras.forEach(l => { const r = l.getBoundingClientRect(); if (y > r.top + r.height / 2) k++; });
+    corpo.querySelectorAll(".insere-antes, .insere-depois").forEach(l => l.classList.remove("insere-antes", "insere-depois"));
+    if (!outras.length) return 0;
+    if (k < outras.length) outras[k].classList.add("insere-antes");
+    else outras[outras.length - 1].classList.add("insere-depois");
+    return k;
+  }
+
+  function mover(y) {
+    st.y = y;
+    st.linha.style.transform = `translateY(${y - st.y0 + (window.scrollY - st.scroll0)}px)`;
+    st.alvo = calcularAlvo(y);
+    cancelAnimationFrame(st.raf);
+    const v = y < 70 ? -14 : y > window.innerHeight - 70 ? 14 : 0;
+    if (v) {
+      const passo = () => {
+        if (!st) return;
+        window.scrollBy(0, v);
+        mover(st.y);
+      };
+      st.raf = requestAnimationFrame(passo);
+    }
+  }
+
+  corpo.addEventListener("pointerdown", e => {
+    const alca = e.target.closest(".alca");
+    if (!alca || (e.pointerType === "mouse" && e.button !== 0)) return;
+    e.preventDefault();
+    limpar();
+    const linha = alca.closest("tr");
+    st = { de: Number(alca.dataset.alca), linha, id: e.pointerId, y0: e.clientY, y: e.clientY, scroll0: window.scrollY, alvo: Number(alca.dataset.alca) };
+    alca.setPointerCapture(e.pointerId);
+    linha.classList.add("linha-arrastada");
+    document.body.classList.add("reordenando");
+    if (e.pointerType !== "mouse" && navigator.vibrate) { try { navigator.vibrate(10); } catch (x) { /* sem vibração */ } }
+    mover(e.clientY);
+  });
+  corpo.addEventListener("pointermove", e => { if (st && e.pointerId === st.id) mover(e.clientY); });
+
+  function soltar(e, cancelado) {
+    if (!st || e.pointerId !== st.id) return;
+    const { de, alvo } = st;
+    limpar();
+    if (cancelado || alvo === de) return;
+    const [item] = ficha.itens.splice(de, 1);
+    ficha.itens.splice(alvo, 0, item);
+    salvar();
+    desenharItens();
+    atualizarResumo();
+  }
+  corpo.addEventListener("pointerup", e => soltar(e, false));
+  corpo.addEventListener("pointercancel", e => soltar(e, true));
+  document.addEventListener("keydown", e => { if (e.key === "Escape") limpar(); });
+})();
 
 // ---------- 8. Retrato do personagem ----------
 
