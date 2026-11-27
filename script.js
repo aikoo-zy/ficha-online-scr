@@ -50,9 +50,10 @@ const MAX_ANTECEDENTE = 5; // bolinhas na ficha
 
 const CHAVE = "ficha-sacramento-v2";
 
+const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos). Fica aqui em cima porque carregarBanco() usa antes do resto do arquivo.
 const TOTAL_COLDRES = 3; // armas equipadas (antes eram 4)
 function coldreVazio() {
-  return { nome: "", dano: "", espaco: "", municao: 0, reserva: 0 };
+  return { tipo: "", nome: "", dano: "", dano2: "", espaco: "", capacidade: 0, municao: 0, reserva: 0, detalhes: "" };
 }
 
 function fichaNova() {
@@ -111,6 +112,14 @@ function normalizar(dados) {
   }
   while (f.coldres.length < TOTAL_COLDRES) f.coldres.push(coldreVazio());
   f.coldres = f.coldres.slice(0, TOTAL_COLDRES).map(c => Object.assign(coldreVazio(), c));
+  // Armas do formato antigo (sem "tipo") viram cards do tipo "Outra", sem perder nada
+  f.coldres.forEach(c => {
+    if (!c.tipo && (c.nome || c.dano || c.espaco || Number(c.municao) || Number(c.reserva))) {
+      const temMunicao = Number(c.municao) || Number(c.reserva);
+      c.tipo = temMunicao ? "outra" : "branca";      // sem munição nenhuma: provavelmente arma branca
+      if (!Number(c.capacidade)) c.capacidade = Number(c.municao) || 0;
+    }
+  });
   if (!Array.isArray(f.itens)) f.itens = [];
   if (!Array.isArray(f.habilidadesLista)) f.habilidadesLista = [];
   f.nivel = Math.min(NIVEL_MAXIMO, Math.max(1, Number(f.nivel) || 1));
@@ -206,7 +215,6 @@ function calcular() {
 
 const $ = id => document.getElementById(id);
 
-const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos)
 
 
 
@@ -258,31 +266,9 @@ function desenharItens() {
   $("corpo-alforje").innerHTML = linhasItens(ficha.montaria.itens, "montaria.itens");
 }
 
+// As armas equipadas são desenhadas pelo armas.js (cards, nova arma e detalhes)
 function desenharColdres() {
-  $("coldres").innerHTML = ficha.coldres.map((c, i) => {
-    const vazio = !c.nome && !c.dano && !c.espaco && !Number(c.municao) && !Number(c.reserva);
-    return `
-    <article class="coldre ${vazio ? "vazio" : ""}">
-      <header class="coldre-topo">
-        <span class="coldre-num">Arma ${i + 1}</span>
-        <button class="link-botao" data-limpar-coldre="${i}" ${vazio ? "hidden" : ""}>Esvaziar</button>
-      </header>
-      <input class="coldre-nome" type="text" placeholder="Nome da arma" value="${esc(c.nome)}"
-        data-lista="coldres" data-i="${i}" data-k="nome" aria-label="Nome da arma do coldre ${i + 1}">
-      <div class="coldre-dados">
-        <label class="coldre-campo"><span>Dano</span>
-          <input type="text" placeholder="ex.: 2" value="${esc(c.dano)}" data-lista="coldres" data-i="${i}" data-k="dano">
-        </label>
-        <label class="coldre-campo"><span>Espaço</span>
-          <input type="number" min="0" step="0.5" placeholder="0" value="${esc(c.espaco)}" data-lista="coldres" data-i="${i}" data-k="espaco">
-        </label>
-      </div>
-      <div class="coldre-municao">
-        ${contadorMunicao(i, "municao", "Munição atual", c.municao)}
-        ${contadorMunicao(i, "reserva", "Reserva", c.reserva)}
-      </div>
-    </article>`;
-  }).join("");
+  if (typeof Armas !== "undefined") Armas.desenhar();
 }
 
 function contadorMunicao(i, k, rotulo, valor) {
