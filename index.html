@@ -16,7 +16,7 @@
     html:not(.sem-ficha) #tela-inicio { display: none !important; }
     html.sem-ficha #tela-ficha { display: none !important; }
   </style>
-  <link rel="stylesheet" href="style.css?v=20261113a">
+  <link rel="stylesheet" href="style.css?v=20261127a">
   <link rel="stylesheet" href="tema-botanico.css?v=20261104i">
 </head>
 <body>
@@ -51,7 +51,11 @@
     <input id="nome" class="marca-nome" type="text" placeholder="Nome do personagem" data-campo="nome" aria-label="Nome do personagem">
   </div>
   <div class="banner-dir">
-    <button class="botao-guia" id="abrir-guia">Guia Rápido do Jogador</button>
+    <label class="dinheiro-banner" title="Seu dinheiro">
+      <span class="dinheiro-rotulo">Dinheiro</span>
+      <span class="dinheiro-campo"><span aria-hidden="true">$</span><input id="val-dinheiro" class="dinheiro-input" type="number" min="0" step="0.01" data-campo="dinheiro" aria-label="Seu dinheiro"></span>
+    </label>
+    <button class="botao-guia" id="abrir-cofre">Cofre do Bando</button>
     <label class="nivel-circulo">
       <span class="nivel-rotulo">Nível</span>
       <input id="val-nivel" class="nivel-input" type="number" min="1" max="8" step="1" data-campo="nivel" aria-label="Nível do personagem">
@@ -208,7 +212,7 @@
       <!-- ARMAS EQUIPADAS (até 3) -->
       <section class="bloco armas-equipadas">
         <div class="bloco-cabeca"><h2>Armas equipadas</h2></div>
-        <p class="dica">Até 3 armas. O espaço delas entra só na bolsa do personagem.</p>
+        <p class="dica">Até 3 armas. O espaço delas entra na conta da bolsa.</p>
         <div class="coldres" id="coldres"></div>
       </section>
       </div>
@@ -224,19 +228,14 @@
         <h2>Bolsa</h2>
         <span class="contador" id="resumo-espaco"></span>
       </div>
-      <div class="bolsa-abas" role="tablist" aria-label="De quem é a bolsa">
-        <button type="button" class="bolsa-aba ativa" role="tab" aria-selected="true" data-bolsa="personagem">Personagem</button>
-        <button type="button" class="bolsa-aba" role="tab" aria-selected="false" data-bolsa="cavalo">Cavalo</button>
-      </div>
       <p class="dica">
-        <span id="rotulo-capacidade">Bolsa do personagem</span> com
+        Bolsa com
         <input id="capacidade" class="campo-curto" type="number" min="0" step="1" data-campo="capacidade" aria-label="Capacidade da bolsa">
         espaços.
       </p>
-      <p class="dica dica-coldres" id="dica-coldres">O espaço das armas equipadas (aba Personagem) já está somado aqui.</p>
       <div class="tabela-rolagem">
         <table class="tabela">
-          <thead><tr><th class="col-alca"><span class="so-leitor">Mover</span></th><th>Item</th><th class="col-num">Espaço</th><th class="col-acao"></th></tr></thead>
+          <thead><tr><th>Item</th><th class="col-num">Espaço</th><th class="col-acao"></th></tr></thead>
           <tbody id="corpo-itens"></tbody>
         </table>
       </div>
@@ -330,6 +329,43 @@
 </div>
 
 </div><!-- fim da tela-ficha -->
+
+
+<!-- ===================== JANELA: COFRE DO BANDO ===================== -->
+<div class="janela-fundo" id="janela-cofre" hidden>
+  <div class="janela janela-cofre" role="dialog" aria-modal="true" aria-labelledby="titulo-cofre">
+    <div class="janela-topo">
+      <h2 id="titulo-cofre">Cofre do Bando</h2>
+      <button class="mini" id="fechar-cofre" aria-label="Fechar">×</button>
+    </div>
+    <p class="cofre-aviso" id="cofre-aviso" hidden></p>
+    <div class="cofre-grade">
+      <section class="cofre-coluna" id="zona-cofre" data-zona="cofre" aria-label="Itens do cofre">
+        <h3>No cofre <span class="dica" id="cofre-contagem"></span></h3>
+        <ul class="cofre-lista" id="lista-cofre"></ul>
+        <p class="dica cofre-dica">Arraste um item da sua mochila até aqui, ou use o botão →.</p>
+      </section>
+      <section class="cofre-coluna" id="zona-mochila" data-zona="mochila" aria-label="Sua mochila">
+        <h3>Sua mochila <span class="dica" id="mochila-contagem"></span></h3>
+        <ul class="cofre-lista" id="lista-mochila"></ul>
+        <p class="dica cofre-dica">Arraste um item do cofre até aqui, ou use o botão ←.</p>
+      </section>
+    </div>
+    <div class="cofre-dinheiro">
+      <div class="cofre-saldo">
+        <span>Dinheiro do Bando</span><strong id="cofre-saldo">$0</strong>
+      </div>
+      <div class="cofre-saldo cofre-seu">
+        <span>Seu dinheiro</span><strong id="cofre-seu-saldo">$0</strong>
+      </div>
+      <div class="cofre-valor">
+        <input id="cofre-valor" type="number" min="0" step="0.01" placeholder="Valor" aria-label="Valor a depositar ou sacar">
+        <button class="botao" id="cofre-depositar">Depositar</button>
+        <button class="botao botao-claro" id="cofre-sacar">Sacar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- ===================== JANELA: GUIA RÁPIDO DO JOGADOR ===================== -->
 <div class="janela-fundo" id="janela-guia" hidden>
@@ -490,7 +526,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="habilidades.js?v=20261022a"></script>
-<script src="script.js?v=20261113c"></script>
-<script type="module" src="nuvem.js?v=20261022a"></script>
+<script src="script.js?v=20261127a"></script>
+<script type="module" src="nuvem.js?v=20261127a"></script>
 </body>
 </html>
