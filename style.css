@@ -1300,3 +1300,17 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 #corpo-itens tr.linha-arrastada { z-index: 5; opacity: 0.92; background: #efe0b8; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35); pointer-events: none; }
 #corpo-itens tr.insere-antes td { box-shadow: inset 0 3px 0 #8c2730; }
 #corpo-itens tr.insere-depois td { box-shadow: inset 0 -3px 0 #8c2730; }
+
+/* Alforje do cavalo e arrastar entre listas */
+.linha-vazia td { padding: 14px 8px; text-align: center; color: var(--poeira, #6b5538); font-style: italic; font-size: 0.85rem; }
+[data-zona-lista] { min-height: 52px; border-radius: 6px; transition: background .12s; }
+[data-zona-lista].zona-alvo { background: rgba(140, 39, 48, 0.14); box-shadow: inset 0 0 0 2px #8c2730; }
+.alca-fantasma {
+  position: fixed; left: 0; top: 0; z-index: 300; pointer-events: none; box-sizing: border-box;
+  padding: 10px 14px; border-radius: 6px; background: #e8d6a8; color: #2b1f14; border: 2px solid #8c2730;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45); font-family: var(--fonte-texto, Georgia, serif); opacity: 0.95;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 92vw;
+}
+#corpo-itens tr.linha-arrastada, #corpo-alforje tr.linha-arrastada { opacity: 0.35; transform: none; box-shadow: none; background: transparent; }
+#corpo-alforje tr.insere-antes td { box-shadow: inset 0 3px 0 #8c2730; }
+#corpo-alforje tr.insere-depois td { box-shadow: inset 0 -3px 0 #8c2730; }
