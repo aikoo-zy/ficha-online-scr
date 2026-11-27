@@ -1326,3 +1326,17 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
   body.ver-dados #tela-ficha .conteudo .painel[data-painel="personagem"] .coluna-central { display: none; }
   body.ver-dados #tela-ficha .conteudo .painel[data-painel="personagem"] .grade-2 { display: block; }
 }
+
+/* Seletor de inventário: Jogador | Cavalo */
+.inv-oculto { display: none !important; }
+.seletor-inventario { display: flex; gap: 8px; }
+.seletor-inv {
+  flex: 1; padding: 10px 14px; cursor: pointer;
+  font-family: var(--fonte-letreiro, Georgia, serif); font-size: 1.05rem;
+  background: #d9c49a; color: #2b1f14; border: 2px solid #5a3b26; border-radius: 8px;
+  box-shadow: 0 3px 0 #2b1f14; transition: transform .08s, box-shadow .08s;
+}
+.seletor-inv.ativo { background: #1f3a55; color: #f3e3bd; border-color: #0d0b09; }
+.seletor-inv:active { transform: translateY(2px); box-shadow: 0 1px 0 #2b1f14; }
+.seletor-inv.zona-alvo { outline: 3px solid #8c2730; outline-offset: 2px; background: #e8c9a0; color: #2b1f14; }
+.seletor-dica { margin: 0; font-size: 0.8rem; }
