@@ -53,7 +53,7 @@ const CHAVE = "ficha-sacramento-v2";
 const NIVEL_MAXIMO = 8; // nível máximo do personagem (são 8 símbolos). Fica aqui em cima porque carregarBanco() usa antes do resto do arquivo.
 const TOTAL_COLDRES = 3; // armas equipadas (antes eram 4)
 function coldreVazio() {
-  return { tipo: "", nome: "", dano: "", dano2: "", espaco: "", capacidade: 0, municao: 0, reserva: 0, detalhes: "" };
+  return { tipo: "", nome: "", dano: "", dano2: "", espaco: "", capacidade: 0, municao: 0, reserva: 0, tipoMun: "normal", estoqueEsp: {}, detalhes: "" };
 }
 
 function fichaNova() {
@@ -106,7 +106,6 @@ function normalizar(dados) {
   const sobras = (f.coldres || []).slice(TOTAL_COLDRES).filter(c => c && (c.nome || c.espaco || c.dano));
   if (sobras.length) {
     if (!Array.isArray(f.itens)) f.itens = [];
-  f.diario = Array.isArray(f.diario) ? f.diario.filter(x => typeof x === "string").slice(0, 50) : [];
     sobras.forEach(c => f.itens.push({
       nome: [c.nome, c.dano && `dano ${c.dano}`, `munição ${Number(c.municao) || 0}`, `reserva ${Number(c.reserva) || 0}`].filter(Boolean).join(" · "),
       espaco: c.espaco || "",
@@ -114,6 +113,12 @@ function normalizar(dados) {
   }
   while (f.coldres.length < TOTAL_COLDRES) f.coldres.push(coldreVazio());
   f.coldres = f.coldres.slice(0, TOTAL_COLDRES).map(c => Object.assign(coldreVazio(), c));
+  // Munição especial: cada arma guarda o tipo carregado e o estoque de cada tipo (o estoque "normal" é o campo reserva)
+  f.coldres.forEach(c => {
+    if (typeof c.tipoMun !== "string" || !c.tipoMun) c.tipoMun = "normal";
+    if (!c.estoqueEsp || typeof c.estoqueEsp !== "object" || Array.isArray(c.estoqueEsp)) c.estoqueEsp = {};
+    Object.keys(c.estoqueEsp).forEach(k => { c.estoqueEsp[k] = Math.max(0, Number(c.estoqueEsp[k]) || 0); });
+  });
   // Armas do formato antigo (sem "tipo") viram cards do tipo "Outra", sem perder nada
   f.coldres.forEach(c => {
     if (!c.tipo && (c.nome || c.dano || c.espaco || Number(c.municao) || Number(c.reserva))) {
@@ -126,6 +131,7 @@ function normalizar(dados) {
   if (!Array.isArray(f.habilidadesLista)) f.habilidadesLista = [];
   f.nivel = Math.min(NIVEL_MAXIMO, Math.max(1, Number(f.nivel) || 1));
   if (!Array.isArray(f.historico)) f.historico = [];
+  f.diario = Array.isArray(f.diario) ? f.diario.filter(x => typeof x === "string").slice(0, 50) : [];
   return f;
 }
 
