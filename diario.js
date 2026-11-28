@@ -16,7 +16,7 @@ const Diario = (() => {
   const DESENHO_LARG = 1200, DESENHO_ALT = 1600;
   const PAG_LARG = 1050, PAG_ALT = 1400;
   const MAX_CARACTERES = 800000;          // limite de segurança da imagem em texto (base64)
-  const COR_PAPEL = "#efe3c6";
+  const COR_PAPEL = "#ffffff";
   const cache = new Map();                // "fichaId/paginaId" -> dataURL
 
   const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -35,7 +35,7 @@ const Diario = (() => {
           for (let tentativa = 0; tentativa < 6; tentativa++) {
             tela.width = w; tela.height = h;
             const c = tela.getContext("2d");
-            c.fillStyle = COR_PAPEL; c.fillRect(0, 0, w, h);      // fundo transparente vira papel
+            c.fillStyle = COR_PAPEL; c.fillRect(0, 0, w, h);      // fundo transparente vira branco
             c.imageSmoothingQuality = "high";
             const escala = encaixe === "ajustar" ? Math.min(w / img.width, h / img.height) : Math.max(w / img.width, h / img.height);
             const dw = img.width * escala, dh = img.height * escala;
@@ -133,7 +133,7 @@ const Diario = (() => {
           <div class="diario-encaixe" role="group" aria-label="Como encaixar a imagem">
             <span>Encaixe:</span>
             <button class="dbtn ${encaixe === "cortar" ? "ativo" : ""}" data-d="encaixe" data-v="cortar" title="Preenche a página e corta o que passar, no centro">Cortar</button>
-            <button class="dbtn ${encaixe === "ajustar" ? "ativo" : ""}" data-d="encaixe" data-v="ajustar" title="Mostra a imagem inteira, com margem de papel nas sobras">Ajustar</button>
+            <button class="dbtn ${encaixe === "ajustar" ? "ativo" : ""}" data-d="encaixe" data-v="ajustar" title="Mostra a imagem inteira, com margem branca nas sobras">Ajustar</button>
           </div>
           <span class="diario-limite">${n} / ${MAX_PAGINAS} páginas</span>
         </div>
