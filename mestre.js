@@ -5,6 +5,7 @@
    ============================================================ */
 
 const $ = id => document.getElementById(id);
+const NOMES_MUNICAO = { dumdum: "Dum-Dum", express: "Express", envenenada: "Envenenada", balote: "Balote", incendiaria: "Incendiária", "ponta-vermelha": "Ponta Vermelha", explosiva: "Explosiva" };
 const CHAVE_FILTRO = "mestre-mostrar-vazias";
 let ultimaLista = [];
 
@@ -100,7 +101,12 @@ function card({ id, ficha: f, atualizadoEm }) {
 
     ${armas.length ? `
     <ul class="mestre-armas">
-      ${armas.map(c => `<li><span class="nome">${esc(c.nome)}</span><span class="municao">${Number(c.municao) || 0} / ${Number(c.reserva) || 0}</span></li>`).join("")}
+      ${armas.map(c => {
+        const tm = c.tipoMun || "normal";
+        const est = tm === "normal" ? Number(c.reserva) || 0 : Number((c.estoqueEsp || {})[tm]) || 0;
+        const rot = tm !== "normal" && NOMES_MUNICAO[tm] ? ` <small>(${esc(NOMES_MUNICAO[tm])})</small>` : "";
+        return `<li><span class="nome">${esc(c.nome)}${rot}</span><span class="municao">${Number(c.municao) || 0} / ${est}</span></li>`;
+      }).join("")}
     </ul>` : ""}
 
     ${m.nome ? `<div class="mestre-linha"><span class="mestre-rotulo">${esc(m.nome)}</span>${barra("mbarra-vida", montariaVidaMax, m.vidaRiscada || 0, "Pontos de Vida da montaria")}</div>` : ""}
