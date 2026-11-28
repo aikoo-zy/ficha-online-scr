@@ -71,6 +71,7 @@ function fichaNova() {
     habilidadesLista: [], // ids das habilidades do livro (ver habilidades.js)
     nivel: 1,
     dinheiro: 0,       // dinheiro do personagem (em $)
+    diario: [],        // ids das páginas do diário (as imagens ficam na nuvem)
     capacidade: 10,
     itens: [{ nome: "", espaco: "" }],
     coldres: Array.from({ length: TOTAL_COLDRES }, coldreVazio),
@@ -105,6 +106,7 @@ function normalizar(dados) {
   const sobras = (f.coldres || []).slice(TOTAL_COLDRES).filter(c => c && (c.nome || c.espaco || c.dano));
   if (sobras.length) {
     if (!Array.isArray(f.itens)) f.itens = [];
+  f.diario = Array.isArray(f.diario) ? f.diario.filter(x => typeof x === "string").slice(0, 50) : [];
     sobras.forEach(c => f.itens.push({
       nome: [c.nome, c.dano && `dano ${c.dano}`, `munição ${Number(c.municao) || 0}`, `reserva ${Number(c.reserva) || 0}`].filter(Boolean).join(" · "),
       espaco: c.espaco || "",
@@ -379,6 +381,7 @@ function desenharTudo() {
   desenharFidelidade();
   desenharHistorico();
   atualizarResumo();
+  desenharDiario();
 }
 
 // ---------- 5. Dados ----------
@@ -1188,6 +1191,27 @@ function avisarNoCelular(rotulo, total) {
 
 // ---------- 6. Abas ----------
 
+// ---------- 5b. Diário (a lógica fica no diario.js) ----------
+let diarioUI = null, diarioAssinatura = null;
+function desenharDiario(forcar) {
+  if (typeof Diario === "undefined" || !$("diario-raiz")) return;
+  if (!diarioUI) {
+    diarioUI = Diario.criar({
+      raiz: $("diario-raiz"),
+      lista: () => ficha.diario,
+      fichaId: () => banco.atual,
+      api: () => nuvem,
+      salvarLista: () => { diarioAssinatura = JSON.stringify(ficha.diario) + (nuvem ? "|n" : "|l"); salvar(); },
+      leitura: false,
+    });
+  }
+  // só redesenha quando a lista de páginas muda (não atrapalha a escolha de arquivo)
+  const ass = JSON.stringify(ficha.diario) + (nuvem ? "|n" : "|l");
+  if (!forcar && ass === diarioAssinatura) return;
+  diarioAssinatura = ass;
+  diarioUI.desenhar();
+}
+
 function trocarAba(nome) {
   document.querySelectorAll(".aba").forEach(b => b.classList.toggle("ativa", b.dataset.aba === nome));
   document.querySelectorAll(".aba").forEach(b => b.setAttribute("aria-selected", b.dataset.aba === nome));
@@ -1195,6 +1219,7 @@ function trocarAba(nome) {
   if (nome !== "dados") {
     document.querySelectorAll(".painel").forEach(p => p.classList.toggle("ativo", p.dataset.painel === nome));
   }
+  if (nome === "diario") desenharDiario(true);
 }
 
 // ---------- 7. Cliques e digitação ----------
