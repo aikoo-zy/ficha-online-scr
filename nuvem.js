@@ -29,7 +29,7 @@ if (!app) {
 } else {
   try {
     const { initializeApp } = await import(`https://www.gstatic.com/firebasejs/${VERSAO_FIREBASE}/firebase-app.js`);
-    const { getFirestore, doc, setDoc, onSnapshot, collection, runTransaction } =
+    const { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, runTransaction } =
       await import(`https://www.gstatic.com/firebasejs/${VERSAO_FIREBASE}/firebase-firestore.js`);
 
     const db = getFirestore(initializeApp(firebaseConfig));
@@ -49,6 +49,14 @@ if (!app) {
         onSnapshot(collection(db, "fichas"),
           snap => aoMudar(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
           aoFalhar),
+
+      // DIÁRIO: cada página (imagem) é um documento em diarios/{fichaId}/paginas/{paginaId}
+      diarioLer: async (fichaId, paginaId) => {
+        const snap = await getDoc(doc(db, "diarios", fichaId, "paginas", paginaId));
+        return snap.exists() ? snap.data() : null;
+      },
+      diarioSalvar: (fichaId, paginaId, dados) => setDoc(doc(db, "diarios", fichaId, "paginas", paginaId), dados),
+      diarioApagar: (fichaId, paginaId) => deleteDoc(doc(db, "diarios", fichaId, "paginas", paginaId)),
 
       // COFRE DO BANDO: um único documento (bando/cofre) que todas as fichas compartilham
       cofreOuvir: (aoMudar, aoFalhar) =>
