@@ -1,0 +1,101 @@
+/* ============================================================
+   DIÁRIO — aparência de livro (capa de couro, papel envelhecido, lombada)
+   ============================================================ */
+.diario { display: flex; flex-direction: column; gap: 12px; }
+.diario-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.diario-encaixe { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--poeira, #6b5538); }
+.diario-limite { margin-left: auto; font-size: 0.85rem; color: var(--poeira, #6b5538); font-variant-numeric: tabular-nums; }
+.diario-dica { margin: 0; font-size: 0.8rem; }
+.diario-aviso { margin: 0; padding: 8px 12px; border-radius: 6px; background: #f0d9c4; border: 1px solid #9a4a22; color: #5a1620; font-size: 0.85rem; }
+.diario-aviso[hidden] { display: none; }
+
+.dbtn {
+  padding: 5px 12px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  background: #d9c49a; color: #2b1f14; border: 1px solid #5a3b26; border-radius: 999px;
+}
+.dbtn:hover { border-color: #2b1f14; }
+.dbtn.ativo { background: #1f3a55; color: #f3e3bd; border-color: #0d0b09; }
+.dbtn-perigo { color: #7a1f27; }
+.dbtn-perigo:hover { background: #7a1f27; color: #f3e3bd; }
+
+/* Capa de couro */
+.diario-capa {
+  position: relative; padding: 18px;
+  background:
+    radial-gradient(ellipse at 30% 20%, rgba(255, 255, 255, 0.07), transparent 60%),
+    linear-gradient(160deg, #5a3522 0%, #3b2216 55%, #2a170d 100%);
+  border-radius: 12px; border: 2px solid #1b0e07;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55), inset 0 0 0 3px rgba(216, 197, 154, 0.12), inset 0 0 30px rgba(0, 0, 0, 0.6);
+}
+.diario-capa::before {            /* costura da capa */
+  content: ""; position: absolute; inset: 7px; border: 2px dashed rgba(216, 197, 154, 0.35); border-radius: 8px; pointer-events: none;
+}
+
+/* Miolo: páginas de papel */
+.diario-livro { position: relative; display: flex; justify-content: center; perspective: 1600px; }
+.dpag {
+  position: relative; flex: 1 1 0; min-width: 0; aspect-ratio: 3 / 4; max-width: 520px;
+  background:
+    radial-gradient(ellipse at 15% 10%, rgba(150, 105, 50, 0.14), transparent 45%),
+    radial-gradient(ellipse at 90% 85%, rgba(120, 80, 30, 0.16), transparent 50%),
+    var(--textura-papel, none),
+    #efe3c6;
+  box-shadow: inset 0 0 40px rgba(120, 80, 30, 0.25);
+}
+.dpag-esq { border-radius: 6px 0 0 6px; box-shadow: inset -26px 0 28px -18px rgba(40, 20, 5, 0.55), inset 0 0 40px rgba(120, 80, 30, 0.22), -3px 0 0 #e1d2ac, -5px 0 0 #cdbb92; }
+.dpag-dir { border-radius: 0 6px 6px 0; box-shadow: inset 26px 0 28px -18px rgba(40, 20, 5, 0.55), inset 0 0 40px rgba(120, 80, 30, 0.22), 3px 0 0 #e1d2ac, 5px 0 0 #cdbb92; }
+.diario-livro:not(:has(.dpag-dir)) .dpag-esq { border-radius: 6px; max-width: 460px; box-shadow: inset 0 0 40px rgba(120, 80, 30, 0.22), 3px 0 0 #e1d2ac, 5px 0 0 #cdbb92; }
+.dpag-branca {
+  background:
+    repeating-linear-gradient(transparent 0 31px, rgba(90, 120, 150, 0.22) 31px 32px),
+    radial-gradient(ellipse at 15% 10%, rgba(150, 105, 50, 0.14), transparent 45%),
+    var(--textura-papel, none), #efe3c6;
+}
+.dpag-vazia { display: grid; place-items: center; text-align: center; padding: 24px; color: #6b5538; font-style: italic; }
+.dpag-vazia p { margin: 0; }
+
+.dpag-img { position: absolute; inset: 14px 14px 14px 14px; padding: 0; border: 0; background: transparent; cursor: zoom-in; display: grid; place-items: center; overflow: hidden; }
+.dpag-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.dpag-carregando { color: #6b5538; font-style: italic; font-size: 0.85rem; }
+.dpag-img img:not([hidden]) ~ .dpag-carregando { display: none; }
+.dpag-num { position: absolute; bottom: 2px; font-size: 0.7rem; color: #6b5538; font-family: var(--fonte-datilo, "Special Elite", monospace); }
+.dpag-esq .dpag-num { left: 16px; } .dpag-dir .dpag-num { right: 16px; }
+.dpag-acoes { position: absolute; left: 0; right: 0; bottom: -40px; display: flex; gap: 6px; justify-content: center; }
+.diario-livro { margin-bottom: 40px; }
+.diario-capa:has(.dpag-acoes) { padding-bottom: 18px; }
+
+/* Lombada no meio e fita marcadora */
+.diario-livro:has(.dpag-dir)::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 26px; transform: translateX(-50%); pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(30, 14, 4, 0.35) 45%, rgba(30, 14, 4, 0.5) 50%, rgba(30, 14, 4, 0.35) 55%, transparent);
+}
+.diario-fita { position: absolute; top: -12px; right: 14%; width: 14px; height: 70px; background: linear-gradient(#8c2730, #5a1620); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); pointer-events: none; }
+
+/* Virar a página */
+@keyframes virar-proxima { from { transform: rotateY(-70deg); opacity: 0.3; } to { transform: none; opacity: 1; } }
+@keyframes virar-anterior { from { transform: rotateY(70deg); opacity: 0.3; } to { transform: none; opacity: 1; } }
+.virando-proxima .dpag-dir, .virando-proxima .dpag-esq:only-of-type { transform-origin: left center; animation: virar-proxima .38s ease-out; }
+.virando-anterior .dpag-esq { transform-origin: right center; animation: virar-anterior .38s ease-out; }
+.virando-anterior .dpag-esq:only-of-type { transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .virando-proxima *, .virando-anterior * { animation: none !important; } }
+
+.diario-nav { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.diario-rotulo { min-width: 150px; text-align: center; font-family: var(--fonte-letreiro, Georgia, serif); }
+.diario-nav .botao[disabled], .diario-barra .botao[disabled] { opacity: 0.45; cursor: default; }
+
+/* Ampliar a página (pra ler as anotações) */
+.diario-zoom { position: fixed; inset: 0; z-index: 400; background: rgba(8, 6, 5, 0.92); display: grid; }
+.diario-zoom-rolagem { overflow: auto; padding: 16px; display: grid; place-items: start center; touch-action: pan-x pan-y pinch-zoom; }
+.diario-zoom-rolagem img { width: min(100%, 1050px); height: auto; display: block; border-radius: 4px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8); }
+.diario-zoom-fechar { position: fixed; top: 12px; right: 12px; z-index: 2; }
+
+@media (max-width: 860px) {
+  .diario-capa { padding: 12px; }
+  .dpag { max-width: 100%; }
+  .diario-livro:not(:has(.dpag-dir)) .dpag-esq { max-width: 100%; }
+  .diario-limite { margin-left: 0; }
+}
+
+/* Janela do mestre: o livro cabe na tela sem precisar rolar */
+.janela-diario .dpag { max-width: 400px; }
+.janela-diario .diario-livro { margin-bottom: 8px; }
