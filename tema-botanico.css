@@ -708,7 +708,7 @@ body {
 /* ---------- Botão "Cofre do Bando" (cabeçalho) ---------- */
 #tela-ficha .banner #abrir-cofre {
   display: inline-flex; align-items: center; justify-content: center; text-align: center;
-  min-height: 40px; padding: 0 22px; line-height: 1; white-space: nowrap;
+  min-height: 40px; padding: 5px 22px 0; box-sizing: border-box; line-height: 1; white-space: nowrap;
   font-size: 0.95rem; font-weight: 700; letter-spacing: 0.04em;
   border-radius: 999px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02) 55%), rgba(10, 18, 26, 0.6);
