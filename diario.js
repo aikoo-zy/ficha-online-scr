@@ -150,7 +150,6 @@ const Diario = (() => {
             ${n === 0
               ? `<div class="dpag dpag-esq dpag-branca dpag-vazia"><p>${leitura ? "Este diário está vazio." : "Seu diário está vazio. Adicione a primeira página."}</p></div>${p === 2 ? '<div class="dpag dpag-dir dpag-branca" aria-hidden="true"></div>' : ""}`
               : paginaHtml(ini, "esq") + (p === 2 ? paginaHtml(ini + 1, "dir") : "")}
-            <span class="diario-fita" aria-hidden="true"></span>
           </div>
         </div>
         <div class="diario-nav">
