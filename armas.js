@@ -5,7 +5,8 @@
 
    Campos de cada arma:
      tipo, nome, dano (valor principal), dano2 (só escopeta), espaco,
-     capacidade (máx. da arma), municao (na arma agora), reserva (estoque), detalhes
+     capacidade (máx. da arma), municao (na arma agora), reserva (estoque da munição normal),
+     tipoMun (tipo de munição carregada), estoqueEsp (estoque de cada munição especial), detalhes
    ============================================================ */
 
 const Armas = (() => {
@@ -21,6 +22,43 @@ const Armas = (() => {
     { id: "corpo", nome: "Corpo a corpo", dano: "dor", campos: 1, municao: false },
     { id: "outra", nome: "Outra (improvisada)", dano: "letal", campos: 1, municao: true },
   ];
+  /* Munições: "normal" serve em qualquer arma de fogo. As especiais só servem nas armas listadas
+     (regra do livro): Dum-Dum, Express e Envenenada = revólver, pistola e rifle;
+     Balote e Incendiária = escopeta; Ponta Vermelha e Explosiva = fuzil.
+     Arco, arma branca e "Outra (improvisada)" só usam a normal. */
+  const ARMAS_PEQUENAS = ["revolver", "pistola", "rifle"];
+  const MUNICOES = [
+    { id: "normal", nome: "Normal", efeito: "Munição comum." },
+    { id: "dumdum", nome: "Dum-Dum", armas: ARMAS_PEQUENAS, efeito: "Dano da arma +1 de Dor." },
+    { id: "express", nome: "Express", armas: ARMAS_PEQUENAS, efeito: "Remove a penalidade de disparos à distância." },
+    { id: "envenenada", nome: "Envenenada", armas: ARMAS_PEQUENAS, efeito: "1 de Dor por turno durante 3 turnos." },
+    { id: "balote", nome: "Balote", armas: ["escopeta"], efeito: "Remove a penalidade de disparos à longa distância." },
+    { id: "incendiaria", nome: "Incendiária", armas: ["escopeta"], efeito: "Dano da arma +1 de Dor por turno durante 3 turnos." },
+    { id: "ponta-vermelha", nome: "Ponta Vermelha", armas: ["fuzil"], efeito: "Sangramento: 1 de Vida por turno até o fim do combate." },
+    { id: "explosiva", nome: "Explosiva", armas: ["fuzil"], efeito: "−2 no Teste de Violência; o dano do fuzil vira 7 de Vida." },
+  ];
+  const munDe = id => MUNICOES.find(m => m.id === id) || MUNICOES[0];
+  const permitidas = tipoArma => MUNICOES.filter(m => !m.armas || m.armas.includes(tipoArma));
+  const iconeMun = (id, classe) => `<img class="${classe}" src="icones/municoes/${id}.png" alt="">`;
+  // O estoque "normal" fica no campo reserva; o das especiais em estoqueEsp[id]
+  const estoqueDe = (c, id) => id === "normal" ? n(c.reserva) : n((c.estoqueEsp || {})[id]);
+  const poeEstoque = (c, id, v) => {
+    if (id === "normal") c.reserva = n(v);
+    else { if (!c.estoqueEsp) c.estoqueEsp = {}; c.estoqueEsp[id] = n(v); }
+  };
+  const tipoMunDe = c => permitidas(c.tipo).some(m => m.id === c.tipoMun) ? c.tipoMun : "normal";
+  // Troca o tipo carregado: as balas que sobraram na arma voltam pro estoque do tipo antigo.
+  // Devolve quantas balas voltaram.
+  function trocarMunicao(c, novo, velho = tipoMunDe(c)) {
+    if (velho === novo) { c.tipoMun = novo; return 0; }
+    const volta = n(c.municao);
+    if (volta) poeEstoque(c, velho, estoqueDe(c, velho) + volta);
+    c.municao = 0;
+    c.tipoMun = novo;
+    return volta;
+  }
+  const avisoVolta = (volta, velho) => { if (volta > 0) avisoFicha(`${volta} ${volta === 1 ? "bala voltou" : "balas voltaram"} pro estoque de munição ${munDe(velho).nome}.`, true); };
+
   const tipoDe = id => TIPOS.find(t => t.id === id) || TIPOS[TIPOS.length - 1];
   const n = v => Math.max(0, Number(v) || 0);
   const emUso = c => !!c.tipo;
@@ -39,13 +77,17 @@ const Armas = (() => {
   /* ---------------- cards na ficha ---------------- */
   function cardHtml(c, i) {
     const t = tipoDe(c.tipo);
-    const cap = n(c.capacidade), atual = n(c.municao), est = n(c.reserva);
+    const tm = tipoMunDe(c), mun = munDe(tm);
+    const cap = n(c.capacidade), atual = n(c.municao), est = estoqueDe(c, tm);
+    const trocar = permitidas(c.tipo).length > 1 ? `
+        <button class="arma-mun-tipo ${tm !== "normal" ? "especial" : ""}" data-arma-tipo="${i}" title="${esc(mun.nome)} · ${esc(mun.efeito)} Toque para trocar a munição.">${iconeMun(tm, "arma-mun-icone")}<span>${esc(mun.nome)}</span></button>` : "";
     const municao = t.municao ? `
       <div class="arma-municao">
         <button class="mini" data-arma-mun="${i}" data-passo="-1" ${atual <= 0 ? "disabled" : ""} aria-label="Gastar 1 munição">−</button>
         <span class="arma-atual" title="Munição atual / capacidade"><b>${atual}</b> / ${cap}</span>
         <button class="mini" data-arma-mun="${i}" data-passo="1" ${atual >= cap || est <= 0 ? "disabled" : ""} aria-label="Recarregar 1 munição do estoque">+</button>
-        <span class="arma-estoque" title="Munição em estoque">Estoque ${est}</span>
+        ${trocar}
+        <span class="arma-estoque" title="Estoque de munição ${esc(mun.nome)}">Estoque ${est}</span>
       </div>` : "";
     return `
     <article class="arma-card" data-arma="${i}" tabindex="0" role="button" aria-label="Detalhes de ${esc(c.nome || t.nome)}">
@@ -73,7 +115,7 @@ const Armas = (() => {
   function campo(rotulo, html, dica) { return `<label class="af-campo"><span>${rotulo}</span>${html}${dica ? `<small>${dica}</small>` : ""}</label>`; }
 
   function formHtml(c, detalhes) {
-    const t = tipoDe(c.tipo);
+    const t = tipoDe(c.tipo), perm = permitidas(c.tipo);
     const dano = t.dano === "dor"
       ? campo("Dano de Dor", `<input data-f="dano" type="text" inputmode="numeric" value="${esc(c.dano)}" placeholder="ex.: 2">`)
       : t.campos === 2
@@ -82,8 +124,12 @@ const Armas = (() => {
         : campo("Dano Letal", `<input data-f="dano" type="text" inputmode="numeric" value="${esc(c.dano)}" placeholder="ex.: 2">`);
     const mun = t.municao ? `
       ${campo("Capacidade máxima", `<input data-f="capacidade" type="number" min="0" value="${n(c.capacidade)}">`, "Quantas balas cabem na arma.")}
-      ${campo("Munição em estoque", `<input data-f="reserva" type="number" min="0" value="${n(c.reserva)}">`, "O que você carrega fora da arma.")}
-      ${detalhes ? campo("Munição na arma agora", `<input data-f="municao" type="number" min="0" value="${n(c.municao)}">`) : ""}` : "";
+      ${detalhes ? campo("Munição na arma agora", `<input data-f="municao" type="number" min="0" value="${n(c.municao)}">`) : ""}
+      ${detalhes && perm.length > 1 ? campo("Tipo de munição carregada", `<select data-f="tipoMun">${perm.map(m => `<option value="${m.id}" ${m.id === tipoMunDe(c) ? "selected" : ""}>${m.nome}</option>`).join("")}</select>`, "Ao trocar, as balas que estão na arma voltam pro estoque.") : ""}
+      <fieldset class="af-estoques">
+        <legend>Munição em estoque (o que você carrega fora da arma)</legend>
+        ${perm.map(m => `<label class="af-campo"><span>${m.nome}</span><input ${m.id === "normal" ? 'data-f="reserva"' : `data-est="${m.id}"`} type="number" min="0" value="${estoqueDe(c, m.id)}"></label>`).join("")}
+      </fieldset>` : "";
     const tipoSel = detalhes ? campo("Tipo", `<select data-f="tipo">${TIPOS.map(x => `<option value="${x.id}" ${x.id === c.tipo ? "selected" : ""}>${x.nome}</option>`).join("")}</select>`) : "";
     return `
       <div class="af-grade">
@@ -143,7 +189,7 @@ const Armas = (() => {
 
   function telaNova(tipoId) {
     modo = "nova";
-    rascunho = { tipo: tipoId, nome: "", dano: "", dano2: "", espaco: "", capacidade: 0, municao: 0, reserva: 0, detalhes: "" };
+    rascunho = { tipo: tipoId, nome: "", dano: "", dano2: "", espaco: "", capacidade: 0, municao: 0, reserva: 0, tipoMun: "normal", estoqueEsp: {}, detalhes: "" };
     desenharNova();
   }
   function desenharNova() {
@@ -178,6 +224,25 @@ const Armas = (() => {
     abrirJanela();
   }
 
+  function telaMunicao(i) {
+    modo = "munTipo"; idx = i;
+    const c = ficha.coldres[i], t = tipoDe(c.tipo), atual = tipoMunDe(c);
+    caixa().innerHTML = `${topo("Munição · " + (c.nome || t.nome))}
+      <div class="janela-corpo">
+        <p class="dica">Escolha qual munição está na arma. As balas que ainda estão na arma voltam pro estoque do tipo anterior.</p>
+        <div class="mun-opcoes">
+          ${permitidas(c.tipo).map(m => `
+            <button class="mun-opcao ${m.id === atual ? "ativa" : ""}" data-a="mun" data-id="${m.id}">
+              ${iconeMun(m.id, "mun-opcao-icone")}
+              <span class="mun-opcao-texto"><b>${m.nome}</b><small>${m.efeito}</small></span>
+              <span class="mun-opcao-est">${m.id === atual ? "Carregada · " : ""}Estoque ${estoqueDe(c, m.id)}</span>
+            </button>`).join("")}
+        </div>
+        <div class="arma-rodape"><button class="botao" data-a="fechar">Fechar</button></div>
+      </div>`;
+    abrirJanela();
+  }
+
   function aoClicarJanela(e) {
     if (e.target === fundo) return fechar();
     const b = e.target.closest("[data-a]");
@@ -185,6 +250,11 @@ const Armas = (() => {
     const a = b.dataset.a;
     if (a === "fechar") fechar();
     else if (a === "tipo") telaNova(b.dataset.id);
+    else if (a === "mun") {
+      const c = ficha.coldres[idx], velho = tipoMunDe(c);
+      const volta = trocarMunicao(c, b.dataset.id, velho);
+      salvar(); fechar(); avisoVolta(volta, velho);
+    }
     else if (a === "voltar") telaTipos();
     else if (a === "confirmar") {
       const livre = ficha.coldres.findIndex(c => !emUso(c));
@@ -194,8 +264,8 @@ const Armas = (() => {
     } else if (a === "recarregar") {
       const c = ficha.coldres[idx];
       const falta = Math.max(0, n(c.capacidade) - n(c.municao));
-      const pega = Math.min(falta, n(c.reserva));
-      c.municao = n(c.municao) + pega; c.reserva = n(c.reserva) - pega;
+      const tm = tipoMunDe(c), pega = Math.min(falta, estoqueDe(c, tm));
+      c.tipoMun = tm; c.municao = n(c.municao) + pega; poeEstoque(c, tm, estoqueDe(c, tm) - pega);
       salvar(); telaDetalhes(idx);
     } else if (a === "remover") {
       if (!confirmaRemover) { confirmaRemover = true; b.textContent = "Confirmar remoção?"; setTimeout(() => { confirmaRemover = false; if (b.isConnected) b.textContent = "Remover arma"; }, 3500); return; }
@@ -205,13 +275,27 @@ const Armas = (() => {
   }
 
   function aoDigitar(e) {
-    const el = e.target, f = el.dataset.f;
-    if (!f) return;
+    const el = e.target, f = el.dataset.f, est = el.dataset.est;
+    if (!f && !est) return;
     const alvo = modo === "nova" ? rascunho : modo === "detalhes" ? ficha.coldres[idx] : null;
     if (!alvo) return;
+    if (est) {                                // estoque de uma munição especial
+      poeEstoque(alvo, est, el.value);
+      if (modo === "detalhes") { salvar(); desenhar(); }
+      return;
+    }
     if (f === "tipo") {                       // muda o tipo: refaz o formulário com os campos do novo tipo
       if (e.type !== "change") return;
-      alvo.tipo = el.value; salvar(); return telaDetalhes(idx);
+      const velho = alvo.tipoMun || "normal";
+      alvo.tipo = el.value;
+      let volta = 0;
+      if (!permitidas(alvo.tipo).some(m => m.id === velho)) volta = trocarMunicao(alvo, "normal", velho);   // a munição especial não serve na arma nova
+      salvar(); telaDetalhes(idx); avisoVolta(volta, velho); return;
+    }
+    if (f === "tipoMun") {                    // troca a munição carregada
+      if (e.type !== "change") return;
+      const velho = tipoMunDe(alvo), volta = trocarMunicao(alvo, el.value, velho);
+      salvar(); telaDetalhes(idx); avisoVolta(volta, velho); return;
     }
     const numerico = ["capacidade", "municao", "reserva"].includes(f);
     alvo[f] = numerico ? n(el.value) : el.value;
@@ -228,12 +312,14 @@ const Armas = (() => {
   /* ---------------- cliques nos cards ---------------- */
   $("coldres").addEventListener("click", e => {
     if (e.target.closest("[data-arma-add]")) { telaTipos(); return; }
+    const trocar = e.target.closest("[data-arma-tipo]");
+    if (trocar) { telaMunicao(Number(trocar.dataset.armaTipo)); return; }
     const mun = e.target.closest("[data-arma-mun]");
     if (mun) {
       const c = ficha.coldres[Number(mun.dataset.armaMun)];
-      const passo = Number(mun.dataset.passo);
+      const passo = Number(mun.dataset.passo), tm = tipoMunDe(c);
       if (passo < 0 && n(c.municao) > 0) c.municao = n(c.municao) - 1;                                  // disparo: só gasta
-      if (passo > 0 && n(c.municao) < n(c.capacidade) && n(c.reserva) > 0) { c.municao = n(c.municao) + 1; c.reserva = n(c.reserva) - 1; }   // recarga: tira do estoque
+      if (passo > 0 && n(c.municao) < n(c.capacidade) && estoqueDe(c, tm) > 0) { c.tipoMun = tm; c.municao = n(c.municao) + 1; poeEstoque(c, tm, estoqueDe(c, tm) - 1); }   // recarga: tira do estoque do tipo carregado
       salvar(); desenhar(); return;
     }
     const card = e.target.closest("[data-arma]");
@@ -244,7 +330,7 @@ const Armas = (() => {
   });
   document.addEventListener("keydown", e => { if (e.key === "Escape") fechar(); });
 
-  return { desenhar, TIPOS };
+  return { desenhar, TIPOS, MUNICOES };
 })();
 
 desenharColdres();
