@@ -136,8 +136,7 @@ const Diario = (() => {
             <button class="dbtn ${encaixe === "ajustar" ? "ativo" : ""}" data-d="encaixe" data-v="ajustar" title="Mostra a imagem inteira, com margem branca nas sobras">Ajustar</button>
           </div>
           <span class="diario-limite">${n} / ${MAX_PAGINAS} páginas</span>
-        </div>
-        <p class="dica diario-dica">Desenhe no Krita em <b>${DESENHO_LARG} × ${DESENHO_ALT} px</b> (página em pé, proporção 3:4) e exporte em PNG ou JPG. A ficha reduz sozinha pra ${PAG_LARG} × ${PAG_ALT}, sem distorcer.</p>`;
+        </div>`;
 
       const semNuvem = !(nuvem && nuvem.diarioLer) ? '<p class="diario-aviso">O diário precisa da nuvem ligada. Agora a ficha está salvando só neste aparelho.</p>' : "";
 
