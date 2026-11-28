@@ -52,7 +52,7 @@
 .dpag-num { position: absolute; bottom: 2px; font-size: 0.7rem; color: #777; font-family: var(--fonte-datilo, "Special Elite", monospace); }
 .dpag-esq .dpag-num { left: 16px; } .dpag-dir .dpag-num { right: 16px; }
 .dpag-acoes { position: absolute; left: 0; right: 0; bottom: -40px; display: flex; gap: 6px; justify-content: center; }
-.diario-livro { margin-bottom: 40px; }
+.diario-livro:has(.dpag-acoes) { margin-bottom: 40px; }   /* espaço só quando há botões embaixo da página */
 .diario-capa:has(.dpag-acoes) { padding-bottom: 18px; }
 
 /* Lombada no meio */
@@ -84,4 +84,3 @@
   .diario-capa { width: 100%; }
   
 /* Janela do mestre: o livro cabe na tela sem precisar rolar */
-.janela-diario .diario-livro:not(:has(.dpag-acoes)) { margin-bottom: 8px; }
