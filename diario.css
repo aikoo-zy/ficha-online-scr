@@ -31,34 +31,24 @@
   content: ""; position: absolute; inset: 7px; border: 2px dashed rgba(216, 197, 154, 0.35); border-radius: 8px; pointer-events: none;
 }
 
-/* Miolo: páginas de papel */
+/* Miolo: páginas totalmente brancas */
 .diario-livro { position: relative; display: flex; justify-content: center; perspective: 1600px; }
 .dpag {
   position: relative; flex: 1 1 0; min-width: 0; aspect-ratio: 3 / 4; max-width: 520px;
-  background:
-    radial-gradient(ellipse at 15% 10%, rgba(150, 105, 50, 0.14), transparent 45%),
-    radial-gradient(ellipse at 90% 85%, rgba(120, 80, 30, 0.16), transparent 50%),
-    var(--textura-papel, none),
-    #efe3c6;
-  box-shadow: inset 0 0 40px rgba(120, 80, 30, 0.25);
+  background: #ffffff;
 }
-.dpag-esq { border-radius: 6px 0 0 6px; box-shadow: inset -26px 0 28px -18px rgba(40, 20, 5, 0.55), inset 0 0 40px rgba(120, 80, 30, 0.22), -3px 0 0 #e1d2ac, -5px 0 0 #cdbb92; }
-.dpag-dir { border-radius: 0 6px 6px 0; box-shadow: inset 26px 0 28px -18px rgba(40, 20, 5, 0.55), inset 0 0 40px rgba(120, 80, 30, 0.22), 3px 0 0 #e1d2ac, 5px 0 0 #cdbb92; }
-.diario-livro:not(:has(.dpag-dir)) .dpag-esq { border-radius: 6px; max-width: 460px; box-shadow: inset 0 0 40px rgba(120, 80, 30, 0.22), 3px 0 0 #e1d2ac, 5px 0 0 #cdbb92; }
-.dpag-branca {
-  background:
-    repeating-linear-gradient(transparent 0 31px, rgba(90, 120, 150, 0.22) 31px 32px),
-    radial-gradient(ellipse at 15% 10%, rgba(150, 105, 50, 0.14), transparent 45%),
-    var(--textura-papel, none), #efe3c6;
-}
-.dpag-vazia { display: grid; place-items: center; text-align: center; padding: 24px; color: #6b5538; font-style: italic; }
+.dpag-esq { border-radius: 6px 0 0 6px; box-shadow: inset -22px 0 24px -18px rgba(0, 0, 0, 0.35), -3px 0 0 #ececec, -5px 0 0 #d6d6d6; }
+.dpag-dir { border-radius: 0 6px 6px 0; box-shadow: inset 22px 0 24px -18px rgba(0, 0, 0, 0.35), 3px 0 0 #ececec, 5px 0 0 #d6d6d6; }
+.diario-livro:not(:has(.dpag-dir)) .dpag-esq { border-radius: 6px; max-width: 460px; box-shadow: 3px 0 0 #ececec, 5px 0 0 #d6d6d6; }
+.dpag-branca { background: #ffffff; }
+.dpag-vazia { display: grid; place-items: center; text-align: center; padding: 24px; color: #666; font-style: italic; }
 .dpag-vazia p { margin: 0; }
 
 .dpag-img { position: absolute; inset: 14px 14px 14px 14px; padding: 0; border: 0; background: transparent; cursor: zoom-in; display: grid; place-items: center; overflow: hidden; }
 .dpag-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.dpag-carregando { color: #6b5538; font-style: italic; font-size: 0.85rem; }
+.dpag-carregando { color: #666; font-style: italic; font-size: 0.85rem; }
 .dpag-img img:not([hidden]) ~ .dpag-carregando { display: none; }
-.dpag-num { position: absolute; bottom: 2px; font-size: 0.7rem; color: #6b5538; font-family: var(--fonte-datilo, "Special Elite", monospace); }
+.dpag-num { position: absolute; bottom: 2px; font-size: 0.7rem; color: #777; font-family: var(--fonte-datilo, "Special Elite", monospace); }
 .dpag-esq .dpag-num { left: 16px; } .dpag-dir .dpag-num { right: 16px; }
 .dpag-acoes { position: absolute; left: 0; right: 0; bottom: -40px; display: flex; gap: 6px; justify-content: center; }
 .diario-livro { margin-bottom: 40px; }
@@ -67,7 +57,7 @@
 /* Lombada no meio e fita marcadora */
 .diario-livro:has(.dpag-dir)::after {
   content: ""; position: absolute; top: 0; bottom: 0; left: 50%; width: 26px; transform: translateX(-50%); pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(30, 14, 4, 0.35) 45%, rgba(30, 14, 4, 0.5) 50%, rgba(30, 14, 4, 0.35) 55%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.18) 45%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.18) 55%, transparent);
 }
 .diario-fita { position: absolute; top: -12px; right: 14%; width: 14px; height: 70px; background: linear-gradient(#8c2730, #5a1620); clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); pointer-events: none; }
 
@@ -98,4 +88,4 @@
 
 /* Janela do mestre: o livro cabe na tela sem precisar rolar */
 .janela-diario .dpag { max-width: 400px; }
-.janela-diario .diario-livro { margin-bottom: 8px; }
+.janela-diario .diario-livro:not(:has(.dpag-acoes)) { margin-bottom: 8px; }
