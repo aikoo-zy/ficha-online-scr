@@ -1340,3 +1340,9 @@ body[data-tema-dado="azul"] .tema-bolinha { transform: translateX(24px); backgro
 .seletor-inv:active { transform: translateY(2px); box-shadow: 0 1px 0 #2b1f14; }
 .seletor-inv.zona-alvo { outline: 3px solid #8c2730; outline-offset: 2px; background: #e8c9a0; color: #2b1f14; }
 .seletor-dica { margin: 0; font-size: 0.8rem; }
+
+/* Mesa do mestre: botões do card + janela do diário */
+.mestre-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.mestre-acoes .mestre-abrir { flex: 1 1 auto; text-align: center; cursor: pointer; }
+.janela-diario { width: min(1100px, 100%); }
+.janela-diario .janela-corpo { padding-bottom: 24px; }
