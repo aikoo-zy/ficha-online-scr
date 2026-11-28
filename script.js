@@ -1212,6 +1212,22 @@ function desenharDiario(forcar) {
   diarioUI.desenhar();
 }
 
+function abrirDiario() {
+  $("janela-diario").hidden = false;
+  document.body.classList.add("sem-rolagem");
+  desenharDiario(true);
+}
+function fecharDiario() {
+  $("janela-diario").hidden = true;
+  if ($("janela-cofre").hidden) document.body.classList.remove("sem-rolagem");
+}
+$("abrir-diario").addEventListener("click", abrirDiario);
+$("fechar-diario").addEventListener("click", fecharDiario);
+$("janela-diario").addEventListener("click", e => { if (e.target.id === "janela-diario") fecharDiario(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && !$("janela-diario").hidden && !document.querySelector(".diario-zoom")) fecharDiario();
+});
+
 function trocarAba(nome) {
   document.querySelectorAll(".aba").forEach(b => b.classList.toggle("ativa", b.dataset.aba === nome));
   document.querySelectorAll(".aba").forEach(b => b.setAttribute("aria-selected", b.dataset.aba === nome));
@@ -1219,7 +1235,6 @@ function trocarAba(nome) {
   if (nome !== "dados") {
     document.querySelectorAll(".painel").forEach(p => p.classList.toggle("ativo", p.dataset.painel === nome));
   }
-  if (nome === "diario") desenharDiario(true);
 }
 
 // ---------- 7. Cliques e digitação ----------
