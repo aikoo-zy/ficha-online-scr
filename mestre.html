@@ -8,8 +8,9 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Zilla+Slab:ital,wght@0,400;0,600;0,700;1,400&display=swap">
   <!-- O "?v=..." força o navegador a baixar a versão nova depois de cada atualização.
        Quando mudar algum arquivo, troque esse número (ex.: a data de hoje). -->
-  <link rel="stylesheet" href="style.css?v=20261104g">
+  <link rel="stylesheet" href="style.css?v=20261128a">
   <link rel="stylesheet" href="tema-botanico.css?v=20261104h">
+  <link rel="stylesheet" href="diario.css?v=20261128a">
 </head>
 <body>
 <!-- ============================================================
@@ -30,8 +31,20 @@
   <div class="grade-mestre" id="grade-mestre"></div>
 </main>
 
+<!-- Janela do diário de um jogador (só leitura) -->
+<div class="janela-fundo" id="janela-diario" hidden>
+  <div class="janela janela-diario" role="dialog" aria-modal="true" aria-labelledby="titulo-diario">
+    <div class="janela-topo">
+      <h2 id="titulo-diario">Diário</h2>
+      <button class="mini" id="fechar-diario" aria-label="Fechar">×</button>
+    </div>
+    <div class="janela-corpo"><div class="diario" id="diario-raiz"></div></div>
+  </div>
+</div>
+
 <script src="habilidades.js?v=20261104g"></script>
-<script src="mestre.js?v=20261104g"></script>
-<script type="module" src="nuvem.js?v=20261104g"></script>
+<script src="diario.js?v=20261128a"></script>
+<script src="mestre.js?v=20261128a"></script>
+<script type="module" src="nuvem.js?v=20261128b"></script>
 </body>
 </html>
