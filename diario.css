@@ -31,11 +31,6 @@
 .diario-capa::before {            /* costura da capa */
   content: ""; position: absolute; inset: 4px; border: 1px dashed rgba(224, 200, 150, 0.4); border-radius: 7px 11px 11px 7px; pointer-events: none;
 }
-.diario-capa::after {             /* elástico de fechar o diário */
-  content: ""; position: absolute; top: -1px; bottom: -1px; right: 3px; width: 8px; pointer-events: none;
-  background: linear-gradient(90deg, #1b1411, #2e2520 50%, #1b1411);
-  box-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
-}
 
 /* Miolo: páginas totalmente brancas */
 .diario-livro { position: relative; display: flex; justify-content: center; perspective: 1600px; }
@@ -87,11 +82,6 @@
 @media (max-width: 860px) {
   .diario-capa { padding: 12px; }
   .diario-capa { width: 100%; }
-  .diario-capa::after { right: 2px; }
-  .dpag { flex: 1 1 100%; width: auto; max-width: 100%; }
-  .diario-livro:not(:has(.dpag-dir)) .dpag-esq { max-width: 100%; width: 100%; }
-  .diario-limite { margin-left: 0; }
-}
-
+  
 /* Janela do mestre: o livro cabe na tela sem precisar rolar */
 .janela-diario .diario-livro:not(:has(.dpag-acoes)) { margin-bottom: 8px; }
